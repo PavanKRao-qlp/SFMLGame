@@ -13,7 +13,7 @@ namespace D2D
 
     int App::Bootup()
     {
-        Logger::Log(LogType::Verbose,"App Booting Up!");
+        Logger::Log(LogType::Verbose, "App Booting Up!");
         if (Init())
         {
             Run();
@@ -23,20 +23,31 @@ namespace D2D
 
     bool App::Init()
     {
+        mAppWindow = new AppWindow();
+        mAppWindow->CreateWindow();
         return true;
     }
 
     void App::Run()
     {
-        while (mAppRunning)
+        while (!mAppWindow->bWindowClosed)
         {
-            /* code */
+
+            mAppWindow->Update();
+            mAppWindow->ClearDisplay();
+            // for each spriteComponent S Get tranform T
+            {
+                // Renderer->Draw(S)
+            }
+            mAppWindow->RefreshDisplay();
         }
     }
 
     int App::Exit()
     {
-        Logger::Log(LogType::Verbose,"App Shuting Down!");
+        Logger::Log(LogType::Verbose, "App Shuting Down!");
+        mAppWindow->CloseWindow();
+        delete mAppWindow;
         return 0;
     }
 }

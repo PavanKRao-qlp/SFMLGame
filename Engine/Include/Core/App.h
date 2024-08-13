@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/AppWindow.h"
 
 namespace D2D
 {
@@ -10,7 +11,7 @@ namespace D2D
         int Exit();
 
         bool mAppRunning = false;
-
+        class AppWindow *mAppWindow;
     public:
         App(/* args */);
         ~App();
