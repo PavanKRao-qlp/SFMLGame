@@ -1,4 +1,5 @@
 #include "Core/App.h"
+#include "Diag/Logger.h"
 
 class SimpleApp : public D2D::App
 {
@@ -11,7 +12,7 @@ public:
 
 SimpleApp::SimpleApp(/* args */)
 {
-    printf("hello from SimpleApp!!\n");
+    //Logger::Log(LogType::Verbose, "SimpleApp Spawned");
 }
 
 SimpleApp::~SimpleApp()
@@ -19,6 +20,5 @@ SimpleApp::~SimpleApp()
 }
 
 D2D::App* CreateApplication() {
-    printf("hello from CreateApplication!!\n");
  return new SimpleApp();
 }

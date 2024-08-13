@@ -1,5 +1,5 @@
 #include "Core/App.h"
-
+#include "Diag/Logger.h"
 namespace D2D
 {
 
@@ -13,6 +13,7 @@ namespace D2D
 
     int App::Bootup()
     {
+        Logger::Log(LogType::Verbose,"App Booting Up!");
         if (Init())
         {
             Run();
@@ -35,6 +36,7 @@ namespace D2D
 
     int App::Exit()
     {
+        Logger::Log(LogType::Verbose,"App Shuting Down!");
         return 0;
     }
 }
