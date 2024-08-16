@@ -1,6 +1,7 @@
 #pragma once 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include "Event.h"
 
 class AppWindow {
     public:
@@ -15,3 +16,5 @@ class AppWindow {
     private:
     sf::RenderWindow* mWindow;
 };
+
+class AppClosedEvent : public D2D::Event {};
