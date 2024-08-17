@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/AppWindow.h"
 #include "Diag/Logger.h"
+#include "Input/Input.h"
+#include "sfmlHelper.h"
 
 AppWindow::AppWindow()
 {
@@ -29,13 +31,46 @@ void AppWindow::Update()
 { // run the program as long as the window is open
     if (mWindow->isOpen())
     {
-        sf::Event event;
-        while (mWindow->pollEvent(event))
+        sf::Event sfEvent;
+        while (mWindow->pollEvent(sfEvent))
         {
-            // "close requested" event: we close the window
-            if (event.type == sf::Event::Closed){
+            if (sfEvent.type == sf::Event::Closed)
+            {
                 bWindowClosed = true;
                 D2D::EventBus::FireEvent<AppClosedEvent>(new AppClosedEvent());
+            }
+            if (sfEvent.type == sf::Event::KeyPressed)
+            {
+                D2D::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(sfEvent.key.code);
+                D2D::KeyPressedEvent *event = new D2D::KeyPressedEvent(keyPressed);
+                D2D::EventBus::FireEvent<D2D::KeyPressedEvent>(event);
+            }
+            if (sfEvent.type == sf::Event::KeyReleased)
+            {
+                D2D::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(sfEvent.key.code);
+                D2D::KeyReleasedEvent *event = new D2D::KeyReleasedEvent(keyPressed);
+                D2D::EventBus::FireEvent<D2D::KeyReleasedEvent>(event);
+            }
+            if (sfEvent.type == sf::Event::MouseButtonPressed)
+            {
+                D2D::Mouse::MouseButton buttonPressed = ConvertSFMLMouseCode(sfEvent.mouseButton.button);
+                D2D::MouseButtonPressedEvent *event = new D2D::MouseButtonPressedEvent(buttonPressed, sfEvent.mouseButton.x, sfEvent.mouseButton.y);
+                D2D::EventBus::FireEvent<D2D::MouseButtonPressedEvent>(event);
+            }
+            if (sfEvent.type == sf::Event::MouseButtonReleased)
+            {
+                D2D::Mouse::MouseButton buttonPressed = ConvertSFMLMouseCode(sfEvent.mouseButton.button);
+                D2D::MouseButtonReleasedEvent *event = new D2D::MouseButtonReleasedEvent(buttonPressed, sfEvent.mouseButton.x, sfEvent.mouseButton.y);
+                D2D::EventBus::FireEvent<D2D::MouseButtonReleasedEvent>(event);
+            }
+            if (sfEvent.type == sf::Event::MouseMoved)
+            {
+                D2D::MouseMovedEvent *event = new D2D::MouseMovedEvent(sfEvent.mouseMove.x, sfEvent.mouseMove.y);
+                D2D::EventBus::FireEvent<D2D::MouseMovedEvent>(event);
+            }
+            if (sfEvent.type == sf::Event::JoystickButtonPressed)
+            {
+                // D2D::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(event.joystickButton.button);
             }
         }
     }

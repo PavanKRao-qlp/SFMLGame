@@ -46,7 +46,7 @@ namespace D2D
         inline static void Subscribe(FUNC(void, const T &) callback)
         {
             using EventDelegate = Delegate<void, T>;
-            int32 eventType = typeid(T).hash_code();
+            int64 eventType = typeid(T).hash_code();
             if (EventBus::CallbackMap.find(eventType) != EventBus::CallbackMap.end())
             {
                 EventDelegate *delegate = CAST(EventDelegate *, CallbackMap[eventType]);
@@ -65,7 +65,7 @@ namespace D2D
         inline static void FireEvent(T* Event)
         {
             using EventDelegate = Delegate<void, T>;
-            int32 eventType = typeid(T).hash_code();
+            int64 eventType =  typeid(T).hash_code();
             if (EventBus::CallbackMap.find(eventType) != EventBus::CallbackMap.end())
             {
                 auto delegate = CAST(EventDelegate *, CallbackMap[eventType]);
@@ -79,7 +79,7 @@ namespace D2D
             }
         };
 
-        static inline std::map<int32, void *> CallbackMap;
+        static inline std::map<int64, void *> CallbackMap;
     };
 
     class Event

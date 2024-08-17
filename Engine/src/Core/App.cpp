@@ -1,5 +1,6 @@
 #include "Core/App.h"
 #include "Core/Event.h"
+#include "Input/Input.h"
 #include "Diag/Logger.h"
 
 namespace D2D
@@ -26,6 +27,7 @@ namespace D2D
     bool App::Init()
     {
         EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
+        Input Input;
         mAppWindow = new AppWindow();
         mAppWindow->CreateWindow();
         mAppRunning = true;
@@ -42,6 +44,13 @@ namespace D2D
             // for each spriteComponent S Get transform T
             {
                 // Renderer->Draw(S)
+            }
+            printf("%d %d \n", Input::GetMousePositionX(), Input::GetMousePositionY());
+            if(Input::GetKey(KeyBoard::Keycode::Left)){
+                Logger::Log(LogType::Verbose, "Left Pressed");
+            } 
+            if(Input::GetKeyDown(KeyBoard::Keycode::Left)){
+                Logger::Log(LogType::Verbose, "Left Held");
             }
             mAppWindow->RefreshDisplay();
         }

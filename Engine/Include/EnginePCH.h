@@ -5,11 +5,15 @@
 #include <map>
 #include <typeindex>
 #include <typeinfo>
+#include <bitset>
 
 namespace D2D
 {
     #define CAST(X,Y) reinterpret_cast<X>(Y)
 
+    template<size_t T>
+    using BitField = std::bitset<T>;
+    
     using int8 = int8_t;
     using int16 = int16_t;
     using int32 = int32_t;
