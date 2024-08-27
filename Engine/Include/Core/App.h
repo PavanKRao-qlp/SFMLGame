@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/AppWindow.h"
 #include "Core/Event.h"
+#include "ECS/ECSRegister.h"
+#include "ECS/Systems/RenderSystem.h"
 
 namespace D2D
 {
@@ -14,6 +16,8 @@ namespace D2D
 
         bool mAppRunning = false;
         class AppWindow *mAppWindow;
+        class ECSRegister mWorldRegister;
+        class RenderSystem* mRenderSystem;
 
     public:
         App(/* args */);

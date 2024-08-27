@@ -78,11 +78,6 @@ void AppWindow::Update()
 
 void AppWindow::RefreshDisplay()
 {
-    sf::RectangleShape rect;
-    rect.setPosition(400, 400);
-    rect.setSize(sf::Vector2f(100, 100));
-    rect.setFillColor(sf::Color::Red);
-    mWindow->draw(rect);
     mWindow->display();
 }
 
@@ -96,4 +91,9 @@ void AppWindow::CloseWindow()
     Logger::Log(LogType::Verbose, "Closing Window");
     if (mWindow->isOpen())
         mWindow->close();
+}
+
+sf::RenderWindow *AppWindow::GetRenderWindowHandle()
+{
+    return mWindow;
 }

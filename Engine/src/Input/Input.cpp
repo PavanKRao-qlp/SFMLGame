@@ -30,7 +30,7 @@ namespace D2D
      void Input::OnMouseButtonPressed(const MouseButtonPressedEvent &event)
      {
         PrevMouseButtonPressedState.set(event.Button, MouseButtonPressedState.test(event.Button));
-        KeyPressedState.set(event.Button, true);
+        MouseButtonPressedState.set(event.Button, true);
         MouseX = event.x;
         MouseY = event.y;
      }
@@ -38,7 +38,7 @@ namespace D2D
     void Input::OnMouseButtonReleased(const MouseButtonReleasedEvent &event)
     {
         PrevMouseButtonPressedState.set(event.Button, MouseButtonPressedState.test(event.Button));
-        KeyPressedState.set(event.Button, false);
+        MouseButtonPressedState.set(event.Button, false);
         MouseX = event.x;
         MouseY = event.y;
     }

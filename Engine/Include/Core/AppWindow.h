@@ -12,6 +12,7 @@ class AppWindow {
     void RefreshDisplay();
     void ClearDisplay();
     void CloseWindow();
+    sf::RenderWindow*  GetRenderWindowHandle();
     bool bWindowClosed = true;
     private:
     sf::RenderWindow* mWindow;

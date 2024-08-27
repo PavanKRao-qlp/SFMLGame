@@ -62,10 +62,10 @@ namespace D2D
         };
 
         template <typename T>
-        inline static void FireEvent(T* Event)
+        inline static void FireEvent(T *Event)
         {
             using EventDelegate = Delegate<void, T>;
-            int64 eventType =  typeid(T).hash_code();
+            int64 eventType = typeid(T).hash_code();
             if (EventBus::CallbackMap.find(eventType) != EventBus::CallbackMap.end())
             {
                 auto delegate = CAST(EventDelegate *, CallbackMap[eventType]);
@@ -84,11 +84,5 @@ namespace D2D
 
     class Event
     {
-    };
-
-    class NumEvent : public Event
-    {
-    public:
-        int pNum = 900;
     };
 }

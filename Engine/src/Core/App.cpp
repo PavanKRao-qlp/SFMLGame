@@ -2,10 +2,10 @@
 #include "Core/Event.h"
 #include "Input/Input.h"
 #include "Diag/Logger.h"
+#include "ECS/Systems/RotationSystem.h"
 
 namespace D2D
 {
-
     App::App()
     {
     }
@@ -31,6 +31,23 @@ namespace D2D
         mAppWindow = new AppWindow();
         mAppWindow->CreateWindow();
         mAppRunning = true;
+
+        mWorldRegister.RegisterComponent<SpriteComponent>();
+        mWorldRegister.RegisterComponent<TransformComponent>();
+
+        EntityID ballA = mWorldRegister.CreateEntity();
+        mWorldRegister.AddComponent<TransformComponent>(ballA, TransformComponent(300, 300));
+        mWorldRegister.AddComponent<SpriteComponent>(ballA, sf::Color::Red);
+        mWorldRegister.GetComponent<TransformComponent>(ballA)->x = 400;
+
+        EntityID ballB = mWorldRegister.CreateEntity();
+        mWorldRegister.AddComponent<TransformComponent>(ballB, TransformComponent(650, 100));
+        mWorldRegister.AddComponent<SpriteComponent>(ballB, sf::Color::Blue);
+
+        mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
+        mWorldRegister.AddSystem(mRenderSystem);
+        mWorldRegister.AddSystem(new RotationSystem());
+
         return true;
     }
 
@@ -38,21 +55,17 @@ namespace D2D
     {
         while (mAppRunning)
         {
-
             mAppWindow->Update();
-            mAppWindow->ClearDisplay();
-            // for each spriteComponent S Get transform T
+
+            // mAppWindow->ClearDisplay();
+            mWorldRegister.Update();
+            // mAppWindow->RefreshDisplay();
+            if (Input::GetMouseButtonUp(D2D::Mouse::Left))
             {
-                // Renderer->Draw(S)
+                EntityID ballB = mWorldRegister.CreateEntity();
+                mWorldRegister.AddComponent<TransformComponent>(ballB, TransformComponent(Input::GetMousePositionX(), Input::GetMousePositionY()));
+                mWorldRegister.AddComponent<SpriteComponent>(ballB, sf::Color::Green);
             }
-            printf("%d %d \n", Input::GetMousePositionX(), Input::GetMousePositionY());
-            if(Input::GetKey(KeyBoard::Keycode::Left)){
-                Logger::Log(LogType::Verbose, "Left Pressed");
-            } 
-            if(Input::GetKeyDown(KeyBoard::Keycode::Left)){
-                Logger::Log(LogType::Verbose, "Left Held");
-            }
-            mAppWindow->RefreshDisplay();
         }
     }
 
