@@ -18,6 +18,7 @@ bool AppWindow::CreateWindow()
 {
     Logger::Log(LogType::Verbose, "Creating Window");
     mWindow = new sf::RenderWindow(sf::VideoMode(800, 800), "My window");
+    //mWindow->setFramerateLimit(60);
     if (mWindow == nullptr)
     {
         Logger::Log(LogType::FatalError, "Creating Window Failed");

@@ -24,9 +24,13 @@ namespace D2D
         }
     };
 
-    struct Component {};
+    struct Component
+    {
+    };
 
-    class BaseComponentArray {};
+    class BaseComponentArray
+    {
+    };
 
     template <typename Component, typename... Rest>
     ComponentMask CreateSignature()
@@ -52,7 +56,8 @@ namespace D2D
         T &Get(EntityID _entity);
         void Insert(EntityID _entity, T _component);
         void Remove(EntityID _entity, T _component);
-        bool  Has(EntityID _entity);
+        bool Has(EntityID _entity);
+
     protected:
         Vector<T> mPackedComponents;
         UMap<EntityID, int> mSparseIndexMap;
@@ -79,11 +84,33 @@ namespace D2D
         inline void RemoveComponentArray()
         {
             ComponentID id = ComponentIDHelper::GetID<T>();
-            mComponentArrays.remove(id);
+            mComponentArrays.erase(id);
         };
-        
+
+        inline void RemoveComponentArray(ComponentID _id) {
+            mComponentArrays.erase(_id);
+            // mComponentArrays.remove(_id);
+        };
+
+        template <typename T>
+        inline bool HasComponentArray()
+        {
+            ComponentID id = ComponentIDHelper::GetID<T>();
+            return mComponentArrays.find(id) != mComponentArrays.end();
+        };
+
+        inline bool HasComponentArray(ComponentID _id)
+        {
+            // return false;
+            return mComponentArrays.find(_id) != mComponentArrays.end();
+        };
+
     protected:
         UMap<ComponentID, BaseComponentArray *> mComponentArrays;
+    };
+
+    class ComponentManager
+    {
     };
 }
 

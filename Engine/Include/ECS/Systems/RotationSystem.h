@@ -17,8 +17,8 @@ namespace D2D
             for (EntityID entity : mView->mEntities)
             {
                 TransformComponent *transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
-                transform->angle += 0.01f;
-                transform->y += 0.01f;
+                transform->angle += 50.f * EngineTime::GetDeltaTime();
+                //transform->y += 5 * EngineTime::GetDeltaTime();
             };
         };
 

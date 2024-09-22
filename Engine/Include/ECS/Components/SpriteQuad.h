@@ -1,4 +1,6 @@
+#pragma once
 #include "ECS/Component.h"
+#include "SFML/Graphics.hpp"
 namespace D2D
 {
     struct SpriteComponent : Component

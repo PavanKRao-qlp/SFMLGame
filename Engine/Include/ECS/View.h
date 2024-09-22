@@ -18,7 +18,6 @@ namespace D2D
         // protected:
         Set<EntityID> mEntities;
         ComponentMask mSignature;
-        ComponentArrayPool *ComponentArrayHolder;
         ECSRegister *ecsRegister;
         EntityID id;
     };
@@ -32,25 +31,13 @@ namespace D2D
         virtual void RemoveEntity(EntityID _entity) override;
 
     private:
-        template <typename ComponentType1, typename... ComponentTypeRest>
-        void BuildComponentArray();
-
-        template <typename ComponentType1, typename... ComponentTypeRest>
-        void AddToComponentArray(EntityID _entity);
-
-        template <typename ComponentType1, typename... ComponentTypeRest>
-        void RemoveFromComponentArray(EntityID _entity);
-
-    private:
     };
 
     template <typename... ComponentTypes>
     ECView<ComponentTypes...>::ECView()
     {
         mEntities.clear();
-        ComponentArrayHolder = new ComponentArrayPool();
         mSignature = CreateSignature<ComponentTypes...>();
-        BuildComponentArray<ComponentTypes...>();
     }
 
     template <typename... ComponentTypes>
@@ -59,57 +46,15 @@ namespace D2D
         if (mEntities.find(_entity) == mEntities.end())
         {
             mEntities.emplace(_entity);
-            AddToComponentArray<ComponentTypes...>(_entity);
         }
     }
 
     template <typename... ComponentTypes>
     void ECView<ComponentTypes...>::RemoveEntity(EntityID _entity)
     {
-        RemoveFromComponentArray<ComponentTypes...>(_entity);
-    }
-
-    template <typename... ComponentTypes>
-    template <typename ComponentType1, typename... ComponentTypeRest>
-    void ECView<ComponentTypes...>::BuildComponentArray()
-    {
-        ComponentArrayHolder->AddComponentArray(new ComponentArray<ComponentType1>());
-        if constexpr (sizeof...(ComponentTypeRest) > 0)
+        if (mEntities.find(_entity) != mEntities.end())
         {
-            BuildComponentArray<ComponentTypeRest...>();
-        }
-    }
-
-    template <typename... ComponentTypes>
-    template <typename ComponentType1, typename... ComponentTypeRest>
-    void ECView<ComponentTypes...>::AddToComponentArray(EntityID _entity)
-    {
-
-        ComponentArray<ComponentType1> *componentArray = ComponentArrayHolder->GetComponentArray<ComponentType1>();
-        if (!componentArray->Has(_entity))
-        {
-            ComponentType1 *component = ecsRegister->GetComponent<ComponentType1>(_entity);
-            componentArray->Insert(_entity, *component);
-        }
-        if constexpr (sizeof...(ComponentTypeRest) > 0)
-        {
-            AddToComponentArray<ComponentTypeRest...>(_entity);
-        }
-    }
-
-    template <typename... ComponentTypes>
-    template <typename ComponentType1, typename... ComponentTypeRest>
-    void ECView<ComponentTypes...>::RemoveFromComponentArray(EntityID _entity)
-    {
-        ComponentArray<ComponentType1> *componentArray = ComponentArrayHolder->GetComponentArray<ComponentType1>();
-        if (componentArray->Has(_entity))
-        {
-            ComponentType1 *component = ecsRegister->GetComponent<ComponentType1>(_entity);
-            componentArray->Remove(_entity, *component);
-        }
-        if constexpr (sizeof...(ComponentTypeRest) > 0)
-        {
-            RemoveFromComponentArray<ComponentTypeRest...>(_entity);
+            mEntities.erase(_entity);
         }
     }
 }

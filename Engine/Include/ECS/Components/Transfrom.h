@@ -5,10 +5,10 @@ namespace D2D
     struct TransformComponent : Component
     {
     public:
-        inline TransformComponent(float _x, float _y, float _angle = 0)
+        inline TransformComponent(float _posX, float _posY, float _angle = 0)
         {
-            x = _x;
-            y = _y;
+            x = _posX;
+            y = _posY;
             angle = _angle;
         }
         float x = 0;

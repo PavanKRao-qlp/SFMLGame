@@ -11,40 +11,43 @@ namespace D2D
 
     inline EntityID ECSRegister::CreateEntity()
     {
-        if (nextEntityId > MAX_ENTITY)
-        {
-            // handle
-            return MAX_ENTITY;
-        }
-        Entity *e = new Entity(nextEntityId++);
-        e->bAlive = true;
-        mEntityComponentSignatures[e->GetId()] = 0u;
-        mEntities.emplace(e->GetId(), e);
+        EntityID id = mEntityManager.CreateEntity();
+        mEntityComponentSignatures[id] = ComponentMask();
         bRegisterDirty = true;
-        return e->GetId();
+        return id;
     };
 
-    inline EntityID ECSRegister::DestroyEntity() {
-
+    inline void ECSRegister::DestroyEntity(EntityID _entity)
+    {
+        mEntityManager.DestroyEntity(_entity);
+        bRegisterDirty = true;
     };
 
     template <typename T>
     inline void ECSRegister::RegisterComponent()
     {
         ComponentID id = ComponentIDHelper::GetID<T>();
-        // add contains check
-        ComponentArrayHolder->AddComponentArray(new ComponentArray<T>());
+        if (!ComponentArrayHolder->HasComponentArray<T>())
+        {
+            ComponentArrayHolder->AddComponentArray(new ComponentArray<T>());
+        }
     };
 
     template <typename T>
     inline void ECSRegister::AddComponent(EntityID _entity, T _component)
     {
+        if (!mEntityManager.IsValid(_entity))
+        {
+            return;
+        }
+        if (!ComponentArrayHolder->HasComponentArray<T>())
+        {
+            return;
+        }
         ComponentID id = ComponentIDHelper::GetID<T>();
-        Entity *e = mEntities[_entity];
-        mEntityComponentSignatures[_entity].set(id,true);
+        mEntityComponentSignatures[_entity].set(id, true);
         ComponentArray<T> *pool = ComponentArrayHolder->GetComponentArray<T>();
         pool->Insert(_entity, _component);
-        // pool->mComponents.insert(_component);
     };
 
     template <typename T, typename... Args>
@@ -53,6 +56,23 @@ namespace D2D
         T component(std::forward<Args>(args)...);
         AddComponent<T>(_entity, component);
     }
+
+    template <typename T>
+    inline void ECSRegister::RemoveComponent(EntityID _entity)
+    {
+        if (!mEntityManager.IsValid(_entity))
+        {
+            return;
+        }
+        if (!ComponentArrayHolder->HasComponentArray<T>())
+        {
+            return;
+        }
+        ComponentID id = ComponentIDHelper::GetID<T>();
+        mEntityComponentSignatures[_entity].set(id, false);
+        ComponentArray<T> *pool = ComponentArrayHolder->GetComponentArray<T>();
+        pool->Remove(_entity, _component);
+    };
 
     template <typename T>
     inline bool ECSRegister::HasComponent(EntityID _entity)
@@ -64,11 +84,17 @@ namespace D2D
     template <typename T>
     inline T *ECSRegister::GetComponent(EntityID _entity)
     {
-        if (!HasComponent<T>(_entity))
+        if (!mEntityManager.IsValid(_entity))
+        {
             return nullptr;
+        }
+        if (!ComponentArrayHolder->HasComponentArray<T>())
+        {
+            return nullptr;
+        }
         ComponentID id = ComponentIDHelper::GetID<T>();
         ComponentArray<T> *pool = ComponentArrayHolder->GetComponentArray<T>();
-        return &pool->Get(_entity);
+        return &(pool->Get(_entity));
     };
 
     inline void ECSRegister::AddSystem(System *_system)
@@ -79,19 +105,39 @@ namespace D2D
 
     inline void ECSRegister::Update()
     {
-
-        // handle creation / destruction of entities
-
-        // handle component pools
-
-        // update system component pool
         if (bRegisterDirty)
         {
+            for (EntityID entity : mEntityManager.EntitiesRemoved)
+            {
+                // remove entity from mEntities
+                mEntityManager.Entities.erase(entity);
+                for (ComponentID cId = 0; cId < MAX_COMPONENTS; ++cId)
+                {
+                    if (mEntityComponentSignatures[entity].test(cId))
+                    {
+                        // ComponentArrayHolder->GetComponentArray(cId);
+                    }
+                }
+                mEntityComponentSignatures[entity].reset();
+                // remove component pool
+                // remove from systems
+                for (System *system : mSystems)
+                {
+                    system->RemoveEntity(entity);
+                }
+            }
+            mEntityManager.EntitiesRemoved.clear();
+
+            for (EntityID entity : mEntityManager.EntitiesAdded)
+            {
+                mEntityManager.Entities.emplace(entity);
+            }
+            mEntityManager.EntitiesAdded.clear();
+
             for (System *system : mSystems)
             {
-                for (auto pair : mEntities) // has to be sparse set
+                for (EntityID entity : mEntityManager.Entities) // has to be sparse set
                 {
-                    EntityID entity = pair.first;
                     if ((system->SystemSignature & mEntityComponentSignatures[entity]) == system->SystemSignature)
                     {
                         system->AddEntity(entity);

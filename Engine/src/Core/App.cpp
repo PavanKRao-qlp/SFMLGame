@@ -1,13 +1,17 @@
 #include "Core/App.h"
 #include "Core/Event.h"
+#include "Core/Clock.h"
 #include "Input/Input.h"
 #include "Diag/Logger.h"
 #include "ECS/Systems/RotationSystem.h"
+#include "ECS/Systems/LifeTimeSystem.h"
 
 namespace D2D
 {
-    App::App()
+    const float fixedDt = 1.f / 60;
+    App::App(IGameInstance *gameInstance)
     {
+        mGameInstance = gameInstance;
     }
 
     App::~App()
@@ -32,41 +36,62 @@ namespace D2D
         mAppWindow->CreateWindow();
         mAppRunning = true;
 
+        mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
         mWorldRegister.RegisterComponent<SpriteComponent>();
         mWorldRegister.RegisterComponent<TransformComponent>();
+        mWorldRegister.RegisterComponent<LifeTimeComponent>();
 
-        EntityID ballA = mWorldRegister.CreateEntity();
-        mWorldRegister.AddComponent<TransformComponent>(ballA, TransformComponent(300, 300));
-        mWorldRegister.AddComponent<SpriteComponent>(ballA, sf::Color::Red);
-        mWorldRegister.GetComponent<TransformComponent>(ballA)->x = 400;
-
-        EntityID ballB = mWorldRegister.CreateEntity();
-        mWorldRegister.AddComponent<TransformComponent>(ballB, TransformComponent(650, 100));
-        mWorldRegister.AddComponent<SpriteComponent>(ballB, sf::Color::Blue);
-
-        mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
+        
         mWorldRegister.AddSystem(mRenderSystem);
         mWorldRegister.AddSystem(new RotationSystem());
-
+        mWorldRegister.AddSystem(new LifeTimeSystem());
+        
+        if (mGameInstance != nullptr)
+        {
+            mGameInstance->SetECSRegister(&mWorldRegister);
+            mGameInstance->Initialize();
+        }
+        else
+        {
+            return false;
+        }
         return true;
     }
 
     void App::Run()
     {
+        float dt = 0;
+        double accDt = 0;
+        if (mGameInstance != nullptr)
+            mGameInstance->OnBeginPlay();
         while (mAppRunning)
         {
-            mAppWindow->Update();
-
-            // mAppWindow->ClearDisplay();
-            mWorldRegister.Update();
-            // mAppWindow->RefreshDisplay();
-            if (Input::GetMouseButtonUp(D2D::Mouse::Left))
+            dt = EngineTime::Tick();
+            accDt += dt;
+            OnUpdate(dt);
+            while (accDt >= fixedDt)
             {
-                EntityID ballB = mWorldRegister.CreateEntity();
-                mWorldRegister.AddComponent<TransformComponent>(ballB, TransformComponent(Input::GetMousePositionX(), Input::GetMousePositionY()));
-                mWorldRegister.AddComponent<SpriteComponent>(ballB, sf::Color::Green);
+                OnFixedUpdate();
+                accDt -= fixedDt;
             }
         }
+        if (mGameInstance != nullptr)
+            mGameInstance->OnEndPlay();
+    }
+
+    void App::OnUpdate(float _dt)
+    {
+        mAppWindow->Update();
+        if (mGameInstance != nullptr)
+        {
+            mGameInstance->OnUpdate(_dt);
+            mWorldRegister.Update();
+        }
+        Input::Update();
+    }
+
+    void App::OnFixedUpdate()
+    {
     }
 
     int App::Exit()
@@ -77,7 +102,7 @@ namespace D2D
         return 0;
     }
 
-    void App::OnAppWindowClosed(const AppClosedEvent &Event)
+    void App::OnAppWindowClosed(const AppClosedEvent &_event)
     {
         mAppRunning = false;
         mAppWindow->CloseWindow();

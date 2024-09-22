@@ -5,18 +5,37 @@
 namespace D2D
 {
 
-    class Entity
+    // class Entity
+    // {
+    // public:
+    //     inline Entity(EntityID _id)
+    //     {
+    //         mId = _id;
+    //     }
+    //     inline const EntityID GetId() { return mId; }
+
+    //     bool bAlive;
+
+    // private:
+    //     EntityID mId;
+    // };
+
+    class EntityManager
     {
     public:
-        inline Entity(EntityID _id)
-        {
-            mId = _id;
-        }
-        inline const EntityID GetId() { return mId; }
-
-        bool bAlive;
-
+        EntityID CreateEntity();
+        void DestroyEntity(EntityID _id);
+        bool IsValid(EntityID _id);
+        EntityID GetEntityCount();
+        Set<EntityID> EntitiesAdded;
+        Set<EntityID> EntitiesRemoved;
+        Set<EntityID> Entities;
     private:
-        EntityID mId;
+        BitField<MAX_ENTITY> mEntityAliveFlags;
+        Queue<EntityID> mFreeIds;
+        EntityID mNextEntityID = 0;
+        EntityID mAliveCount = 0;
     };
 }
+
+#include "EnityManager.inl"

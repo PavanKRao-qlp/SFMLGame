@@ -13,10 +13,11 @@ namespace D2D
     {
     public:
         ECSRegister(/* args */);
-        ~ECSRegister();
-
+        ~ECSRegister(); 
+        /** Creates an entity. */
         EntityID CreateEntity();
-        EntityID DestroyEntity();
+        /** Destroys an entity.*/
+        void DestroyEntity(EntityID _entity);
 
         template <typename T>
         void RegisterComponent();
@@ -26,6 +27,9 @@ namespace D2D
 
         template <typename T, typename... Args>
         void AddComponent(EntityID _entity, Args &&...args);
+        
+        template <typename T>
+        void RemoveComponent(EntityID _entity);
 
         template <typename T>
         bool HasComponent(EntityID _entity);
@@ -38,17 +42,15 @@ namespace D2D
         void Update();
 
     private:
-        Vector<Entity *> EntitiesToAdd;
-        Vector<Entity *> EntitiesToRemove;
-        SparseArray<Entity*, MAX_ENTITY> mEntitySet;
-        UMap<EntityID, Entity *> mEntities;
+        EntityManager mEntityManager;
+        ComponentManager mComponentManager;
+        SystemManager mSystemManager;
+
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
         ComponentArrayPool *ComponentArrayHolder;
         Vector<System *> mSystems;
-
-        EntityID nextEntityId = 0;
+        
         bool bRegisterDirty = true;
-        // std::unordered_map<ComponentID,  *> ComponentMap;
     };
     
 }
