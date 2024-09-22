@@ -1,7 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include <SFML/System/Clock.hpp>
-namespace D2D
+namespace UMBRA
 {
     class Clock
     {

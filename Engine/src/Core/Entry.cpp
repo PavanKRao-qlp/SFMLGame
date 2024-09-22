@@ -2,11 +2,11 @@
 #include "EnginePCH.h"
 #include "Core/App.h"
 
-extern D2D::App* CreateApplication();
+extern UMBRA::App* CreateApplication();
 
 int main()
 {
-    D2D::App* app = CreateApplication();
+    UMBRA::App* app = CreateApplication();
     int returnCode = app->Bootup();
     delete app;
     return returnCode;

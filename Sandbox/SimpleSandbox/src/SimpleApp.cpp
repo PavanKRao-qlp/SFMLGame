@@ -2,7 +2,7 @@
 #include "Diag/Logger.h"
 #include "Game/SimpleGameinstance.h"
 
-class SimpleApp : public D2D::App
+class SimpleApp : public UMBRA::App
 {
 private:
     /* data */
@@ -20,7 +20,7 @@ SimpleApp::~SimpleApp()
 {
 }
 
-D2D::App *CreateApplication()
+UMBRA::App *CreateApplication()
 {
     SimpleApp *app = new SimpleApp();
     return app;

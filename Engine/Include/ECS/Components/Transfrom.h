@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Component.h"
-namespace D2D
+namespace UMBRA
 {
     struct TransformComponent : Component
     {

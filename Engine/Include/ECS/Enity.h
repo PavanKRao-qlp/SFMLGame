@@ -2,7 +2,7 @@
 #include "EnginePCH.h"
 #include "ECS/ECSConfig.h"
 
-namespace D2D
+namespace UMBRA
 {
 
     // class Entity

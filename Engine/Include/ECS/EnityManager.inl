@@ -1,6 +1,6 @@
 #include "Enity.h"
 
-namespace D2D
+namespace UMBRA
 {
     inline EntityID EntityManager::CreateEntity()
     {

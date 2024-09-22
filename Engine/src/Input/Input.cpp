@@ -1,6 +1,6 @@
 #include "Input/Input.h"
 
-namespace D2D
+namespace UMBRA
 {
     Input::Input()
     {
@@ -84,4 +84,4 @@ namespace D2D
     {
         return PrevKeyPressedState.test(_code) && !KeyPressedState.test(_code);
     }
-} // namespace  D2D
+} // namespace  UMBRA

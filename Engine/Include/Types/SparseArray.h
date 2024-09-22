@@ -1,7 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 
-namespace D2D
+namespace UMBRA
 {
 
     template <typename T, std::size_t Capacity>

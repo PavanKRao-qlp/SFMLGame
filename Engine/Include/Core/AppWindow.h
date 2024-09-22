@@ -18,4 +18,4 @@ class AppWindow {
     sf::RenderWindow* mWindow;
 };
 
-class AppClosedEvent : public D2D::Event {};
+class AppClosedEvent : public UMBRA::Event {};

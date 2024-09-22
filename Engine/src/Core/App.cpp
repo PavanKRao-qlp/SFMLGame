@@ -6,7 +6,7 @@
 #include "ECS/Systems/RotationSystem.h"
 #include "ECS/Systems/LifeTimeSystem.h"
 
-namespace D2D
+namespace UMBRA
 {
     const float fixedDt = 1.f / 60;
     App::App(IGameInstance *gameInstance)

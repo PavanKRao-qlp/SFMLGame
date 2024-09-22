@@ -5,7 +5,7 @@
 #include "ECS/Components/LifeTime.h"
 #include "Core/Clock.h"
 
-namespace D2D
+namespace UMBRA
 {
     class LifeTimeSystem : public System
     {

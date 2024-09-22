@@ -1,7 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include "ECS/ECSRegister.h"
-namespace D2D
+namespace UMBRA
 {
     class IGameInstance
     {

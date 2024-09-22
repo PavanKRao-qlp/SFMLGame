@@ -19,9 +19,9 @@ void SimpleGameInstance::Initialize()
 {
     Logger::Log(LogType::Verbose, "SimpleGameInstance Initialize!");
 
-    D2D::EntityID ballB = mWorldRegister->CreateEntity();
-    mWorldRegister->AddComponent<D2D::TransformComponent>(ballB, D2D::TransformComponent(650, 100));
-    mWorldRegister->AddComponent<D2D::SpriteComponent>(ballB, sf::Color::Blue);
+    UMBRA::EntityID ballB = mWorldRegister->CreateEntity();
+    mWorldRegister->AddComponent<UMBRA::TransformComponent>(ballB, UMBRA::TransformComponent(650, 100));
+    mWorldRegister->AddComponent<UMBRA::SpriteComponent>(ballB, sf::Color::Blue);
 }
 
 void SimpleGameInstance::OnBeginPlay()
@@ -36,11 +36,11 @@ void SimpleGameInstance::OnEndPlay()
 
 void SimpleGameInstance::OnUpdate(float dt)
 {
-    if (D2D::Input::GetMouseButtonDown(D2D::Mouse::Left))
+    if (UMBRA::Input::GetMouseButtonDown(UMBRA::Mouse::Left))
     {
-        D2D::EntityID ballA = mWorldRegister->CreateEntity();
-        mWorldRegister->AddComponent<D2D::TransformComponent>(ballA, D2D::Input::GetMousePositionX(),  D2D::Input::GetMousePositionY());
-        mWorldRegister->AddComponent<D2D::SpriteComponent>(ballA, sf::Color::Red);
-        mWorldRegister->AddComponent<D2D::LifeTimeComponent>(ballA , 5);
+        UMBRA::EntityID ballA = mWorldRegister->CreateEntity();
+        mWorldRegister->AddComponent<UMBRA::TransformComponent>(ballA, UMBRA::Input::GetMousePositionX(),  UMBRA::Input::GetMousePositionY());
+        mWorldRegister->AddComponent<UMBRA::SpriteComponent>(ballA, sf::Color::Red);
+        mWorldRegister->AddComponent<UMBRA::LifeTimeComponent>(ballA , 5);
     };
 }

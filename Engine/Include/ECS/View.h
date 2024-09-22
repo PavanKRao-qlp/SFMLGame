@@ -5,7 +5,7 @@
 #include "ECS/Component.h"
 #include "ECS/ECSRegister.h"
 
-namespace D2D
+namespace UMBRA
 {
     class BaseView
     {

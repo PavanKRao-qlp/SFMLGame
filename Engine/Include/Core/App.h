@@ -5,7 +5,7 @@
 #include "Game/IGameInstance.h"
 #include "ECS/Systems/RenderSystem.h"
 
-namespace D2D
+namespace UMBRA
 {
     class App
     {

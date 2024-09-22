@@ -16,7 +16,7 @@
 
 #include <bitset>
 
-namespace D2D
+namespace UMBRA
 {
     #define CAST(X,Y) reinterpret_cast<X>(Y)
     template<size_t T>

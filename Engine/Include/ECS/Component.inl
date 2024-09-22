@@ -1,6 +1,6 @@
 #include "Component.h"
 
-namespace D2D
+namespace UMBRA
 {
 
     template <typename T>

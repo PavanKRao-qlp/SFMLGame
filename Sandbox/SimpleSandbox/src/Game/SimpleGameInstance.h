@@ -1,7 +1,7 @@
 #pragma once
 #include "Game/IGameInstance.h"
 
-class SimpleGameInstance : public D2D::IGameInstance
+class SimpleGameInstance : public UMBRA::IGameInstance
 {
 private:
     /* data */

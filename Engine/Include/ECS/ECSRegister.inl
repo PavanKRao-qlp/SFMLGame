@@ -1,6 +1,6 @@
 #include "ECSRegister.h"
 
-namespace D2D
+namespace UMBRA
 {
     inline ECSRegister::ECSRegister(/* args */)
     {

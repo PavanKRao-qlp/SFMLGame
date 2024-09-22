@@ -7,7 +7,7 @@
 #include "ECS/View.h"
 #include "Types/SparseArray.h"
 
-namespace D2D
+namespace UMBRA
 {
     class ECSRegister
     {
