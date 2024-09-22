@@ -17,27 +17,23 @@ namespace D2D
 
     void Input::OnKeyPressed(const KeyPressedEvent &event)
     {
-        PrevKeyPressedState.set(event.Key, KeyPressedState.test(event.Key));
         KeyPressedState.set(event.Key, true);
     }
 
     void Input::OnKeyReleased(const KeyReleasedEvent &event)
     {
-        PrevKeyPressedState.set(event.Key, KeyPressedState.test(event.Key));
         KeyPressedState.set(event.Key, false);
     }
 
-     void Input::OnMouseButtonPressed(const MouseButtonPressedEvent &event)
-     {
-        PrevMouseButtonPressedState.set(event.Button, MouseButtonPressedState.test(event.Button));
+    void Input::OnMouseButtonPressed(const MouseButtonPressedEvent &event)
+    {
         MouseButtonPressedState.set(event.Button, true);
         MouseX = event.x;
         MouseY = event.y;
-     }
+    }
 
     void Input::OnMouseButtonReleased(const MouseButtonReleasedEvent &event)
     {
-        PrevMouseButtonPressedState.set(event.Button, MouseButtonPressedState.test(event.Button));
         MouseButtonPressedState.set(event.Button, false);
         MouseX = event.x;
         MouseY = event.y;
@@ -51,7 +47,7 @@ namespace D2D
 
     bool Input::GetMouseButton(Mouse::MouseButton _button)
     {
-        return !PrevMouseButtonPressedState.test(_button) && MouseButtonPressedState.test(_button);
+        return MouseButtonPressedState.test(_button);
     }
 
     bool Input::GetMouseButtonDown(Mouse::MouseButton _button)
@@ -61,14 +57,16 @@ namespace D2D
 
     bool Input::GetMouseButtonUp(Mouse::MouseButton _button)
     {
-        return !PrevMouseButtonPressedState.test(_button) && MouseButtonPressedState.test(_button);
+        return PrevMouseButtonPressedState.test(_button) && !MouseButtonPressedState.test(_button);
     }
 
-    int16 Input::GetMousePositionX(){
+    int16 Input::GetMousePositionX()
+    {
         return MouseX;
     }
 
-    int16 Input::GetMousePositionY(){
+    int16 Input::GetMousePositionY()
+    {
         return MouseY;
     }
 

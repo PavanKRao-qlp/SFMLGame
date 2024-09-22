@@ -183,15 +183,23 @@ namespace D2D
     public:
         Input();
         ~Input();
+        inline static void Update()
+        {
+            PrevMouseButtonPressedState = MouseButtonPressedState;
+        }
         // static inline void Update() { PrevKeyPressedState = KeyPressedState; };
+        /** Returns true while the user holds down the key identified by name. */
         static bool GetKey(KeyBoard::Keycode _code);
-        // If key is pressed, but not held (event based).
+        /** Returns true during the frame the user starts pressing down the key identified by name. */
         static bool GetKeyDown(KeyBoard::Keycode _code);
+        /** Returns true during the frame the user releases the key identified by name. */
         static bool GetKeyUp(KeyBoard::Keycode _code);
-
-        static bool GetMouseButtonDown(Mouse::MouseButton _code);
-        static bool GetMouseButtonUp(Mouse::MouseButton _code);
+        /** Returns true during the frame the user releases the given mouse button.*/
         static bool GetMouseButton(Mouse::MouseButton _code);
+        /** Returns true during the frame the user pressed the given mouse button. */
+        static bool GetMouseButtonDown(Mouse::MouseButton _code);
+        /*Returns true during the frame the user releases the given mouse button.*/
+        static bool GetMouseButtonUp(Mouse::MouseButton _code);
         static int16 GetMousePositionX();
         static int16 GetMousePositionY();
 
@@ -204,7 +212,7 @@ namespace D2D
         // BitField<KeyBoard::Keycode::COUNT> KeyPressedState;
         static inline BitField<KeyBoard::Keycode::COUNT> KeyPressedState = 0;
         static inline BitField<KeyBoard::Keycode::COUNT> PrevKeyPressedState = 0;
-        static inline BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState= 0;
+        static inline BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState = 0;
         static inline BitField<Mouse::MouseButton::COUNT> PrevMouseButtonPressedState = 0;
         static inline int16 MouseX = 0;
         static inline int16 MouseY = 0;
