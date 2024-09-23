@@ -20,14 +20,14 @@ namespace UMBRA
             mWindowHandle->clear(sf::Color::Black);
             for (EntityID entity : mView->mEntities)
             {
-                ComponentID ix = ComponentIDHelper::GetID<TransformComponent>();
                 const SpriteComponent *sprite = mView->ecsRegister->GetComponent<SpriteComponent>(entity);
                 const TransformComponent *transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
                 sf::RectangleShape quadShape;
-                quadShape.setSize(sf::Vector2f(100, 100));
-                quadShape.setOrigin(transform->pivotX * quadShape.getSize().x, transform->pivotY * quadShape.getSize().y);
-                quadShape.setPosition(sf::Vector2f((float)transform->x, (float)transform->y));
-                quadShape.setRotation(transform->angle);
+                //sf::Vector2<String>
+                quadShape.setSize(sf::Vector2f(transform->Size.x, transform->Size.y));
+                quadShape.setOrigin(transform->Pivot.x * transform->Size.x, transform->Pivot.y * quadShape.getSize().y);
+                quadShape.setPosition(sf::Vector2f((float)transform->Position.x, (float)transform->Position.y));
+                quadShape.setRotation(transform->Angle);
                 quadShape.setFillColor(sprite->color);
                 mWindowHandle->draw(quadShape);
             };

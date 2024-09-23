@@ -18,7 +18,6 @@ namespace UMBRA
         {
             for (EntityID entity : mView->mEntities)
             {
-                ComponentID ix = ComponentIDHelper::GetID<TransformComponent>();
                 LifeTimeComponent *lifetime = mView->ecsRegister->GetComponent<LifeTimeComponent>(entity);
                 lifetime->Time  -= EngineTime::GetDeltaTime();
                 if( lifetime->Time <= 0)

@@ -1,6 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include "Core/Event.h"
+#include "Math/Vector.h"
 
 namespace UMBRA
 {
@@ -200,8 +201,7 @@ namespace UMBRA
         static bool GetMouseButtonDown(Mouse::MouseButton _code);
         /*Returns true during the frame the user releases the given mouse button.*/
         static bool GetMouseButtonUp(Mouse::MouseButton _code);
-        static int16 GetMousePositionX();
-        static int16 GetMousePositionY();
+        static MATH::Vector2i GetMousePosition();
 
     private:
         static void OnKeyPressed(const KeyPressedEvent &event);
@@ -214,8 +214,7 @@ namespace UMBRA
         static inline BitField<KeyBoard::Keycode::COUNT> PrevKeyPressedState = 0;
         static inline BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState = 0;
         static inline BitField<Mouse::MouseButton::COUNT> PrevMouseButtonPressedState = 0;
-        static inline int16 MouseX = 0;
-        static inline int16 MouseY = 0;
+        static inline MATH::Vector2i MousePosition;
     };
 
 }

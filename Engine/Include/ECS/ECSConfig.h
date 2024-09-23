@@ -3,7 +3,7 @@
 namespace UMBRA
 {
     using EntityID = uint64;
-    const uint64 MAX_ENTITY = 10;
+    const uint32 MAX_ENTITY = 0x7fffffff;
 
     using ComponentID = uint64;
     const ComponentID MAX_COMPONENTS = 64; // has to be multiple WORD size for bit set optimization ?

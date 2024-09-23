@@ -28,21 +28,21 @@ namespace UMBRA
     void Input::OnMouseButtonPressed(const MouseButtonPressedEvent &event)
     {
         MouseButtonPressedState.set(event.Button, true);
-        MouseX = event.x;
-        MouseY = event.y;
+        MousePosition.x = event.x;
+        MousePosition.y = event.y;
     }
 
     void Input::OnMouseButtonReleased(const MouseButtonReleasedEvent &event)
     {
         MouseButtonPressedState.set(event.Button, false);
-        MouseX = event.x;
-        MouseY = event.y;
+        MousePosition.x = event.x;
+        MousePosition.y = event.y;
     }
 
     void Input::OnMouseMoved(const MouseMovedEvent &event)
     {
-        MouseX = event.x;
-        MouseY = event.y;
+        MousePosition.x = event.x;
+        MousePosition.y = event.y;
     }
 
     bool Input::GetMouseButton(Mouse::MouseButton _button)
@@ -60,14 +60,9 @@ namespace UMBRA
         return PrevMouseButtonPressedState.test(_button) && !MouseButtonPressedState.test(_button);
     }
 
-    int16 Input::GetMousePositionX()
+    MATH::Vector2i Input::GetMousePosition()
     {
-        return MouseX;
-    }
-
-    int16 Input::GetMousePositionY()
-    {
-        return MouseY;
+        return MousePosition;
     }
 
     bool Input::GetKey(KeyBoard::Keycode _code)
