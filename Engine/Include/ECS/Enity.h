@@ -1,9 +1,8 @@
 #pragma once
-#include "EnginePCH.h"
 #include "ECS/ECSConfig.h"
+#include "EnginePCH.h"
 
-namespace UMBRA
-{
+namespace Umbra {
 
     // class Entity
     // {
@@ -20,8 +19,7 @@ namespace UMBRA
     //     EntityID mId;
     // };
 
-    class EntityManager
-    {
+    class EntityManager {
     public:
         EntityID CreateEntity();
         void DestroyEntity(EntityID _id);
@@ -30,12 +28,13 @@ namespace UMBRA
         Set<EntityID> EntitiesAdded;
         Set<EntityID> EntitiesRemoved;
         Set<EntityID> Entities;
+
     private:
         BitField<MAX_ENTITY> mEntityAliveFlags;
         Queue<EntityID> mFreeIds;
         EntityID mNextEntityID = 0;
-        EntityID mAliveCount = 0;
+        EntityID mAliveCount   = 0;
     };
-}
+} // namespace Umbra
 
 #include "EnityManager.inl"

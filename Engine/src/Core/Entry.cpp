@@ -1,13 +1,12 @@
 #pragma once
-#include "EnginePCH.h"
 #include "Core/App.h"
+#include "EnginePCH.h"
 
-extern UMBRA::App* CreateApplication();
+extern Umbra::App* CreateApplication();
 
-int main()
-{
-    UMBRA::App* app = CreateApplication();
-    int returnCode = app->Bootup();
+int main() {
+    Umbra::App* app = CreateApplication();
+    int returnCode  = app->Bootup();
     delete app;
     return returnCode;
 }

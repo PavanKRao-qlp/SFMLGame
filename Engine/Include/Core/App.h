@@ -2,24 +2,22 @@
 #include "Core/AppWindow.h"
 #include "Core/Event.h"
 #include "ECS/ECSRegister.h"
-#include "Game/IGameInstance.h"
 #include "ECS/Systems/RenderSystem.h"
+#include "Game/IGameInstance.h"
 
-namespace UMBRA
-{
-    class App
-    {
+namespace Umbra {
+    class App {
     private:
         bool Init();
         void Run();
         int Exit();
-        
+
         void OnUpdate(float _dt);
         void OnFixedUpdate();
         void OnAppWindowClosed(const AppClosedEvent& _event);
 
-        bool mAppRunning = false;
-        class AppWindow *mAppWindow;
+        bool bAppRunning = false;
+        class AppWindow* mAppWindow;
         class ECSRegister mWorldRegister;
         class RenderSystem* mRenderSystem;
         class IGameInstance* mGameInstance;
@@ -29,4 +27,4 @@ namespace UMBRA
         ~App();
         int Bootup();
     };
-}
+} // namespace Umbra

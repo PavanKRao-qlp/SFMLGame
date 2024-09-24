@@ -1,10 +1,11 @@
-#pragma once 
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
+#pragma once
 #include "Event.h"
 
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+
 class AppWindow {
-    public:
+public:
     AppWindow();
     ~AppWindow();
     bool CreateWindow();
@@ -12,10 +13,11 @@ class AppWindow {
     void RefreshDisplay();
     void ClearDisplay();
     void CloseWindow();
-    sf::RenderWindow*  GetRenderWindowHandle();
+    sf::RenderWindow* GetRenderWindowHandle();
     bool bWindowClosed = true;
-    private:
+
+private:
     sf::RenderWindow* mWindow;
 };
 
-class AppClosedEvent : public UMBRA::Event {};
+class AppClosedEvent : public Umbra::Event {};
