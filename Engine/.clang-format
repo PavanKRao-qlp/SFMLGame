@@ -73,7 +73,7 @@ AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
 # AllowShortBlocksOnASingleLine: Never
 # AllowShortCaseLabelsOnASingleLine: false
 # AllowShortCompoundRequirementOnASingleLine: true
-# AllowShortEnumsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
 # AllowShortFunctionsOnASingleLine: All
 AllowShortFunctionsOnASingleLine: Empty
 # AllowShortIfStatementsOnASingleLine: Never
@@ -89,11 +89,11 @@ AlwaysBreakTemplateDeclarations: Yes
 # BinPackArguments: true
 # BinPackParameters: true
 # BitFieldColonSpacing: Both
-# BraceWrapping:
-#   AfterCaseLabel:  false
-#   AfterClass:      false
-#   AfterControlStatement: Never
-#   AfterEnum:       false
+BraceWrapping:
+  AfterEnum: true
+  #   AfterCaseLabel:  false
+  #   AfterClass:      false
+  #   AfterControlStatement: Never
 #   AfterExternBlock: false
 #   AfterFunction:   false
 #   AfterNamespace:  false

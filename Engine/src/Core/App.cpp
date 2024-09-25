@@ -1,11 +1,9 @@
 #include "Core/App.h"
 
-#include "Core/Clock.h"
-#include "Core/Event.h"
-#include "Diag/Logger.h"
 #include "ECS/Systems/LifeTimeSystem.h"
 #include "ECS/Systems/RotationSystem.h"
 #include "Input/Input.h"
+#include "Umbra.h"
 
 namespace Umbra {
     const float fixedDt = 1.f / 60;
@@ -28,7 +26,7 @@ namespace Umbra {
         Input Input;
         mAppWindow = new AppWindow();
         mAppWindow->CreateWindow();
-        mAppRunning = true;
+        bAppRunning = true;
 
         mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
         mWorldRegister.RegisterComponent<SpriteComponent>();
@@ -40,6 +38,7 @@ namespace Umbra {
         mWorldRegister.AddSystem(new RotationSystem());
         mWorldRegister.AddSystem(new LifeTimeSystem());
 
+        UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
         if (mGameInstance != nullptr) {
             mGameInstance->SetECSRegister(&mWorldRegister);
             mGameInstance->Initialize();
@@ -55,7 +54,7 @@ namespace Umbra {
         if (mGameInstance != nullptr) {
             mGameInstance->OnBeginPlay();
         }
-        while (mAppRunning) {
+        while (bAppRunning) {
             dt = EngineTime::Tick();
             accDt += dt;
             OnUpdate(dt);
@@ -88,7 +87,7 @@ namespace Umbra {
     }
 
     void App::OnAppWindowClosed(const AppClosedEvent& _event) {
-        mAppRunning = false;
+        bAppRunning = false;
         mAppWindow->CloseWindow();
     }
 } // namespace Umbra

@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/AppWindow.h"
 
-#include "Diag/Logger.h"
 #include "Input/Input.h"
+#include "Umbra.h"
 #include "sfmlHelper.h"
 
 AppWindow::AppWindow() {}
@@ -17,10 +17,7 @@ bool AppWindow::CreateWindow() {
     Logger::Log(LogType::Verbose, "Creating Window");
     mWindow = new sf::RenderWindow(sf::VideoMode(800, 800), "My window");
     // mWindow->setFramerateLimit(60);
-    if (mWindow == nullptr) {
-        Logger::Log(LogType::FatalError, "Creating Window Failed");
-        return false;
-    }
+    UM_ASSERT(mWindow != nullptr, "Creating Window Failed");
     bWindowClosed = false;
     return true;
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Event.h"
-#include "EnginePCH.h"
 #include "Math/Vector.h"
+#include "Umbra.h"
 
 namespace Umbra {
     namespace KeyBoard {
@@ -111,7 +111,7 @@ namespace Umbra {
 
             COUNT //!< Keep last -- the total number of keyboard keys
         };
-    }
+    } // namespace KeyBoard
     namespace Mouse {
         enum MouseButton : int16 {
             Left, //!< The left mouse button
@@ -122,7 +122,7 @@ namespace Umbra {
 
             COUNT //!< Keep last -- the total number of mouse buttons
         };
-    }
+    } // namespace Mouse
 
     class KeyPressedEvent : Event {
     public:
