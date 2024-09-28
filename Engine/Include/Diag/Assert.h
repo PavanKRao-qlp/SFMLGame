@@ -9,8 +9,7 @@
 
 
 namespace Umbra {
-    inline void HandleAssertionFailure(
-        const std::string& _expression, std::string _message, const std::string& _file, int _line) {
+    inline void HandleAssertionFailure(const String& _expression, String _message, const String& _file, int _line) {
         Logger::Log(LogType::Assert, "Assertion failed [%s] :: %s \n in : %s at  %d", _expression.c_str(),
             _message.c_str(), _file.c_str(), _line);
 

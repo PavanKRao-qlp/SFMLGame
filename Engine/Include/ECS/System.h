@@ -24,11 +24,18 @@ namespace Umbra {
         inline void AssignRegistry(ECSRegister* _register) {
             mView->AssignRegistry(_register);
         }
+        inline void SetEnabled(bool bShouldEnable) {
+            bEnabled = bShouldEnable;
+        }
+        inline bool GetEnabled() {
+            return bEnabled;
+        }
         virtual void Update() = 0;
         ComponentMask SystemSignature;
 
     protected:
         BaseView* mView;
+        bool bEnabled = true;
     };
 
     class SystemManager {};

@@ -25,6 +25,9 @@ namespace Umbra {
                 quadShape.setPosition(sf::Vector2f((float) transform->Position.x, (float) transform->Position.y));
                 quadShape.setRotation(transform->Angle);
                 quadShape.setFillColor(sprite->color);
+                if (sprite->refTexture != nullptr) {
+                    quadShape.setTexture(sprite->refTexture->GetSfmlTexture());
+                }
                 mWindowHandle->draw(quadShape);
             };
             mWindowHandle->display();

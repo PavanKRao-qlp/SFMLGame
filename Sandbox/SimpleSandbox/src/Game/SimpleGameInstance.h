@@ -3,8 +3,6 @@
 
 class SimpleGameInstance : public Umbra::IGameInstance
 {
-private:
-    /* data */
 public:
     SimpleGameInstance();
     ~SimpleGameInstance();
@@ -12,4 +10,7 @@ public:
     virtual void OnBeginPlay() override;
     virtual void OnEndPlay() override;
     virtual void OnUpdate(float dt) override;
+
+private:
+    Umbra::EntityID ship;
 };

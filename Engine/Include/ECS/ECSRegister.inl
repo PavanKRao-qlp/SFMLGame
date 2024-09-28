@@ -122,7 +122,9 @@ namespace Umbra {
             bRegisterDirty = false;
         }
         for (System* system : mSystems) {
-            system->Update();
+            if (system->GetEnabled()) {
+                system->Update();
+            }
         }
     }
 } // namespace Umbra

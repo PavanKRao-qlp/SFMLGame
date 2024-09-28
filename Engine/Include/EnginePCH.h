@@ -3,6 +3,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <queue>
 #include <set>
 #include <stack>
@@ -30,6 +31,14 @@ namespace Umbra {
     using String = std::string;
 
     using Timestamp = uint64_t;
+    // template <typename T>
+    // using MakeShared = std::make_shared<T>;
+    template <typename T>
+    using UniquePtr = std::unique_ptr<T>;
+    template <typename T>
+    using SharedPtr = std::shared_ptr<T>;
+    template <typename T>
+    using WeakPtr = std::weak_ptr<T>;
 
     template <typename T>
     using Vector = std::vector<T>; // dynamic Array

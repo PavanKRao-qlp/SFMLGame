@@ -7,7 +7,9 @@
 namespace Umbra {
     class RotationSystem : public System {
     public:
-        inline RotationSystem() : System(new ECView<TransformComponent>()) {};
+        inline RotationSystem() : System(new ECView<TransformComponent>()) {
+            bEnabled = false;
+        }
         inline ~RotationSystem() {};
         inline void Update() override {
             for (EntityID entity : mView->mEntities) {

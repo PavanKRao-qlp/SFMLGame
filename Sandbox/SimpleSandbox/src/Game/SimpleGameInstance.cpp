@@ -5,6 +5,8 @@
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/LifeTime.h"
 #include "SFML/Graphics.hpp"
+#include "Asset/AssetManager.h"
+#include "Asset/Texture.h"
 #include "Diag/Logger.h"
 
 SimpleGameInstance::SimpleGameInstance()
@@ -19,9 +21,9 @@ void SimpleGameInstance::Initialize()
 {
     Logger::Log(LogType::Verbose, "SimpleGameInstance Initialize!");
 
-    Umbra::EntityID ballB = mWorldRegister->CreateEntity();
-    mWorldRegister->AddComponent<Umbra::TransformComponent>(ballB, Umbra::TransformComponent(Umbra::MATH::Vector2f(600, 400), Umbra::MATH::Vector2f(100, 100)));
-    mWorldRegister->AddComponent<Umbra::SpriteComponent>(ballB, sf::Color::Blue);
+    ship = mWorldRegister->CreateEntity();
+    mWorldRegister->AddComponent<Umbra::TransformComponent>(ship, Umbra::TransformComponent(Umbra::MATH::Vector2f(600, 400), Umbra::MATH::Vector2f(100, 100)));
+    mWorldRegister->AddComponent<Umbra::SpriteComponent>(ship, Umbra::AssetManager::getInstance()->GetTexture("Asset/Texture/T_Ghost.png"));
 }
 
 void SimpleGameInstance::OnBeginPlay()
