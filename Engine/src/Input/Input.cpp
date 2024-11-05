@@ -48,7 +48,7 @@ namespace Umbra {
         return PrevMouseButtonPressedState.test(_button) && !MouseButtonPressedState.test(_button);
     }
 
-    MATH::Vector2i Input::GetMousePosition() {
+    Math::Vector2i Input::GetMousePosition() {
         return MousePosition;
     }
 

@@ -190,7 +190,7 @@ namespace Umbra {
         static bool GetMouseButtonDown(Mouse::MouseButton _code);
         /*Returns true during the frame the user releases the given mouse button.*/
         static bool GetMouseButtonUp(Mouse::MouseButton _code);
-        static MATH::Vector2i GetMousePosition();
+        static Math::Vector2i GetMousePosition();
 
     private:
         static void OnKeyPressed(const KeyPressedEvent& event);
@@ -203,7 +203,7 @@ namespace Umbra {
         static inline BitField<KeyBoard::Keycode::COUNT> PrevKeyPressedState          = 0;
         static inline BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState     = 0;
         static inline BitField<Mouse::MouseButton::COUNT> PrevMouseButtonPressedState = 0;
-        static inline MATH::Vector2i MousePosition;
+        static inline Math::Vector2i MousePosition;
     };
 
 } // namespace Umbra

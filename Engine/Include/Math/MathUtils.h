@@ -1,6 +1,5 @@
 #pragma once
 #include <cmath>
-#include "EnginePCH.h"
 
 namespace Umbra::Math {
 
@@ -9,73 +8,74 @@ const float PI = 3.14159265358979323846f;
 static inline float RadianToDegree(float _radians){
     return _radians * (180/PI);
 };
+
 static inline float DegreeToRadain(float _degrees){
     return _degrees * (PI/180);
 };
 
-static inline floatSin(float Value)
+static inline float Sin(float _value)
 {
-    return sin(Value);
+    return sin(_value);
 };
 
-static inline float Cos(float Value)
+static inline float Cos(float _value)
 {
-    return cos(Value);
+    return cos(_value);
 };
 
-static inline float Tan(float Value)
+static inline float Tan(float _value)
 {
-    return tan(Value);
+    return tan(_value);
 };
 
-static inline float Asin(float Value)
+static inline float Asin(float _value)
 {
-    return asin(Value);
+    return asin(_value);
 };
 
-static inline float Acos(float Value)
+static inline float Acos(float _value)
 {
-    return acos(Value);
+    return acos(_value);
 };
 
-static inline float Atan(float Value)
+static inline float Atan(float _value)
 {
-    return atan(Value);
+    return atan(_value);
 };
 
-static inline float Atan2(float Y, float X)
+static inline float Atan2(float _y, float _x)
 {
-    return atan2(Y, X);
+    return atan2(_y, _x);
 };
 
-static inline float Sqrt(float Value)
+static inline float Sqrt(float _value)
 {
-    return sqrt(Value);
+    return sqrt(_value);
 };
 
-static inline float Pow(float Base, float Exponent)
+static inline float Pow(float _base, float _exp)
 {
-    return pow(Base, Exponent);
+    return pow(_base, _exp);
 };
 
-static inline float Exp(float Exponent)
+static inline float Exp(float _exp)
 {
-    return exp(Exponent);
+    return exp(_exp);
 };
 
-static inline float Abs(float Value)
+static inline float Abs(float _value)
 {
-    return abs(Value);
+    return abs(_value);
 };
 
-static inline float Log(float Value)
+static inline float Log(float _value)
 {
-    return log(Value);
+    return log(_value);
 };
 
-static inline float Log10(float Value)
+static inline float Log10(float _value)
 {
-    return log10(Value);
+    return log10(_value);
 };
 
 static inline float Fmod(float Value, float Modulus)
@@ -83,44 +83,45 @@ static inline float Fmod(float Value, float Modulus)
     return fmod(Value, Modulus);
 };
 
-static inline float Floor(float Value)
+static inline float Floor(float _value)
 {
-    return floor(Value);
+    return floor(_value);
 };
 
-static inline float Ceil(float Value)
+static inline float Ceil(float _value)
 {
-    return ceil(Value);
+    return ceil(_value);
 };
 
-static inline float Round(float Value)
+static inline float Round(float _value)
 {
-    return round(Value);
+    return round(_value);
 };
 
-static inline float Min(float A, float B)
+static inline float Min(float _a, float _b)
 {
-    return std::min(A, B);
+    return std::min(_a, _b);
 };
 
-static inline float Max(float A, float B)
+static inline float Max(float _a, float _b)
 {
-    return std::max(A, B);
+    return std::max(_a, _b);
 };
 
-static inline float Clamp(float Value, float Min, float Max)
+static inline float Clamp(float _value, float _min, float _max)
 {
-    return (Value < Min) ? Min : (Min < Value) ? Min : Value;
+    _value = _value < _min ? _min : _value;
+    return  _value > _max ? _max : _value;
 };
 
-static inline float Lerp(float A, float B, float Alpha)
+static inline float Lerp(float _a, float _b, float Alpha)
 {
-    return A + (B - A) * Alpha;
+    return _a + (_b - _a) * Alpha;
 };
 
-static inline float LerpClamped(float A, float B, float Alpha)
+static inline float LerpClamped(float _a, float _b, float Alpha)
 {
-    return Lerp(A, B, Clamp(Alpha, 0.0f, 1.0f));
+    return Lerp(_a, _b, Clamp(Alpha, 0.0f, 1.0f));
 };
 
 }

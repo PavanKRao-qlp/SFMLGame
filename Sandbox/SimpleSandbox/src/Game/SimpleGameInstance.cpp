@@ -22,7 +22,7 @@ void SimpleGameInstance::Initialize()
     Logger::Log(LogType::Verbose, "SimpleGameInstance Initialize!");
 
     ship = mWorldRegister->CreateEntity();
-    mWorldRegister->AddComponent<Umbra::TransformComponent>(ship, Umbra::TransformComponent(Umbra::MATH::Vector2f(600, 400), Umbra::MATH::Vector2f(100, 100)));
+    mWorldRegister->AddComponent<Umbra::TransformComponent>(ship, Umbra::TransformComponent(Umbra::Math::Vector2f(600, 400), Umbra::Math::Vector2f(100, 100)));
     mWorldRegister->AddComponent<Umbra::SpriteComponent>(ship, Umbra::AssetManager::getInstance()->GetTexture("Asset/Texture/T_Ghost.png"));
 }
 
@@ -41,7 +41,7 @@ void SimpleGameInstance::OnUpdate(float dt)
     if (Umbra::Input::GetMouseButtonDown(Umbra::Mouse::Left))
     {
         Umbra::EntityID ballA = mWorldRegister->CreateEntity();
-        mWorldRegister->AddComponent<Umbra::TransformComponent>(ballA, Umbra::Input::GetMousePosition(), Umbra::MATH::Vector2f(10, 10));
+        mWorldRegister->AddComponent<Umbra::TransformComponent>(ballA, Umbra::Input::GetMousePosition(), Umbra::Math::Vector2f(10, 10));
         mWorldRegister->AddComponent<Umbra::SpriteComponent>(ballA, sf::Color::Red);
         mWorldRegister->AddComponent<Umbra::LifeTimeComponent>(ballA, 5.f);
     };
