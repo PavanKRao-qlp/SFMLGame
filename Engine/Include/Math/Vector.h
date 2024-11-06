@@ -38,4 +38,5 @@ struct Vector2f{
         float x = 0;
         float y = 0;
 };
+using Vector2i = vector2f;
 } // namespace Umbra::MATH
