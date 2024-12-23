@@ -4,7 +4,6 @@
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/LifeTime.h"
-#include "SFML/Graphics.hpp"
 #include "Asset/AssetManager.h"
 #include "Asset/Texture.h"
 #include "Diag/Logger.h"
@@ -42,7 +41,9 @@ void SimpleGameInstance::OnUpdate(float dt)
     if (Umbra::Input::GetMouseButtonDown(Umbra::Mouse::Left))
     {
         Umbra::EntityID ballA = mWorldRegister->CreateEntity();
-        mWorldRegister->AddComponent<Umbra::TransformComponent>(ballA, Umbra::Input::GetMousePosition(), Umbra::Math::Vector2i(10, 10));
+        Umbra::Math::Vector2f worldPos2D = GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
+
+        mWorldRegister->AddComponent<Umbra::TransformComponent>(ballA, worldPos2D, Umbra::Math::Vector2i(10, 10));
         mWorldRegister->AddComponent<Umbra::SpriteComponent>(ballA, sf::Color::Red);
         mWorldRegister->AddComponent<Umbra::LifeTimeComponent>(ballA, 5.f);
     };

@@ -41,6 +41,7 @@ namespace Umbra {
         UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
         if (mGameInstance != nullptr) {
             mGameInstance->SetECSRegister(&mWorldRegister);
+            mGameInstance->SetAppWindowRef(mAppWindow);
             mGameInstance->Initialize();
         } else {
             return false;

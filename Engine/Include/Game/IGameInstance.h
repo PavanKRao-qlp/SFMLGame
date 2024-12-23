@@ -1,5 +1,7 @@
 #pragma once
+#include "Core/AppWindow.h"
 #include "ECS/ECSRegister.h"
+#include "Math/Vector.h"
 #include "Umbra.h"
 namespace Umbra {
     class IGameInstance {
@@ -11,8 +13,18 @@ namespace Umbra {
         inline void SetECSRegister(ECSRegister* worldRegister) {
             mWorldRegister = worldRegister;
         }
+        inline void SetAppWindowRef(AppWindow* appWindow) {
+            mAppWindowRef = appWindow;
+        }
 
     protected:
         class ECSRegister* mWorldRegister;
+
+#pragma region moveToPC?
+        Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& screenPosition);
+        Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& worldPosition);
+
+        class AppWindow* mAppWindowRef;
+#pragma endregion
     };
 } // namespace Umbra
