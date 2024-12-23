@@ -3,8 +3,10 @@ project(SFML2D VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(external/SFML) 
+add_subdirectory(external/SFML)
+#add_subdirectory(external/hlslpp) 
 include_directories(Engine/include/ external/SFML/include)
+include_directories(Engine/include/ external/hlslpp/include)
 
 # Add all source files from Game/src
 file(GLOB_RECURSE SOURCES_ENGINE "Engine/src/*.cpp")
