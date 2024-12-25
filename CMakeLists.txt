@@ -19,3 +19,11 @@ target_precompile_headers(Engine2D PUBLIC "Engine/include/EnginePCH.h")
 file(GLOB_RECURSE SOURCES_SANDBOX "Sandbox/SimpleSandbox/src/*.cpp")
 add_executable(SimpleSandbox  ${SOURCES_SANDBOX})
 target_link_libraries(SimpleSandbox Engine2D)
+
+add_custom_command(
+    TARGET SimpleSandbox POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/Asset"
+            "$<TARGET_FILE_DIR:SimpleSandbox>/Asset"
+    COMMENT "Copying assets folder to the build directory"
+)
