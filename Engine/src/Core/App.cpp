@@ -23,6 +23,7 @@ namespace Umbra {
     }
 
     bool App::Init() {
+        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 0.2f);
         EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
         Input Input;
         mAppWindow = new AppWindow();

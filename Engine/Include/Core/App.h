@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/AppWindow.h"
 #include "Core/Event.h"
+#include "Core/Random.h"
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/RenderSystem.h"
 #include "Game/IGameInstance.h"
