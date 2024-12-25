@@ -37,7 +37,9 @@ namespace Umbra {
     template <typename... ComponentTypes>
     ECView<ComponentTypes...>::ECView() {
         mEntities.clear();
-        mSignature = CreateSignature<ComponentTypes...>();
+        if constexpr (sizeof...(ComponentTypes) > 0) {
+            mSignature = CreateSignature<ComponentTypes...>();
+        }
     }
 
     template <typename... ComponentTypes>
