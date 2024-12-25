@@ -13,4 +13,5 @@ public:
 
 private:
     Umbra::EntityID ship;
+    void SpawnBullet();
 };

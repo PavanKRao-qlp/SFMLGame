@@ -1,6 +1,7 @@
 #include "Core/App.h"
 
 #include "ECS/Systems/LifeTimeSystem.h"
+#include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/RotationSystem.h"
 #include "Input/Input.h"
 #include "Umbra.h"
@@ -32,11 +33,13 @@ namespace Umbra {
         mWorldRegister.RegisterComponent<SpriteComponent>();
         mWorldRegister.RegisterComponent<TransformComponent>();
         mWorldRegister.RegisterComponent<LifeTimeComponent>();
+        mWorldRegister.RegisterComponent<RigidBodyComponent>();
 
 
         mWorldRegister.AddSystem(mRenderSystem);
         mWorldRegister.AddSystem(new RotationSystem());
         mWorldRegister.AddSystem(new LifeTimeSystem());
+        mWorldRegister.AddSystem(new PhysicsSystem());
 
         UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
         if (mGameInstance != nullptr) {

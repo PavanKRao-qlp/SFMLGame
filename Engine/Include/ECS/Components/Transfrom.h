@@ -12,5 +12,14 @@ namespace Umbra {
         Math::Vector2f Pivot;
         float Angle = 0;
         /* data */
+
+        inline Math::Vector2f GetForward() {
+            return Math::Vector2f(Math::Cos(Math::DegreeToRadian(Angle)), Math::Sin(Math::DegreeToRadian(Angle)));
+        }
+
+        inline Math::Vector2f GetUp() {
+            return Math::Vector2f(
+                Math::Cos(Math::DegreeToRadian(Angle - 90)), Math::Sin(Math::DegreeToRadian(Angle - 90)));
+        }
     };
 } // namespace Umbra
