@@ -22,7 +22,10 @@ namespace Umbra {
 
     struct Component {};
 
-    class BaseComponentArray {};
+    class IBaseComponentArray {
+    public:
+        virtual bool Remove(EntityID _entity) = 0;
+    };
 
     template <typename Component, typename... Rest>
     ComponentMask CreateSignature() {
@@ -36,7 +39,7 @@ namespace Umbra {
     }
 
     template <typename T>
-    class ComponentArray : public BaseComponentArray {
+    class ComponentArray : public IBaseComponentArray {
     private:
         /* data */
     public:
@@ -46,10 +49,13 @@ namespace Umbra {
         void Insert(EntityID _entity, T _component);
         void Remove(EntityID _entity, T _component);
         bool Has(EntityID _entity);
+        virtual bool Remove(EntityID _entity) override;
 
     protected:
         Vector<T> mPackedComponents;
+        Queue<int> mFreePackedIx;
         UMap<EntityID, int> mSparseIndexMap;
+        UMap<int, EntityID> mDenseToSparseKey;
     };
 
     class ComponentArrayPool {
@@ -58,6 +64,13 @@ namespace Umbra {
         inline ComponentArray<T>* GetComponentArray() {
             ComponentID id = ComponentIDHelper::GetID<T>();
             return static_cast<ComponentArray<T>*>(mComponentArrays[id]);
+        }
+
+        inline IBaseComponentArray* GetComponentArray(ComponentID _componentID) {
+            if (mComponentArrays.find(_componentID) == mComponentArrays.end()) {
+                return nullptr;
+            }
+            return mComponentArrays[_componentID];
         }
 
         template <typename T>
@@ -89,7 +102,7 @@ namespace Umbra {
         }
 
     protected:
-        UMap<ComponentID, BaseComponentArray*> mComponentArrays;
+        UMap<ComponentID, IBaseComponentArray*> mComponentArrays;
     };
 
     class ComponentManager {};

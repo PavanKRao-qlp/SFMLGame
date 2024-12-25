@@ -23,10 +23,11 @@ namespace Umbra {
     public:
         EntityID CreateEntity();
         void DestroyEntity(EntityID _id);
+        void RemoveEntity(EntityID _id);
         bool IsValid(EntityID _id);
         EntityID GetEntityCount();
         Set<EntityID> EntitiesAdded;
-        Set<EntityID> EntitiesRemoved;
+        Set<EntityID> EntitiesDestroyed;
         Set<EntityID> Entities;
 
     private:

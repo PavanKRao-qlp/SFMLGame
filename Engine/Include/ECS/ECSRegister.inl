@@ -61,6 +61,17 @@ namespace Umbra {
         pool->Remove(_entity, _component);
     }
 
+    inline void ECSRegister::RemoveComponent(EntityID _entity, ComponentID _componentId) {
+        if (!mEntityManager.IsValid(_entity)) {
+            return;
+        }
+        if (!mEntityComponentSignatures[_entity].test(_componentId)) {
+            return;
+        }
+        IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(_componentId);
+        pool->Remove(_entity);
+    }
+
     template <typename T>
     inline bool ECSRegister::HasComponent(EntityID _entity) {
         ComponentID id = ComponentIDHelper::GetID<T>();
@@ -80,6 +91,7 @@ namespace Umbra {
         return &(pool->Get(_entity));
     }
 
+
     inline void ECSRegister::AddSystem(System* _system) {
         mSystems.emplace_back(_system);
         _system->AssignRegistry(this);
@@ -87,27 +99,8 @@ namespace Umbra {
 
     inline void ECSRegister::Update() {
         if (bRegisterDirty) {
-            for (EntityID entity : mEntityManager.EntitiesRemoved) {
-                // remove entity from mEntities
-                mEntityManager.Entities.erase(entity);
-                for (ComponentID cId = 0; cId < MAX_COMPONENTS; ++cId) {
-                    if (mEntityComponentSignatures[entity].test(cId)) {
-                        // ComponentArrayHolder->GetComponentArray(cId);
-                    }
-                }
-                mEntityComponentSignatures[entity].reset();
-                // remove component pool
-                // remove from systems
-                for (System* system : mSystems) {
-                    system->RemoveEntity(entity);
-                }
-            }
-            mEntityManager.EntitiesRemoved.clear();
-
-            for (EntityID entity : mEntityManager.EntitiesAdded) {
-                mEntityManager.Entities.emplace(entity);
-            }
-            mEntityManager.EntitiesAdded.clear();
+            RemoveDestroyedEntities();
+            AddCreatedEntities();
 
             for (System* system : mSystems) {
                 for (EntityID entity : mEntityManager.Entities) // has to be sparse set
@@ -126,5 +119,34 @@ namespace Umbra {
                 system->Update();
             }
         }
+    }
+
+    inline void ECSRegister::RemoveDestroyedEntities() {
+        for (EntityID entity : mEntityManager.EntitiesDestroyed) {
+            // remove entity from mEntities
+            mEntityManager.RemoveEntity(entity);
+            // remove component pool
+            for (ComponentID cId = 0; cId < MAX_COMPONENTS; ++cId) {
+                if (mEntityComponentSignatures[entity].test(cId)) {
+                    IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(cId);
+                    if (pool != nullptr) {
+                        pool->Remove(entity);
+                    }
+                }
+            }
+            mEntityComponentSignatures[entity].reset();
+            // remove from systems
+            for (System* system : mSystems) {
+                system->RemoveEntity(entity);
+            }
+        }
+        mEntityManager.EntitiesDestroyed.clear();
+    }
+
+    inline void ECSRegister::AddCreatedEntities() {
+        for (EntityID entity : mEntityManager.EntitiesAdded) {
+            mEntityManager.Entities.emplace(entity);
+        }
+        mEntityManager.EntitiesAdded.clear();
     }
 } // namespace Umbra

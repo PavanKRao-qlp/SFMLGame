@@ -29,6 +29,8 @@ namespace Umbra {
         template <typename T>
         void RemoveComponent(EntityID _entity);
 
+        void RemoveComponent(EntityID _entity, ComponentID _componentId);
+
         template <typename T>
         bool HasComponent(EntityID _entity);
 
@@ -40,6 +42,8 @@ namespace Umbra {
         void Update();
 
     private:
+        void RemoveDestroyedEntities();
+        void AddCreatedEntities();
         EntityManager mEntityManager;
         ComponentManager mComponentManager;
         SystemManager mSystemManager;

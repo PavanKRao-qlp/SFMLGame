@@ -23,7 +23,13 @@ namespace Umbra {
     }
 
     inline void EntityManager::DestroyEntity(EntityID _id) {
-        EntitiesRemoved.emplace(_id);
+        if (EntitiesDestroyed.find(_id) == EntitiesDestroyed.end()) {
+            EntitiesDestroyed.emplace(_id);
+        }
+    }
+
+    inline void EntityManager::RemoveEntity(EntityID _id) {
+        Entities.erase(_id);
         mEntityAliveFlags.set(_id, false);
         mFreeIds.push(_id);
         mAliveCount--;

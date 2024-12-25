@@ -16,16 +16,37 @@ namespace Umbra {
     template <typename T>
     inline void ComponentArray<T>::Insert(EntityID _entity, T _component) {
         mPackedComponents.emplace_back(_component);
-        mSparseIndexMap[_entity] = (int) mPackedComponents.size() - 1;
+        mSparseIndexMap[_entity]                    = (int) mPackedComponents.size() - 1;
+        mDenseToSparseKey[mSparseIndexMap[_entity]] = _entity;
     }
+
     template <typename T>
     inline bool ComponentArray<T>::Has(EntityID _entity) {
         return mSparseIndexMap.find(_entity) != mSparseIndexMap.end();
     }
 
     template <typename T>
+    inline bool ComponentArray<T>::Remove(EntityID _entity) {
+        if (mSparseIndexMap.find(_entity) != mSparseIndexMap.end()) {
+            Remove(_entity, Get(_entity));
+            return true;
+        }
+        return false;
+    }
+
+    template <typename T>
     inline void ComponentArray<T>::Remove(EntityID _entity, T _component) {
-        // mPackedComponents(_component);
-        // mSparseIndexMap[_entity] = (int)mPackedComponents.size() - 1;
+        int packedIx     = mSparseIndexMap[_entity];
+        int lastPackedIx = mPackedComponents.size() - 1;
+
+        if (packedIx != lastPackedIx) {
+            mPackedComponents[packedIx] = mPackedComponents[lastPackedIx];
+            EntityID swapEntity         = mDenseToSparseKey[lastPackedIx];
+            mSparseIndexMap[swapEntity] = packedIx;
+            mDenseToSparseKey[packedIx] = swapEntity;
+        }
+        mDenseToSparseKey.erase(lastPackedIx);
+        mPackedComponents.pop_back();
+        mSparseIndexMap.erase(_entity);
     }
 }; // namespace Umbra
