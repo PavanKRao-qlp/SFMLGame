@@ -4,41 +4,171 @@
 #include "hlsl++.h"
 
 namespace Umbra::Math {
+    // using namespace hlslpp;
 
-    // struct Vector2f {
-    // public:
-    //     Vector2f();
-    //     Vector2f(float _x, float _y);
+    template <typename T>
+    struct TVector {
+    public:
+        TVector(T x = 0, T y = 0) : x(x), y(y) {}
 
-    //     const static Vector2f Zero;
-    //     const static Vector2f One;
-    //     const static Vector2f Up;
-    //     const static Vector2f Down;
-    //     const static Vector2f Left;
-    //     const static Vector2f Right;
+        template <typename U>
+        explicit TVector(const TVector<U>& _vector) : x(static_cast<T>(_vector.x)), y(static_cast<T>(_vector.y)){};
 
-    //     Vector2f operator*(const float _value) const;
-    //     Vector2f operator/(const float _value) const;
-    //     Vector2f operator+(const Vector2f& _vector) const;
-    //     Vector2f operator-(const Vector2f& _vector) const;
-    //     bool operator==(const Vector2f& _vector) const;
-    //     void operator/=(const float _value);
-    //     void operator*=(const float _value);
-    //     void operator+=(const Vector2f& _vector);
-    //     void operator-=(const Vector2f& _vector);
+        float Magnitude();
+        float SquareMagnitude();
+        void Normalize();
+        TVector<T> GetNormalized();
 
-    //     static Vector2f Lerp(const Vector2f& _fromVector, const Vector2f& _toVector, float _alpha);
-    //     static float Dot(const Vector2f& _a, const Vector2f& _b);
-    //     static float Dot(float _magnitudeVectorA, float _magnitudeVectorB, float _angle);
+        static float Angle(TVector& _from, TVector& _to);
+        static float AngleSigned(TVector& _from, TVector& _to);
+        static float Dot(TVector& _vectorA, TVector& _vectorB);
+        // static float GetProjection(TVector& _vectorA, TVector& _vectorB);
+        static float Cross2D(TVector& _vectorA, TVector& _vectorB);
+        static float Perpendicular(TVector& _vectorA, TVector& _vectorB);
+        static float Reflect(TVector& _vectorA, TVector& _vectorB);
+        static float Lerp(TVector& _vectorA, TVector& _vectorB, float _t);
 
-    //     float Magnitude() const;
-    //     float SqrMagnitude() const;
-    //     Vector2f GetNormalized() const;
+        T x;
+        T y;
+        // inline static const TVector<T> Up    = TVector<T>(0, 1);
+        // inline static const TVector<T> Down  = TVector<T>(0, -1);
+        // inline static const TVector<T> Left  = TVector<T>(-1, 0);
+        // inline static const TVector<T> Right = TVector<T>(1, 0);
+        // inline static const TVector<T> Zero  = TVector<T>(0, 0);
+        // inline static const TVector<T> One   = TVector<T>(1, 1);
+
+    private:
+    };
+
+    using FVector2D   = TVector<float>;
+    using IntVector2D = TVector<int>;
+    using Vector2f    = TVector<float>;
+    using Vector2i    = TVector<int>;
 
 
-    //     float x = 0;
-    //     float y = 0;
-    // };
-    using Vector2f = hlslpp::float2;
-    using Vector2i = hlslpp::int2;
+    template <typename T>
+    inline TVector<T> operator+(const TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        return TVector<T>(_vectorA.x + _vectorB.x, _vectorA.y + _vectorB.y);
+    }
+
+    template <typename T>
+    inline TVector<T> operator-(const TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        return TVector<T>(_vectorA.x - _vectorB.x, _vectorA.y - _vectorB.y);
+    }
+
+    template <typename T>
+    inline TVector<T> operator+=(TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        _vectorA.x += _vectorB.x;
+        _vectorA.y += _vectorB.y;
+        return _vectorA;
+    }
+
+    template <typename T>
+    inline TVector<T> operator-=(TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        _vectorA.x -= _vectorB.x;
+        _vectorA.y -= _vectorB.y;
+        return _vectorA;
+    }
+
+    template <typename T>
+    inline TVector<T> operator*(const TVector<T>& _vector, T _value) {
+        return TVector<T>(_vector.x * _value, _vector.y * _value);
+    }
+
+    template <typename T, typename U>
+    inline TVector<T> operator*(const TVector<T>& _vector, U _value) {
+        return TVector<T>(static_cast<T>(_vector.x * _value), static_cast<T>(_vector.y * _value));
+    }
+
+    template <typename T, typename U>
+    inline TVector<T> operator*(U _value, const TVector<T>& _vector) {
+
+        return _vector * _value;
+    }
+
+    template <typename T, typename U>
+    inline TVector<T> operator/(const TVector<T>& _vector, U _value) {
+        return TVector<T>(static_cast<T>(_vector.x / _value), static_cast<T>(_vector.y / _value));
+    }
+
+    template <typename T, typename U>
+    inline TVector<T> operator*=(TVector<T>& _vector, U _value) {
+        _vector.x *= static_cast<T>(_value);
+        _vector.y *= static_cast<T>(_value);
+        return _vector;
+    }
+
+    template <typename T, typename U>
+    inline TVector<T> operator/=(TVector<T>& _vector, U _value) {
+        _vector.x /= static_cast<T>(_value);
+        _vector.y /= static_cast<T>(_value);
+        return _vector;
+    }
+
+    template <typename T>
+    inline bool operator==(TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        return _vectorA.x == _vectorB.x && _vectorA.y == _vectorB.y;
+    }
+
+    template <typename T>
+    inline bool operator!=(TVector<T>& _vectorA, const TVector<T>& _vectorB) {
+        return _vectorA.x != _vectorB.x || _vectorA.y != _vectorB.y;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Magnitude() {
+        return Sqrt((x * x) + (y * y));
+    }
+
+    template <typename T>
+    inline float TVector<T>::SquareMagnitude() {
+        return (x * x) + (y * y);
+    }
+
+    template <typename T>
+    inline void TVector<T>::Normalize() {
+        *this /= Magnitude();
+    }
+
+    template <typename T>
+    inline TVector<T> TVector<T>::GetNormalized() {
+        TVector normalized(x, y);
+        normalized.Normalize();
+        return normalized;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Angle(TVector& _from, TVector& _to) {
+        return acos(Dot(_from, _to) / (_from.Magnitude * _to.Magnitude));
+    }
+
+    template <typename T>
+    inline float TVector<T>::AngleSigned(TVector& _from, TVector& _to) {
+        return 0.0f;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Dot(TVector& _vectorA, TVector& _vectorB) {
+        return (_vectorA.x * _vectorB);
+    }
+
+    template <typename T>
+    inline float TVector<T>::Cross2D(TVector& _vectorA, TVector& _vectorB) {
+        return 0.0f;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Perpendicular(TVector& _vectorA, TVector& _vectorB) {
+        return 0.0f;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Reflect(TVector& _vectorA, TVector& _vectorB) {
+        return 0.0f;
+    }
+
+    template <typename T>
+    inline float TVector<T>::Lerp(TVector& _vectorA, TVector& _vectorB, float _t) {
+        return 0.0f;
+    }
 } // namespace Umbra::Math

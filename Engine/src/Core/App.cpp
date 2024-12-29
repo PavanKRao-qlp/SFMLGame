@@ -1,5 +1,6 @@
 #include "Core/App.h"
 
+#include "ECS/Systems/CollisionSystem.h"
 #include "ECS/Systems/LifeTimeSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/RotationSystem.h"
@@ -23,37 +24,26 @@ namespace Umbra {
     }
 
     bool App::Init() {
-        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 0.2f);
+        // @todo CheckSystemCompatable();
+        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 2);
         EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
+        //  @todo  Initialize Memory Pool
+        //  @todo  Initialize AssetRegister
+        //  @todo  Initialize SoundSystem
+        //  @todo  Initialize Save Systems
         Input Input;
-        mAppWindow = new AppWindow();
-        mAppWindow->CreateWindow();
-        bAppRunning = true;
-
-        mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
-        mWorldRegister.RegisterComponent<SpriteComponent>();
-        mWorldRegister.RegisterComponent<TransformComponent>();
-        mWorldRegister.RegisterComponent<LifeTimeComponent>();
-        mWorldRegister.RegisterComponent<RigidBodyComponent>();
-
-
-        mWorldRegister.AddSystem(mRenderSystem);
-        mWorldRegister.AddSystem(new RotationSystem());
-        mWorldRegister.AddSystem(new LifeTimeSystem());
-        mWorldRegister.AddSystem(new PhysicsSystem());
-
-        UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
-        if (mGameInstance != nullptr) {
-            mGameInstance->SetECSRegister(&mWorldRegister);
-            mGameInstance->SetAppWindowRef(mAppWindow);
-            mGameInstance->Initialize();
-        } else {
+        if (!CreateWindow()) {
+            return false;
+        }
+        InitializeECS();
+        if (!InitializeGameInstance()) {
             return false;
         }
         return true;
     }
 
     void App::Run() {
+        bAppRunning  = true;
         float dt     = 0;
         double accDt = 0;
         if (mGameInstance != nullptr) {
@@ -96,3 +86,37 @@ namespace Umbra {
         mAppWindow->CloseWindow();
     }
 } // namespace Umbra
+
+void Umbra::App::InitializeECS() {
+
+    mWorldRegister.RegisterComponent<SpriteComponent>();
+    mWorldRegister.RegisterComponent<TransformComponent>();
+    mWorldRegister.RegisterComponent<LifeTimeComponent>();
+    mWorldRegister.RegisterComponent<RigidBodyComponent>();
+    mWorldRegister.RegisterComponent<CollisionBoxComponent>();
+    mWorldRegister.RegisterComponent<CollisionEventComponent>();
+
+    mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
+    mWorldRegister.AddSystem(mRenderSystem);
+    mWorldRegister.AddSystem(new LifeTimeSystem());
+    mWorldRegister.AddSystem(new RotationSystem());
+    mWorldRegister.AddSystem(new PhysicsSystem());
+    mWorldRegister.AddSystem(new CollisionSystem());
+}
+
+bool Umbra::App::CreateWindow() {
+    mAppWindow = new AppWindow();
+    return mAppWindow->CreateWindow();
+}
+
+bool Umbra::App::InitializeGameInstance() {
+    UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
+    if (mGameInstance != nullptr) {
+        mGameInstance->SetECSRegister(&mWorldRegister);
+        mGameInstance->SetAppWindowRef(mAppWindow);
+        mGameInstance->Initialize();
+        return true;
+    } else {
+        return false;
+    }
+}

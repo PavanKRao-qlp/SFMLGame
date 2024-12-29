@@ -15,8 +15,8 @@ namespace Umbra {
 
     bool AppWindow::CreateWindow() {
         Logger::Log(LogType::Verbose, "Creating Window");
-        mScreenSize       = (800, 800);
-        mRenderResolution = (400, 400);
+        mScreenSize       = Math::Vector2i(800, 800);
+        mRenderResolution = Math::Vector2i(400, 400);
         aspectRatio       = ((float) mRenderResolution.x) / mRenderResolution.y;
         mWindow           = new sf::RenderWindow(sf::VideoMode(mScreenSize.x, mScreenSize.y), "My window");
         mView             = new sf::View(sf::Vector2f(0, 0), sf::Vector2f(mRenderResolution.x, mRenderResolution.y));

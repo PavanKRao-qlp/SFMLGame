@@ -14,7 +14,7 @@ namespace Umbra {
         ~ECSRegister();
         /** Creates an entity. */
         EntityID CreateEntity();
-        /** Destroys an entity.*/
+        /** Marks Entity as Destroyed.*/
         void DestroyEntity(EntityID _entity);
 
         template <typename T>

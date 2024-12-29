@@ -15,9 +15,9 @@ namespace Umbra {
             for (EntityID entity : mView->mEntities) {
                 TransformComponent* transform          = mView->ecsRegister->GetComponent<TransformComponent>(entity);
                 RigidBodyComponent* rigidBodyComponent = mView->ecsRegister->GetComponent<RigidBodyComponent>(entity);
-                float velocityMag = hlslpp::dot(rigidBodyComponent->Velocity, rigidBodyComponent->Velocity);
+                float velocityMag                      = rigidBodyComponent->Velocity.Magnitude();
                 if (velocityMag > 0) {
-                    transform->Position += rigidBodyComponent->Velocity;
+                    transform->Position += (rigidBodyComponent->Velocity * EngineTime::GetDeltaTime());
                 }
             }
         }

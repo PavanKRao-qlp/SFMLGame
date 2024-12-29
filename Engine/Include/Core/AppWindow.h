@@ -23,8 +23,8 @@ namespace Umbra {
 
         sf::RenderWindow* mWindow;
         sf::View* mView;
-        Math::Vector2i mScreenSize       = (0, 0);
-        Math::Vector2i mRenderResolution = (0, 0);
+        Math::Vector2i mScreenSize       = Math::Vector2i(0, 0);
+        Math::Vector2i mRenderResolution = Math::Vector2i(0, 0);
         float aspectRatio                = 1;
     };
 

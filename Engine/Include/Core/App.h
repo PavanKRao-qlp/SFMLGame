@@ -17,6 +17,10 @@ namespace Umbra {
         void OnFixedUpdate();
         void OnAppWindowClosed(const AppClosedEvent& _event);
 
+        void InitializeECS();
+        bool CreateWindow();
+        bool InitializeGameInstance();
+
         bool bAppRunning = false;
         class AppWindow* mAppWindow;
         class ECSRegister mWorldRegister;
