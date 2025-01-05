@@ -9,10 +9,10 @@ namespace Umbra {
     private:
         /* data */
     public:
-        AssetManager();
         SharedPtr<Texture> GetTexture(const String& _filePath);
 
     private:
+        AssetManager();
         template <typename T>
         SharedPtr<T> GetResource(const String& _filePath);
         // AddResourceRef
@@ -23,6 +23,7 @@ namespace Umbra {
         void UnloadResource();
 
     private:
+        friend class Singleton<AssetManager>;
         UniquePtr<AssetRegister> assetRegister;
     };
 
