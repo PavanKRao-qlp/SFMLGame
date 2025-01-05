@@ -11,7 +11,7 @@ namespace Umbra {
     public:
         inline SharedPtr<IResource> GetResource(const String& _filePath) {
             if (AssetRegisterMap.find(_filePath) != AssetRegisterMap.end()) {
-                return AssetRegisterMap[_filePath];
+                return AssetRegisterMap.at(_filePath);
             }
             return nullptr;
         }

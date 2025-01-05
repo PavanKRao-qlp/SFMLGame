@@ -36,7 +36,7 @@ namespace Umbra {
             return;
         }
         ComponentID id = ComponentIDHelper::GetID<T>();
-        mEntityComponentSignatures[_entity].set(id, true);
+        mEntityComponentSignatures.at(_entity).set(id, true);
         ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
         pool->Insert(_entity, _component);
     }
@@ -56,7 +56,7 @@ namespace Umbra {
             return;
         }
         ComponentID id = ComponentIDHelper::GetID<T>();
-        mEntityComponentSignatures[_entity].set(id, false);
+        mEntityComponentSignatures.at(_entity).set(id, false);
         ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
         pool->Remove(_entity, _component);
     }
@@ -65,7 +65,7 @@ namespace Umbra {
         if (!mEntityManager.IsValid(_entity)) {
             return;
         }
-        if (!mEntityComponentSignatures[_entity].test(_componentId)) {
+        if (!mEntityComponentSignatures.at(_entity).test(_componentId)) {
             return;
         }
         IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(_componentId);
@@ -75,7 +75,7 @@ namespace Umbra {
     template <typename T>
     inline bool ECSRegister::HasComponent(EntityID _entity) {
         ComponentID id = ComponentIDHelper::GetID<T>();
-        return mEntityComponentSignatures[_entity].test(id);
+        return mEntityComponentSignatures.at(_entity).test(id);
     }
 
     template <typename T>
@@ -105,7 +105,7 @@ namespace Umbra {
             for (System* system : mSystems) {
                 for (EntityID entity : mEntityManager.Entities) // has to be sparse set
                 {
-                    if ((system->SystemSignature & mEntityComponentSignatures[entity]) == system->SystemSignature) {
+                    if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
                         system->AddEntity(entity);
                     } else {
                         system->RemoveEntity(entity);
@@ -127,14 +127,14 @@ namespace Umbra {
             mEntityManager.RemoveEntity(entity);
             // remove component pool
             for (ComponentID cId = 0; cId < MAX_COMPONENTS; ++cId) {
-                if (mEntityComponentSignatures[entity].test(cId)) {
+                if (mEntityComponentSignatures.at(entity).test(cId)) {
                     IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(cId);
                     if (pool != nullptr) {
                         pool->Remove(entity);
                     }
                 }
             }
-            mEntityComponentSignatures[entity].reset();
+            mEntityComponentSignatures.at(entity).reset();
             // remove from systems
             for (System* system : mSystems) {
                 system->RemoveEntity(entity);

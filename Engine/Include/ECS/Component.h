@@ -63,46 +63,46 @@ namespace Umbra {
         template <typename T>
         inline ComponentArray<T>* GetComponentArray() {
             ComponentID id = ComponentIDHelper::GetID<T>();
-            return static_cast<ComponentArray<T>*>(mComponentArrays[id]);
+            return static_cast<ComponentArray<T>*>(mComponentArrayMap.at(id));
         }
 
         inline IBaseComponentArray* GetComponentArray(ComponentID _componentID) {
-            if (mComponentArrays.find(_componentID) == mComponentArrays.end()) {
+            if (mComponentArrayMap.find(_componentID) == mComponentArrayMap.end()) {
                 return nullptr;
             }
-            return mComponentArrays[_componentID];
+            return mComponentArrayMap.at(_componentID);
         }
 
         template <typename T>
         inline void AddComponentArray(ComponentArray<T>* _array) {
             ComponentID id = ComponentIDHelper::GetID<T>();
-            mComponentArrays.insert_or_assign(id, _array);
+            mComponentArrayMap.insert_or_assign(id, _array);
         }
 
         template <typename T>
         inline void RemoveComponentArray() {
             ComponentID id = ComponentIDHelper::GetID<T>();
-            mComponentArrays.erase(id);
+            mComponentArrayMap.erase(id);
         }
 
         inline void RemoveComponentArray(ComponentID _id) {
-            mComponentArrays.erase(_id);
+            mComponentArrayMap.erase(_id);
             // mComponentArrays.remove(_id);
         }
 
         template <typename T>
         inline bool HasComponentArray() {
             ComponentID id = ComponentIDHelper::GetID<T>();
-            return mComponentArrays.find(id) != mComponentArrays.end();
+            return mComponentArrayMap.find(id) != mComponentArrayMap.end();
         }
 
         inline bool HasComponentArray(ComponentID _id) {
             // return false;
-            return mComponentArrays.find(_id) != mComponentArrays.end();
+            return mComponentArrayMap.find(_id) != mComponentArrayMap.end();
         }
 
     protected:
-        UMap<ComponentID, IBaseComponentArray*> mComponentArrays;
+        UMap<ComponentID, IBaseComponentArray*> mComponentArrayMap;
     };
 
     class ComponentManager {};

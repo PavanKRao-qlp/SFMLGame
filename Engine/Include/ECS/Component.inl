@@ -9,15 +9,15 @@ namespace Umbra {
 
     template <typename T>
     inline T& ComponentArray<T>::Get(EntityID _entity) {
-        int ix = mSparseIndexMap[_entity];
+        int ix = mSparseIndexMap.at(_entity);
         return mPackedComponents[ix];
     }
 
     template <typename T>
     inline void ComponentArray<T>::Insert(EntityID _entity, T _component) {
         mPackedComponents.emplace_back(_component);
-        mSparseIndexMap[_entity]                    = (int) mPackedComponents.size() - 1;
-        mDenseToSparseKey[mSparseIndexMap[_entity]] = _entity;
+        mSparseIndexMap[_entity]                       = (int) mPackedComponents.size() - 1;
+        mDenseToSparseKey[mSparseIndexMap.at(_entity)] = _entity;
     }
 
     template <typename T>
@@ -37,11 +37,11 @@ namespace Umbra {
     template <typename T>
     inline void ComponentArray<T>::Remove(EntityID _entity, T _component) {
         int packedIx     = mSparseIndexMap[_entity];
-        int lastPackedIx = mPackedComponents.size() - 1;
+        int lastPackedIx = (int) mPackedComponents.size() - 1;
 
         if (packedIx != lastPackedIx) {
-            mPackedComponents[packedIx] = mPackedComponents[lastPackedIx];
-            EntityID swapEntity         = mDenseToSparseKey[lastPackedIx];
+            mPackedComponents[packedIx] = mPackedComponents.at(lastPackedIx);
+            EntityID swapEntity         = mDenseToSparseKey.at(lastPackedIx);
             mSparseIndexMap[swapEntity] = packedIx;
             mDenseToSparseKey[packedIx] = swapEntity;
         }
