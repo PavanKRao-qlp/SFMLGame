@@ -13,5 +13,8 @@ public:
 
 private:
     Umbra::EntityID ship;
+    void SpawnBG();
+    void SpawnShip();
+    void SpawnPlayerBullet();
     float shootCooldown = 0;
 };

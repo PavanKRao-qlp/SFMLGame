@@ -3,6 +3,8 @@
 #include "ECS/ECSRegister.h"
 #include "Math/Vector.h"
 #include "Umbra.h"
+
+#include "SFML/Graphics.hpp"
 namespace Umbra {
     class IGameInstance {
     public:

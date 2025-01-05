@@ -30,8 +30,14 @@ namespace Umbra {
                 }
                 mWindowHandle->draw(quadShape);
             };
+            for (sf::Drawable* drawObj : RenderSystem::DebugDrawCache) {
+                mWindowHandle->draw(*drawObj);
+            }
+            RenderSystem::DebugDrawCache.clear();
+
             mWindowHandle->display();
         }
+        inline static Vector<sf::Drawable*> DebugDrawCache;
 
     protected:
         sf::RenderWindow* mWindowHandle = nullptr;
