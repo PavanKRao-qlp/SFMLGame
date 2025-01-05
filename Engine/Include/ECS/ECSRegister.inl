@@ -1,8 +1,10 @@
+#include "Diag/Logger.h"
 #include "ECSRegister.h"
 
 namespace Umbra {
     inline ECSRegister::ECSRegister(/* args */) {
         ComponentArrayHolder = new ComponentArrayPool();
+        RegisterComponent<TagComponent>();
     }
 
     inline ECSRegister::~ECSRegister() {};
@@ -40,6 +42,35 @@ namespace Umbra {
         ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
         pool->Insert(_entity, _component);
     }
+
+    inline void ECSRegister::AddTag(EntityID _entity, const String& _tag) {
+        if (!mEntityManager.IsValid(_entity)) {
+            return;
+        }
+        if (HasComponent<TagComponent>(_entity)) {
+            TagComponent* tagComponent = GetComponent<TagComponent>(_entity);
+            tagComponent->Tag          = _tag;
+        } else {
+            AddComponent<TagComponent>(_entity, _tag);
+        }
+    }
+
+    inline bool ECSRegister::IsTag(EntityID _entity, String _tag) {
+        if (!mEntityManager.IsValid(_entity)) {
+            return false;
+        }
+        if (!HasComponent<TagComponent>(_entity)) {
+            return false;
+        }
+        TagComponent* tagComponent = GetComponent<TagComponent>(_entity);
+        if (tagComponent != nullptr) {
+            if (tagComponent->Tag == _tag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     template <typename T, typename... Args>
     void ECSRegister::AddComponent(EntityID _entity, Args&&... args) {

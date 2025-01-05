@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Component.h"
+#include "ECS/Components/Tag.h"
 #include "ECS/ECSConfig.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
@@ -10,7 +11,7 @@
 namespace Umbra {
     class ECSRegister {
     public:
-        ECSRegister(/* args */);
+        ECSRegister();
         ~ECSRegister();
         /** Creates an entity. */
         EntityID CreateEntity();
@@ -22,6 +23,10 @@ namespace Umbra {
 
         template <typename T>
         void AddComponent(EntityID _entity, T _component);
+
+        void AddTag(EntityID _entity, const String& _tag);
+
+        bool IsTag(EntityID _entity, String _tag);
 
         template <typename T, typename... Args>
         void AddComponent(EntityID _entity, Args&&... args);
