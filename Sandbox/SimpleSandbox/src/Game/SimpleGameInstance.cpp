@@ -10,6 +10,7 @@
 #include "Asset/Texture.h"
 #include "Diag/Logger.h"
 #include "EnemySpawnSystem.h"
+#include "GameStates.h"
 
 SimpleGameInstance::SimpleGameInstance()
 {
@@ -22,24 +23,29 @@ SimpleGameInstance::~SimpleGameInstance()
 void SimpleGameInstance::Initialize()
 {
     Logger::Log(LogType::Verbose, "SimpleGameInstance Initialize!");
-    SpawnBG();
-    SpawnShip();
-    mWorldRegister->AddSystem(new EnemySpawnSystem(ship));
+    mGameplayState = new Umbra::FiniteStateMachine();
+    mGameplayState->AddState(static_cast<int>(GameplayStateID::GAME), new GameplayState());
 }
 
 void SimpleGameInstance::OnBeginPlay()
 {
     Logger::Log(LogType::Verbose, "SimpleGameInstance OnBeginPlay!");
+    SpawnBG();
+    SpawnShip();
+    GetWorld()->GetRegister()->AddSystem(new EnemySpawnSystem(ship));
+    mGameplayState->GoToState(static_cast<int>(GameplayStateID::GAME));
 }
 
 void SimpleGameInstance::OnEndPlay()
 {
+    delete mGameplayState;
     Logger::Log(LogType::Verbose, "SimpleGameInstance OnEndPlay!");
 }
 
 void SimpleGameInstance::OnUpdate(float dt)
 {
-    Umbra::TransformComponent *shipTransform = mWorldRegister->GetComponent<Umbra::TransformComponent>(ship);
+    mGameplayState->GetCurrentState()->OnUpdate();
+    Umbra::TransformComponent *shipTransform = GetWorld()->GetRegister()->GetComponent<Umbra::TransformComponent>(ship);
     if (shipTransform != nullptr)
     {
         Umbra::Math::Vector2f worldPos2D = GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
@@ -60,10 +66,10 @@ void SimpleGameInstance::OnUpdate(float dt)
     {
         for (Umbra::Collision::CollisionResponse response : OutResponses)
         {
-            if ((mWorldRegister->IsTag(response.mEntityA, "Enemy") && mWorldRegister->IsTag(response.mEntityB, "PlayerBullet")) || (mWorldRegister->IsTag(response.mEntityB, "Enemy") && mWorldRegister->IsTag(response.mEntityA, "PlayerBullet")))
+            if ((GetWorld()->GetRegister()->IsTag(response.mEntityA, "Enemy") && GetWorld()->GetRegister()->IsTag(response.mEntityB, "PlayerBullet")) || (GetWorld()->GetRegister()->IsTag(response.mEntityB, "Enemy") && GetWorld()->GetRegister()->IsTag(response.mEntityA, "PlayerBullet")))
             {
-                mWorldRegister->DestroyEntity(response.mEntityA);
-                mWorldRegister->DestroyEntity(response.mEntityB);
+                GetWorld()->GetRegister()->DestroyEntity(response.mEntityA);
+                GetWorld()->GetRegister()->DestroyEntity(response.mEntityB);
             }
         }
     }
@@ -72,10 +78,10 @@ void SimpleGameInstance::OnUpdate(float dt)
     {
         for (Umbra::Collision::CollisionResponse response : OutResponses)
         {
-            if (response.mEntityA == ship && mWorldRegister->IsTag(response.mEntityB, "Enemy") || (mWorldRegister->IsTag(response.mEntityA, "Enemy") && response.mEntityB == ship))
+            if (response.mEntityA == ship && GetWorld()->GetRegister()->IsTag(response.mEntityB, "Enemy") || (GetWorld()->GetRegister()->IsTag(response.mEntityA, "Enemy") && response.mEntityB == ship))
             {
-                mWorldRegister->DestroyEntity(response.mEntityA);
-                mWorldRegister->DestroyEntity(response.mEntityB);
+                GetWorld()->GetRegister()->DestroyEntity(response.mEntityA);
+                GetWorld()->GetRegister()->DestroyEntity(response.mEntityB);
             }
         }
     }
@@ -83,30 +89,30 @@ void SimpleGameInstance::OnUpdate(float dt)
 
 void SimpleGameInstance::SpawnPlayerBullet()
 {
-    Umbra::TransformComponent *shipTransform = mWorldRegister->GetComponent<Umbra::TransformComponent>(ship);
+    Umbra::TransformComponent *shipTransform = GetWorld()->GetRegister()->GetComponent<Umbra::TransformComponent>(ship);
     Umbra::Math::Vector2f bulletPos = shipTransform->Position + (shipTransform->GetForward() * 10);
-    Umbra::EntityID bullet = mWorldRegister->CreateEntity();
-    mWorldRegister->AddTag(bullet, "PlayerBullet");
-    mWorldRegister->AddComponent<Umbra::TransformComponent>(bullet, Umbra::TransformComponent(shipTransform->Position, Umbra::Math::Vector2f(16, 16), shipTransform->Angle));
-    mWorldRegister->AddComponent<Umbra::SpriteComponent>(bullet, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T_Bullet.png"));
-    mWorldRegister->AddComponent<Umbra::LifeTimeComponent>(bullet, Umbra::LifeTimeComponent(1.5f));
-    mWorldRegister->AddComponent<Umbra::CollisionBoxComponent>(bullet, Umbra::CollisionBoxComponent(Umbra::Math::Bounds2D(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(20, 20))));
+    Umbra::EntityID bullet = GetWorld()->GetRegister()->CreateEntity();
+    GetWorld()->GetRegister()->AddTag(bullet, "PlayerBullet");
+    GetWorld()->GetRegister()->AddComponent<Umbra::TransformComponent>(bullet, Umbra::TransformComponent(shipTransform->Position, Umbra::Math::Vector2f(16, 16), shipTransform->Angle));
+    GetWorld()->GetRegister()->AddComponent<Umbra::SpriteComponent>(bullet, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T_Bullet.png"));
+    GetWorld()->GetRegister()->AddComponent<Umbra::LifeTimeComponent>(bullet, Umbra::LifeTimeComponent(1.5f));
+    GetWorld()->GetRegister()->AddComponent<Umbra::CollisionBoxComponent>(bullet, Umbra::CollisionBoxComponent(Umbra::Math::Bounds2D(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(20, 20))));
     Umbra::RigidBodyComponent bulletRB;
     bulletRB.Velocity = shipTransform->GetUp() * 150.f;
-    mWorldRegister->AddComponent<Umbra::RigidBodyComponent>(bullet, bulletRB);
+    GetWorld()->GetRegister()->AddComponent<Umbra::RigidBodyComponent>(bullet, bulletRB);
 }
 
 void SimpleGameInstance::SpawnShip()
 {
-    ship = mWorldRegister->CreateEntity();
-    mWorldRegister->AddComponent<Umbra::TransformComponent>(ship, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(32, 32)));
-    mWorldRegister->AddComponent<Umbra::SpriteComponent>(ship, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T_ship_0000.png"));
-    mWorldRegister->AddComponent<Umbra::CollisionBoxComponent>(ship, Umbra::CollisionBoxComponent(Umbra::Math::Bounds2D(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(20, 20))));
+    ship = GetWorld()->GetRegister()->CreateEntity();
+    GetWorld()->GetRegister()->AddComponent<Umbra::TransformComponent>(ship, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(32, 32)));
+    GetWorld()->GetRegister()->AddComponent<Umbra::SpriteComponent>(ship, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T_ship_0000.png"));
+    GetWorld()->GetRegister()->AddComponent<Umbra::CollisionBoxComponent>(ship, Umbra::CollisionBoxComponent(Umbra::Math::Bounds2D(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(20, 20))));
 }
 
 void SimpleGameInstance::SpawnBG()
 {
-    Umbra::EntityID sky = mWorldRegister->CreateEntity();
-    mWorldRegister->AddComponent<Umbra::TransformComponent>(sky, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(400, 400)));
-    mWorldRegister->AddComponent<Umbra::SpriteComponent>(sky, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T__BgSpace.png"));
+    Umbra::EntityID sky = GetWorld()->GetRegister()->CreateEntity();
+    GetWorld()->GetRegister()->AddComponent<Umbra::TransformComponent>(sky, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(400, 400)));
+    GetWorld()->GetRegister()->AddComponent<Umbra::SpriteComponent>(sky, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T__BgSpace.png"));
 }

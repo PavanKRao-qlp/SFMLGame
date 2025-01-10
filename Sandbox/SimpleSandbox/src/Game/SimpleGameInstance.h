@@ -1,5 +1,6 @@
 #pragma once
 #include "Game/IGameInstance.h"
+#include "FSM/FSM.h"
 
 class SimpleGameInstance : public Umbra::IGameInstance
 {
@@ -16,5 +17,6 @@ private:
     void SpawnBG();
     void SpawnShip();
     void SpawnPlayerBullet();
+    class Umbra::FiniteStateMachine *mGameplayState;
     float shootCooldown = 0;
 };

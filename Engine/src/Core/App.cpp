@@ -26,17 +26,24 @@ namespace Umbra {
 
     bool App::Init() {
         // @todo CheckSystemCompatable();
-        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 2);
-        EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
         //  @todo  Initialize Memory Pool
         //  @todo  Initialize AssetRegister
         //  @todo  Initialize SoundSystem
         //  @todo  Initialize Save Systems
-        Input Input;
+
+        // Initialize Core Module
+        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 2);
+
+        // Initialize Window View
         if (!CreateWindow()) {
             return false;
         }
-        InitializeECS();
+        Input Input; // refactor
+        EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
+
+        // Initialize Core Engine Services
+
+        // Check and Initialize GameInstance
         if (!InitializeGameInstance()) {
             return false;
         }
@@ -44,6 +51,25 @@ namespace Umbra {
     }
 
     void App::Run() {
+
+        // Initialize Gameplay framework;
+
+        InitializeECS();
+        mWorld = new World();
+        mWorld->SetECSRegister(&mWorldRegister);
+        mGameInstance->SetCurrentWorld(mWorld);
+        // LoadDefaultScene
+
+        // Start Game
+
+        // While App Running
+        // Poll Input
+        // Update World
+
+        // End Game
+        // ShutDown Gameplay framework;
+        // Unload Scenes
+
         bAppRunning  = true;
         float dt     = 0;
         double accDt = 0;
@@ -78,6 +104,10 @@ namespace Umbra {
 
     int App::Exit() {
         Logger::Log(LogType::Verbose, "App Shuting Down!");
+        // ShutDown GameInstance
+        // Shutdown Core Engine Services
+        // Close Window in case
+        // Core module shutdown
         EventBus::Flush();
         delete mAppWindow;
         return 0;
@@ -114,7 +144,6 @@ namespace Umbra {
     bool App::InitializeGameInstance() {
         UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
         if (mGameInstance != nullptr) {
-            mGameInstance->SetECSRegister(&mWorldRegister);
             mGameInstance->SetAppWindowRef(mAppWindow);
             mGameInstance->Initialize();
             return true;

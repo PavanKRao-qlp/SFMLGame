@@ -5,6 +5,7 @@
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/RenderSystem.h"
 #include "Game/IGameInstance.h"
+#include "Game/World.h"
 
 namespace Umbra {
     class App {
@@ -22,6 +23,7 @@ namespace Umbra {
         bool InitializeGameInstance();
 
         bool bAppRunning = false;
+        class World* mWorld;
         class AppWindow* mAppWindow;
         class ECSRegister mWorldRegister;
         class RenderSystem* mRenderSystem;

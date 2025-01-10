@@ -1,7 +1,20 @@
 #include "Game/IGameInstance.h"
-
 namespace Umbra {
+
+    void IGameInstance::SetECSRegister(ECSRegister* worldRegister) {
+        mWorldRegister = worldRegister;
+    }
+    void IGameInstance::SetAppWindowRef(AppWindow* appWindow) {
+        mAppWindowRef = appWindow;
+    }
+    void IGameInstance::SetCurrentWorld(World* _world) {
+        mCurrentWorld = _world;
+    }
+    World* IGameInstance::GetWorld() {
+        return mCurrentWorld;
+    }
     Math::Vector2f IGameInstance::GetScreenToWorldPosition(Math::Vector2i& screenPosition) {
+
         sf::View view           = mAppWindowRef->GetRenderWindowHandle()->getView();
         sf::Vector2f sfWorldPos = mAppWindowRef->GetRenderWindowHandle()->mapPixelToCoords(
             sf::Vector2i(screenPosition.x, screenPosition.y), view);
