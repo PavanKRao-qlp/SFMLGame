@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/AppWindow.h"
+#include "Core/Clock.h"
 #include "ECS/ECSRegister.h"
 #include "Game/World.h"
 #include "Math/Vector.h"
@@ -19,12 +20,13 @@ namespace Umbra {
 
         World* GetWorld();
 
+        Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& screenPosition);
+        Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& worldPosition);
+
     protected:
         class World* mCurrentWorld;
 
 #pragma region moveToPC?
-        Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& screenPosition);
-        Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& worldPosition);
 
         class AppWindow* mAppWindowRef;
 

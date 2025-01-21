@@ -18,6 +18,9 @@ namespace Umbra {
         inline void AddEntity(EntityID _entity) {
             mView->AddEntity(_entity);
         }
+        inline void Flush() {
+            mView->Flush();
+        }
         inline void RemoveEntity(EntityID _entity) {
             mView->RemoveEntity(_entity);
         }

@@ -7,6 +7,7 @@ namespace Umbra {
     public:
         void SetECSRegister(ECSRegister* _worldRegister);
         ECSRegister* GetRegister();
+        void FlushWorld();
 
     private:
         ECSRegister* mWorldRegister;

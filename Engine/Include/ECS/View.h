@@ -16,6 +16,7 @@ namespace Umbra {
         }
         virtual void AddEntity(EntityID _entity)    = 0;
         virtual void RemoveEntity(EntityID _entity) = 0;
+        virtual void Flush()                        = 0;
 
         // protected:
         Set<EntityID> mEntities;
@@ -30,6 +31,7 @@ namespace Umbra {
         ECView();
         virtual void AddEntity(EntityID _entity) override;
         virtual void RemoveEntity(EntityID _entity) override;
+        virtual void Flush() override;
 
     private:
     };
@@ -54,5 +56,9 @@ namespace Umbra {
         if (mEntities.find(_entity) != mEntities.end()) {
             mEntities.erase(_entity);
         }
+    }
+    template <typename... ComponentTypes>
+    inline void ECView<ComponentTypes...>::Flush() {
+        mEntities.clear();
     }
 } // namespace Umbra

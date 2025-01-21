@@ -25,6 +25,7 @@ namespace Umbra {
     class IBaseComponentArray {
     public:
         virtual bool Remove(EntityID _entity) = 0;
+        virtual void Flush()                  = 0;
     };
 
     template <typename Component, typename... Rest>
@@ -50,6 +51,7 @@ namespace Umbra {
         void Remove(EntityID _entity, T _component);
         bool Has(EntityID _entity);
         virtual bool Remove(EntityID _entity) override;
+        virtual void Flush() override;
 
     protected:
         Vector<T> mPackedComponents;
@@ -58,7 +60,7 @@ namespace Umbra {
         UMap<int, EntityID> mDenseToSparseKey;
     };
 
-    class ComponentArrayPool {
+    class ComponentManager {
     public:
         template <typename T>
         inline ComponentArray<T>* GetComponentArray() {
@@ -101,11 +103,16 @@ namespace Umbra {
             return mComponentArrayMap.find(_id) != mComponentArrayMap.end();
         }
 
+        inline void Flush() {
+            for (auto arrayPair : mComponentArrayMap) {
+                arrayPair.second->Flush();
+            }
+        }
+
     protected:
         UMap<ComponentID, IBaseComponentArray*> mComponentArrayMap;
     };
 
-    class ComponentManager {};
 } // namespace Umbra
 
 #include "Component.inl"

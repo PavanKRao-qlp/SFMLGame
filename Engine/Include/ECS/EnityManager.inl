@@ -39,6 +39,18 @@ namespace Umbra {
         return _id < MAX_ENTITY && mEntityAliveFlags.test(_id);
     }
 
+    inline void EntityManager::Flush() {
+        Entities.clear();
+        EntitiesAdded.clear();
+        EntitiesDestroyed.clear();
+        mEntityAliveFlags.reset();
+        while (mFreeIds.size() > 0) {
+            mFreeIds.pop();
+        };
+        mNextEntityID = 0;
+        mAliveCount   = 0;
+    }
+
     inline EntityID EntityManager::GetEntityCount() {
         return mAliveCount;
     }

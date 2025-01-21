@@ -10,4 +10,8 @@ namespace Umbra {
         return mWorldRegister;
     }
 
+    void World::FlushWorld() {
+        mWorldRegister->FlushRegister();
+    }
+
 } // namespace Umbra

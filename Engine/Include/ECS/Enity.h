@@ -3,28 +3,13 @@
 #include "EnginePCH.h"
 
 namespace Umbra {
-
-    // class Entity
-    // {
-    // public:
-    //     inline Entity(EntityID _id)
-    //     {
-    //         mId = _id;
-    //     }
-    //     inline const EntityID GetId() { return mId; }
-
-    //     bool bAlive;
-
-    // private:
-    //     EntityID mId;
-    // };
-
     class EntityManager {
     public:
         EntityID CreateEntity();
         void DestroyEntity(EntityID _id);
         void RemoveEntity(EntityID _id);
         bool IsValid(EntityID _id);
+        void Flush();
         EntityID GetEntityCount();
         Set<EntityID> EntitiesAdded;
         Set<EntityID> EntitiesDestroyed;

@@ -3,7 +3,7 @@
 
 namespace Umbra {
     inline ECSRegister::ECSRegister(/* args */) {
-        ComponentArrayHolder = new ComponentArrayPool();
+        mComponentManager = new ComponentManager();
         RegisterComponent<TagComponent>();
     }
 
@@ -21,11 +21,20 @@ namespace Umbra {
         bRegisterDirty = true;
     }
 
+    inline void ECSRegister::FlushRegister() {
+        mEntityManager.Flush();
+        mComponentManager->Flush();
+        for (System* system : mSystems) {
+            system->Flush();
+        }
+        mEntityComponentSignatures.clear();
+    }
+
     template <typename T>
     inline void ECSRegister::RegisterComponent() {
         ComponentID id = ComponentIDHelper::GetID<T>();
-        if (!ComponentArrayHolder->HasComponentArray<T>()) {
-            ComponentArrayHolder->AddComponentArray(new ComponentArray<T>());
+        if (!mComponentManager->HasComponentArray<T>()) {
+            mComponentManager->AddComponentArray(new ComponentArray<T>());
         }
     }
 
@@ -34,12 +43,12 @@ namespace Umbra {
         if (!mEntityManager.IsValid(_entity)) {
             return;
         }
-        if (!ComponentArrayHolder->HasComponentArray<T>()) {
+        if (!mComponentManager->HasComponentArray<T>()) {
             return;
         }
         ComponentID id = ComponentIDHelper::GetID<T>();
         mEntityComponentSignatures.at(_entity).set(id, true);
-        ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
+        ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
         pool->Insert(_entity, _component);
     }
 
@@ -83,12 +92,12 @@ namespace Umbra {
         if (!mEntityManager.IsValid(_entity)) {
             return;
         }
-        if (!ComponentArrayHolder->HasComponentArray<T>()) {
+        if (!mComponentManager->HasComponentArray<T>()) {
             return;
         }
         ComponentID id = ComponentIDHelper::GetID<T>();
         mEntityComponentSignatures.at(_entity).set(id, false);
-        ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
+        ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
         pool->Remove(_entity, _component);
     }
 
@@ -99,7 +108,7 @@ namespace Umbra {
         if (!mEntityComponentSignatures.at(_entity).test(_componentId)) {
             return;
         }
-        IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(_componentId);
+        IBaseComponentArray* pool = mComponentManager->GetComponentArray(_componentId);
         pool->Remove(_entity);
     }
 
@@ -114,11 +123,11 @@ namespace Umbra {
         if (!mEntityManager.IsValid(_entity)) {
             return nullptr;
         }
-        if (!ComponentArrayHolder->HasComponentArray<T>()) {
+        if (!mComponentManager->HasComponentArray<T>()) {
             return nullptr;
         }
         ComponentID id          = ComponentIDHelper::GetID<T>();
-        ComponentArray<T>* pool = ComponentArrayHolder->GetComponentArray<T>();
+        ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
         return &(pool->Get(_entity));
     }
 
@@ -159,7 +168,7 @@ namespace Umbra {
             // remove component pool
             for (ComponentID cId = 0; cId < MAX_COMPONENTS; ++cId) {
                 if (mEntityComponentSignatures.at(entity).test(cId)) {
-                    IBaseComponentArray* pool = ComponentArrayHolder->GetComponentArray(cId);
+                    IBaseComponentArray* pool = mComponentManager->GetComponentArray(cId);
                     if (pool != nullptr) {
                         pool->Remove(entity);
                     }

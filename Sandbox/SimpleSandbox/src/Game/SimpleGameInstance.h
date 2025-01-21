@@ -13,10 +13,5 @@ public:
     virtual void OnUpdate(float dt) override;
 
 private:
-    Umbra::EntityID ship;
-    void SpawnBG();
-    void SpawnShip();
-    void SpawnPlayerBullet();
     class Umbra::FiniteStateMachine *mGameplayState;
-    float shootCooldown = 0;
 };

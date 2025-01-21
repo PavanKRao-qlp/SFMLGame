@@ -17,6 +17,7 @@ namespace Umbra {
         EntityID CreateEntity();
         /** Marks Entity as Destroyed.*/
         void DestroyEntity(EntityID _entity);
+        void FlushRegister();
 
         template <typename T>
         void RegisterComponent();
@@ -50,11 +51,9 @@ namespace Umbra {
         void RemoveDestroyedEntities();
         void AddCreatedEntities();
         EntityManager mEntityManager;
-        ComponentManager mComponentManager;
-        SystemManager mSystemManager;
+        ComponentManager* mComponentManager;
 
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
-        ComponentArrayPool* ComponentArrayHolder;
         Vector<System*> mSystems;
 
         bool bRegisterDirty = true;

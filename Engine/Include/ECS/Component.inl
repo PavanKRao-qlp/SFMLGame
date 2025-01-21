@@ -35,6 +35,16 @@ namespace Umbra {
     }
 
     template <typename T>
+    inline void ComponentArray<T>::Flush() {
+        mPackedComponents.clear();
+        mSparseIndexMap.clear();
+        mDenseToSparseKey.clear();
+        while (mFreePackedIx.size() > 0) {
+            mFreePackedIx.pop();
+        }
+    }
+
+    template <typename T>
     inline void ComponentArray<T>::Remove(EntityID _entity, T _component) {
         int packedIx     = mSparseIndexMap[_entity];
         int lastPackedIx = (int) mPackedComponents.size() - 1;
