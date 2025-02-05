@@ -14,16 +14,15 @@ namespace Umbra {
     }
 
     bool AppWindow::CreateWindow() {
-        Logger::Log(LogType::Verbose, "Creating Window");
+        UMBRA_LOG_INFO("Creating Window");
         mScreenSize       = Math::Vector2i(800, 800);
         mRenderResolution = Math::Vector2i(400, 400);
         aspectRatio       = ((float) mRenderResolution.x) / mRenderResolution.y;
         mWindow           = new sf::RenderWindow(sf::VideoMode(mScreenSize.x, mScreenSize.y), "My window");
         mView             = new sf::View(sf::Vector2f(0, 0), sf::Vector2f(mRenderResolution.x, mRenderResolution.y));
         ResizeViewport(mScreenSize);
-        UM_ASSERT(mWindow != nullptr, "Creating Window Failed");
         bWindowClosed = false;
-        return true;
+        return (mWindow != nullptr);
     }
 
     void AppWindow::Update() { // run the program as long as the window is open
@@ -98,7 +97,8 @@ namespace Umbra {
     }
 
     void AppWindow::CloseWindow() {
-        Logger::Log(LogType::Verbose, "Closing Window");
+        UMBRA_LOG_INFO("Window Closed");
+        // Logger::Log(LogType::Verbose, "Closing Window");
         if (mWindow->isOpen()) {
             mWindow->close();
         }

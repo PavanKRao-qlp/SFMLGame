@@ -1,6 +1,8 @@
 #include "SimpleGameInstance.h"
 #include "Diag/Logger.h"
 #include "GameStates.h"
+#include "SimpleScene.h"
+#include "Game/SceneManager.h"
 
 SimpleGameInstance::SimpleGameInstance()
 {
@@ -12,25 +14,16 @@ SimpleGameInstance::~SimpleGameInstance()
 
 void SimpleGameInstance::Initialize()
 {
-    Logger::Log(LogType::Verbose, "SimpleGameInstance Initialize!");
-    mGameplayState = new Umbra::FiniteStateMachine();
-    mGameplayState->AddState(static_cast<int>(GameplayStateID::MAIN_MENU), new MenuState(this));
-    mGameplayState->AddState(static_cast<int>(GameplayStateID::GAME), new GameplayState(this));
+    Umbra::SharedPtr<Umbra::Scene> NewScene = std::make_shared<SimpleScene>();
+    GetSceneManger()->AddScene(NewScene);
+    GetSceneManger()->GoToScene(NewScene);
 }
 
-void SimpleGameInstance::OnBeginPlay()
+void SimpleGameInstance::ShutDown()
 {
-    Logger::Log(LogType::Verbose, "SimpleGameInstance OnBeginPlay!");
-    mGameplayState->GoToState(static_cast<int>(GameplayStateID::MAIN_MENU));
 }
 
-void SimpleGameInstance::OnEndPlay()
+Umbra::SharedPtr<Umbra::IGameInstance> CreateApplication()
 {
-    delete mGameplayState;
-    Logger::Log(LogType::Verbose, "SimpleGameInstance OnEndPlay!");
-}
-
-void SimpleGameInstance::OnUpdate(float dt)
-{
-    mGameplayState->GetCurrentState()->OnUpdate();
+    return std::make_shared<SimpleGameInstance>();
 }

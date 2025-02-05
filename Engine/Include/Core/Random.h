@@ -3,7 +3,7 @@
 #include "Math/PCGRandomNumberGenerator.h"
 
 namespace Umbra {
-    class Random {
+    struct Random {
     public:
         /* * Set the seed for the RNG]*/
         static inline void SetSeed(uint64 _state, uint64 _sequence = 0xda3e39cb94b95bdbULL) {

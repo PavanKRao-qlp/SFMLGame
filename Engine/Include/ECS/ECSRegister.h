@@ -44,6 +44,7 @@ namespace Umbra {
         T* GetComponent(EntityID _entity);
 
         void AddSystem(System* _system);
+        void RemoveSystem(System* _system);
 
         void Update();
 
@@ -54,7 +55,7 @@ namespace Umbra {
         ComponentManager* mComponentManager;
 
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
-        Vector<System*> mSystems;
+        Vector<SharedPtr<System>> mSystems;
 
         bool bRegisterDirty = true;
     };

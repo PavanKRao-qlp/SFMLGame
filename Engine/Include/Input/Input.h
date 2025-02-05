@@ -170,12 +170,21 @@ namespace Umbra {
         int16 y = 0;
     };
 
-    class Input {
+    class Input : public Singleton<Input> {
     public:
         Input();
         ~Input();
-        inline static void Update() {
-            PrevMouseButtonPressedState = MouseButtonPressedState;
+
+        static inline void Initialize() {
+            EventBus::Subscribe<KeyPressedEvent>(BIND_1P(GetInstance(), &Input::OnKeyPressed));
+            EventBus::Subscribe<KeyReleasedEvent>(BIND_1P(GetInstance(), &Input::OnKeyReleased));
+            EventBus::Subscribe<MouseButtonPressedEvent>(BIND_1P(GetInstance(), &Input::OnMouseButtonPressed));
+            EventBus::Subscribe<MouseButtonReleasedEvent>(BIND_1P(GetInstance(), &Input::OnMouseButtonReleased));
+            EventBus::Subscribe<MouseMovedEvent>(BIND_1P(GetInstance(), &Input::OnMouseMoved));
+        }
+
+        inline static void Refresh() {
+            Input::GetInstance()->RefreshImpl();
         }
         // static inline void Update() { PrevKeyPressedState = KeyPressedState; };
         /** Returns true while the user holds down the key identified by name. */
@@ -190,20 +199,22 @@ namespace Umbra {
         static bool GetMouseButtonDown(Mouse::MouseButton _code);
         /*Returns true during the frame the user releases the given mouse button.*/
         static bool GetMouseButtonUp(Mouse::MouseButton _code);
+
         static Math::Vector2i GetMousePosition();
 
     private:
-        static void OnKeyPressed(const KeyPressedEvent& event);
-        static void OnKeyReleased(const KeyReleasedEvent& event);
-        static void OnMouseButtonPressed(const MouseButtonPressedEvent& event);
-        static void OnMouseButtonReleased(const MouseButtonReleasedEvent& event);
-        static void OnMouseMoved(const MouseMovedEvent& event);
+        void RefreshImpl();
+        void OnKeyPressed(const KeyPressedEvent& event);
+        void OnKeyReleased(const KeyReleasedEvent& event);
+        void OnMouseButtonPressed(const MouseButtonPressedEvent& event);
+        void OnMouseButtonReleased(const MouseButtonReleasedEvent& event);
+        void OnMouseMoved(const MouseMovedEvent& event);
         // BitField<KeyBoard::Keycode::COUNT> KeyPressedState;
-        static inline BitField<KeyBoard::Keycode::COUNT> KeyPressedState              = 0;
-        static inline BitField<KeyBoard::Keycode::COUNT> PrevKeyPressedState          = 0;
-        static inline BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState     = 0;
-        static inline BitField<Mouse::MouseButton::COUNT> PrevMouseButtonPressedState = 0;
-        static inline Math::Vector2i MousePosition;
+        BitField<KeyBoard::Keycode::COUNT> KeyPressedState              = 0;
+        BitField<KeyBoard::Keycode::COUNT> PrevKeyPressedState          = 0;
+        BitField<Mouse::MouseButton::COUNT> MouseButtonPressedState     = 0;
+        BitField<Mouse::MouseButton::COUNT> PrevMouseButtonPressedState = 0;
+        Math::Vector2i MousePosition;
     };
 
 } // namespace Umbra

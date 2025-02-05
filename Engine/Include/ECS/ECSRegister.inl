@@ -7,7 +7,7 @@ namespace Umbra {
         RegisterComponent<TagComponent>();
     }
 
-    inline ECSRegister::~ECSRegister() {};
+    inline ECSRegister::~ECSRegister() {}
 
     inline EntityID ECSRegister::CreateEntity() {
         EntityID id                    = mEntityManager.CreateEntity();
@@ -132,9 +132,17 @@ namespace Umbra {
     }
 
 
-    inline void ECSRegister::AddSystem(System* _system) {
+    inline void ECSRegister::AddSystem(SharedPtr<System>& _system) {
         mSystems.emplace_back(_system);
         _system->AssignRegistry(this);
+    }
+
+    inline void ECSRegister::RemoveSystem(System* _system) {
+        for (auto system : mSystems) {
+            if (system == _system) {
+                mSystems.erase(system);
+            }
+        }
     }
 
     inline void ECSRegister::Update() {

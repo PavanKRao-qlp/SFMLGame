@@ -1,9 +1,22 @@
 #include "Game/IGameInstance.h"
+
+#include "Core/AppWindow.h"
+
 namespace Umbra {
+
+    FGameConfig& IGameInstance::LoadGameConfig() {
+        return FGameConfig();
+    }
 
     void IGameInstance::SetECSRegister(ECSRegister* worldRegister) {
         mWorldRegister = worldRegister;
     }
+
+    void IGameInstance::SetSceneManager(SharedPtr<SceneManager>& _sceneManager) {
+        mSceneManager = _sceneManager;
+    }
+
+
     void IGameInstance::SetAppWindowRef(AppWindow* appWindow) {
         mAppWindowRef = appWindow;
     }
@@ -27,4 +40,13 @@ namespace Umbra {
             sf::Vector2f(worldPosition.x, worldPosition.y), view);
         return Math::Vector2i(sfScreenPos.x, sfScreenPos.y);
     }
+
+    void Umbra::IGameInstance::QuitApplication() {
+        AppClosedEvent* event = new AppClosedEvent();
+        EventBus::FireEvent<AppClosedEvent>(event);
+    }
+    const SharedPtr<SceneManager>& IGameInstance::GetSceneManger() {
+        return mSceneManager;
+    }
+
 } // namespace Umbra

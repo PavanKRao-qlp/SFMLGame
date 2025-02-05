@@ -6,13 +6,14 @@
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
+#include "ECS/Systems/RenderSystem.h"
 #include "Math/CollisionSystem.h"
 
 namespace Umbra {
     class CollisionDetectionSystem : public System {
     public:
         inline CollisionDetectionSystem() : System(new ECView<CollisionBoxComponent, TransformComponent>()) {}
-        inline ~CollisionDetectionSystem() {};
+        inline ~CollisionDetectionSystem() {}
         inline void Update() override {
             for (EntityID entity : mView->mEntities) {
                 for (EntityID entityOther : mView->mEntities) {
@@ -92,8 +93,8 @@ namespace Umbra {
                                  : nullptr;
             String t1Tag     = (t1 != nullptr) ? t1->Tag : "t1 tag component not found!";
             String t2Tag     = (t2 != nullptr) ? t2->Tag : "t2 tag component not found!";
-            Logger::Log(
-                LogType::Trace, "Collision : > %i  %s  %i %s ", entity, t1Tag.c_str(), entityOther, t2Tag.c_str());
+            // Logger::Log(                LogType::Trace, "Collision : > %i  %s  %i %s ", entity, t1Tag.c_str(),
+            // entityOther, t2Tag.c_str());
         }
     };
 

@@ -20,10 +20,9 @@ namespace Umbra::Collision {
         bool QueryCollisionsForTag(String _tag, Vector<Collision::CollisionResponse>& _outResponse);
         bool QueryCollisionsForEntityID(EntityID _id, Vector<CollisionResponse>& _outResponse);
 
-    private:
         CollisionSystem();
-        ~CollisionSystem() {};
 
+    private:
         UMap<ECollisionChannel, CollisionMask> CollisionMatrix;
         CollisionEventResolverSystem* mCollisionEventResolverSystem;
         friend class Singleton<CollisionSystem>;

@@ -1,7 +1,10 @@
 #pragma once
 #include <bitset>
+#define NDEBUG
+#include <cassert>
 #include <deque>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <queue>

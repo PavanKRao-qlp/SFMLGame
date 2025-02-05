@@ -8,9 +8,10 @@ public:
     SimpleGameInstance();
     ~SimpleGameInstance();
     virtual void Initialize() override;
-    virtual void OnBeginPlay() override;
-    virtual void OnEndPlay() override;
-    virtual void OnUpdate(float dt) override;
+    virtual void ShutDown() override;
+    // virtual void OnBeginPlay() override;
+    // virtual void OnEndPlay() override;
+    // virtual void OnUpdate(float dt) override;
 
 private:
     class Umbra::FiniteStateMachine *mGameplayState;
