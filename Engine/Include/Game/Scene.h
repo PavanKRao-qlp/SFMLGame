@@ -7,12 +7,13 @@ namespace Umbra {
         Scene();
         virtual ~Scene();
         void Construct();
-        virtual void Initialize() = 0;
-
-        virtual void OnBeginPlay();
-        virtual void OnFixedUpdated();
-        virtual void OnUpdate();
-        virtual void OnEndPlay();
+        void Update();
+        void FixedUpdate();
+        virtual void Initialize()     = 0;
+        virtual void OnBeginPlay()    = 0;
+        virtual void OnFixedUpdated() = 0;
+        virtual void OnUpdate()       = 0;
+        // virtual void OnEndPlay()      = 0;
         virtual void ShutDown();
         bool IsLoaded();
         const String& GetSceneID();

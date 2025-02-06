@@ -2,12 +2,12 @@
 namespace Umbra {
     void SceneManager::Simulate() {
         if (mCurrentScene) {
-            mCurrentScene->OnFixedUpdated();
+            mCurrentScene->FixedUpdate();
         }
     }
     void Umbra::SceneManager::Render() {
         if (mCurrentScene) {
-            mCurrentScene->OnUpdate();
+            mCurrentScene->Update();
         }
     }
 
@@ -38,7 +38,7 @@ namespace Umbra {
             // mCurrentScene->Unload();
         }
         mCurrentScene = _scene;
-        mCurrentScene->Initialize();
+        mCurrentScene->Construct();
         mCurrentScene->OnBeginPlay();
     }
     SceneManager::SceneManager() {}

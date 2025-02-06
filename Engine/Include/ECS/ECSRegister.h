@@ -43,8 +43,8 @@ namespace Umbra {
         template <typename T>
         T* GetComponent(EntityID _entity);
 
-        void AddSystem(System* _system);
-        void RemoveSystem(System* _system);
+        void AddSystem(SharedPtr<System> _system);
+        void RemoveSystem(SharedPtr<System>& _system);
 
         void Update();
 
@@ -56,6 +56,7 @@ namespace Umbra {
 
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
         Vector<SharedPtr<System>> mSystems;
+        UMap<ESystemPhase, Vector<SharedPtr<System>>> mSystemMap;
 
         bool bRegisterDirty = true;
     };

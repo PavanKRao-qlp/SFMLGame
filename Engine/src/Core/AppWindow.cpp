@@ -5,7 +5,9 @@
 #include "Umbra.h"
 #include "sfmlHelper.h"
 namespace Umbra {
-    AppWindow::AppWindow() {}
+    AppWindow::AppWindow() {
+        GEngineStatics.AppWindowPtr = this;
+    }
 
     AppWindow::~AppWindow() {
         if (mWindow) {

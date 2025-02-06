@@ -10,25 +10,24 @@ namespace Umbra {
     }
 
     void Scene::Construct() {
-        mWorld = std::make_shared<World>();
+        mWorld = std::make_unique<World>();
         mWorld->InitializeCoreSystems();
         // add Camera Entity
         Initialize();
         bLoaded = true;
     }
 
-    void Scene::OnBeginPlay() {}
 
-
-    void Scene::OnFixedUpdated() {}
-
-    void Scene::OnUpdate() {}
-
-    void Scene::OnEndPlay() {}
+    void Scene::Update() {
+        this->OnUpdate();
+        UMBRA_LOG_WARNING("OnUpdate");
+        mWorld->Update();
+    }
+    void Scene::FixedUpdate() {}
 
     void Scene::ShutDown() {}
-
     bool Scene::IsLoaded() {
+
         return bLoaded;
     }
 

@@ -9,6 +9,10 @@ void SimpleScene::Initialize()
     // AddSystem();
 }
 
+void SimpleScene::OnFixedUpdated()
+{
+}
+
 void SimpleScene::OnUpdate()
 {
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Escape))
@@ -24,5 +28,9 @@ void SimpleScene::OnUpdate()
 
 void SimpleScene::OnBeginPlay()
 {
-    // auto BG = GetWorld()->CreateEntity();
+    EntityObj = NewEntity();
+    Umbra::EntityID Entity = GetWorld().CreateEntity();
+    GetWorld().AddComponent<Umbra::SpriteComponent>(Entity, Component);
+    GetWorld().AddComponent<Umbra::TransformComponent>(Entity, Component);
+    // GetWorld()->Create
 }

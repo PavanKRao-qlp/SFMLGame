@@ -1,8 +1,8 @@
 #include "Game/World.h"
 
+#include "Core/AppWindow.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Systems/RenderSystem.h"
-
 
 namespace Umbra {
 
@@ -20,7 +20,7 @@ namespace Umbra {
 
     void World::InitializeCoreSystems() {
         mWorldRegister->RegisterComponent<SpriteComponent>();
-        mRenderSystem = std::make_shared<RenderSystem>();
+        mRenderSystem = std::make_shared<RenderSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowHandle());
         mWorldRegister->AddSystem(mRenderSystem);
     }
 
@@ -28,4 +28,7 @@ namespace Umbra {
         mWorldRegister = std::make_shared<ECSRegister>();
     }
 
+    void World::Update() {
+        mWorldRegister->Update();
+    }
 } // namespace Umbra

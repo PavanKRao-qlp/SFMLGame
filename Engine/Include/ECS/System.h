@@ -6,6 +6,13 @@
 #include "ECS/View.h"
 #include "EnginePCH.h"
 namespace Umbra {
+    enum class ESystemPhase {
+        FrameStart, // Input collection, etc.
+        Simulation, // Physics, AI
+        PreRender, // Visibility culling
+        Render, // Actual drawing
+        FrameEnd // Cleanup
+    };
     class System {
     private:
         /* data */

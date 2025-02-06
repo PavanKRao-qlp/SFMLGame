@@ -24,7 +24,7 @@ namespace Umbra {
     inline void ECSRegister::FlushRegister() {
         mEntityManager.Flush();
         mComponentManager->Flush();
-        for (System* system : mSystems) {
+        for (auto system : mSystems) {
             system->Flush();
         }
         mEntityComponentSignatures.clear();
@@ -132,15 +132,16 @@ namespace Umbra {
     }
 
 
-    inline void ECSRegister::AddSystem(SharedPtr<System>& _system) {
+    inline void ECSRegister::AddSystem(SharedPtr<System> _system) {
         mSystems.emplace_back(_system);
         _system->AssignRegistry(this);
     }
 
-    inline void ECSRegister::RemoveSystem(System* _system) {
-        for (auto system : mSystems) {
-            if (system == _system) {
-                mSystems.erase(system);
+    inline void ECSRegister::RemoveSystem(SharedPtr<System>& _system) {
+        for (auto it = mSystems.begin(); it != mSystems.end(); ++it) {
+            if (*it == _system) {
+                mSystems.erase(it);
+                break; // Stop after removing the first match
             }
         }
     }
@@ -150,7 +151,7 @@ namespace Umbra {
             RemoveDestroyedEntities();
             AddCreatedEntities();
 
-            for (System* system : mSystems) {
+            for (const SharedPtr<System>& system : mSystems) {
                 for (EntityID entity : mEntityManager.Entities) // has to be sparse set
                 {
                     if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
@@ -162,7 +163,7 @@ namespace Umbra {
             }
             bRegisterDirty = false;
         }
-        for (System* system : mSystems) {
+        for (const SharedPtr<System>& system : mSystems) {
             if (system->GetEnabled()) {
                 system->Update();
             }
@@ -184,9 +185,9 @@ namespace Umbra {
             }
             mEntityComponentSignatures.at(entity).reset();
             // remove from systems
-            for (System* system : mSystems) {
-                system->RemoveEntity(entity);
-            }
+            // for (System* system : mSystems) {
+            //     system->RemoveEntity(entity);
+            // }
         }
         mEntityManager.EntitiesDestroyed.clear();
     }
