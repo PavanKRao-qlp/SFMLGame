@@ -14,7 +14,7 @@ namespace Umbra {
         void Update();
 
         /** Creates an entity. */
-        const EntityID& CreateEntity();
+        const EntityID CreateEntity();
         /** Marks Entity as Destroyed.*/
         void DestroyEntity(EntityID _entity);
 
@@ -47,3 +47,5 @@ namespace Umbra {
     };
 
 } // namespace Umbra
+
+#include "Game/World.inl"

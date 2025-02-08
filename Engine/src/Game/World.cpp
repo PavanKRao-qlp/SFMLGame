@@ -20,6 +20,7 @@ namespace Umbra {
 
     void World::InitializeCoreSystems() {
         mWorldRegister->RegisterComponent<SpriteComponent>();
+        mWorldRegister->RegisterComponent<TransformComponent>();
         mRenderSystem = std::make_shared<RenderSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowHandle());
         mWorldRegister->AddSystem(mRenderSystem);
     }

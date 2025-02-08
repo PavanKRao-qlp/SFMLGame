@@ -14,9 +14,11 @@ namespace Umbra {
     void SceneManager::AddScene(SharedPtr<Scene> _Scene) {
         mSceneMap.emplace(_Scene->GetSceneID(), _Scene);
     }
+
     const SharedPtr<Scene>& SceneManager::GetCurrentScene() {
         return mCurrentScene;
     }
+
     void SceneManager::GoToScene(const String& _sceneId) {
         GoToScene(mSceneMap[_sceneId]);
     }

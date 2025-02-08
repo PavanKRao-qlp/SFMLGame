@@ -21,16 +21,16 @@ void SimpleScene::OnUpdate()
     }
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Space))
     {
-        // Scene *currentScene = GetGameInstance()->GetSceneManger()->GetCurrentScene();
-        // GetGameInstance()->GetSceneManger()->GoToScene(currentScene->GetSceneID());
+        auto a = GetGameInstance()->GetSceneManger();
     }
 }
 
 void SimpleScene::OnBeginPlay()
 {
-    EntityObj = NewEntity();
-    Umbra::EntityID Entity = GetWorld().CreateEntity();
-    GetWorld().AddComponent<Umbra::SpriteComponent>(Entity, Component);
-    GetWorld().AddComponent<Umbra::TransformComponent>(Entity, Component);
-    // GetWorld()->Create
+    Umbra::EntityID entity = GetWorld()->CreateEntity();
+    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity);
+    GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+                                                                    Umbra::Math::Vector2f(0, 0),
+                                                                    Umbra::Math::Vector2f(50, 50)));
+    //   GetWorld()->Create
 }

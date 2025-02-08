@@ -17,7 +17,9 @@ namespace Umbra {
         virtual void ShutDown();
         bool IsLoaded();
         const String& GetSceneID();
-        const World& GetWorld();
+        World* GetWorld();
+
+        void SetGameInstance(class IGameInstance* _gameInstance);
         class IGameInstance* GetGameInstance();
 
     private:

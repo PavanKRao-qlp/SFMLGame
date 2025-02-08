@@ -1,6 +1,7 @@
 #include "Game/Scene.h"
 
 #include "Game/IGameInstance.h"
+#include "Scene.h"
 
 namespace Umbra {
     Scene::Scene() {}
@@ -17,29 +18,33 @@ namespace Umbra {
         bLoaded = true;
     }
 
-
     void Scene::Update() {
         this->OnUpdate();
         UMBRA_LOG_WARNING("OnUpdate");
         mWorld->Update();
     }
+
     void Scene::FixedUpdate() {}
 
     void Scene::ShutDown() {}
-    bool Scene::IsLoaded() {
 
+    bool Scene::IsLoaded() {
         return bLoaded;
     }
 
     const String& Scene::GetSceneID() {
         return mSceneIdentifier;
     }
-    const World& Scene::GetWorld() {
-        return *mWorld;
+
+    World* Scene::GetWorld() {
+        return mWorld.get();
     }
+
+    void Scene::SetGameInstance(IGameInstance* _gameInstance) {}
 
     IGameInstance* Scene::GetGameInstance() {
+
+
         return mGameInstance.get();
     }
-
 } // namespace Umbra
