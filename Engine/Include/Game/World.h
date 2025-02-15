@@ -1,5 +1,7 @@
 #pragma once
 #include "ECS/ECSRegister.h"
+#include "ECS/Systems/CameraSystem.h"
+#include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/RenderSystem.h"
 #include "Umbra.h"
 
@@ -12,6 +14,8 @@ namespace Umbra {
         // void FlushWorld();
         World();
         void Update();
+        void Simulate();
+        void Render();
 
         /** Creates an entity. */
         const EntityID CreateEntity();
@@ -37,13 +41,15 @@ namespace Umbra {
         template <typename T>
         T* GetComponent(EntityID _entity);
 
-        void AddSystem(SharedPtr<System> _system);
+        void AddSystem(ESystemPhase _phase, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
 
 
     private:
         SharedPtr<ECSRegister> mWorldRegister;
         SharedPtr<RenderSystem> mRenderSystem;
+        SharedPtr<CameraSystem> mCameraSystem;
+        SharedPtr<PhysicsSystem> mPhysicsSystem;
     };
 
 } // namespace Umbra

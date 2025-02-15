@@ -1,8 +1,6 @@
 #include "Game/Scene.h"
 
 #include "Game/IGameInstance.h"
-#include "Scene.h"
-
 namespace Umbra {
     Scene::Scene() {}
 
@@ -13,18 +11,29 @@ namespace Umbra {
     void Scene::Construct() {
         mWorld = std::make_unique<World>();
         mWorld->InitializeCoreSystems();
+
         // add Camera Entity
+        mCameraEntity = mWorld->CreateEntity();
+        mWorld->AddComponent<TransformComponent>(
+            mCameraEntity, TransformComponent(Math::Vector2f(0, 0), Math::Vector2f(0, 0)));
+        CameraComponent cameraComponent;
+        cameraComponent.SetOrthographicSize(150 / 2);
+        cameraComponent.SetActive(true);
+        mWorld->AddComponent<CameraComponent>(mCameraEntity, cameraComponent);
         Initialize();
         bLoaded = true;
     }
 
-    void Scene::Update() {
+    void Scene::Render() {
         this->OnUpdate();
-        UMBRA_LOG_WARNING("OnUpdate");
         mWorld->Update();
+        mWorld->Render();
     }
 
-    void Scene::FixedUpdate() {}
+    void Scene::Simulate() {
+        this->OnFixedUpdated();
+        mWorld->Simulate();
+    }
 
     void Scene::ShutDown() {}
 
@@ -47,4 +56,9 @@ namespace Umbra {
 
         return mGameInstance.get();
     }
+
+    EntityID Scene::GetCameraEntity() {
+        return mCameraEntity;
+    }
+
 } // namespace Umbra

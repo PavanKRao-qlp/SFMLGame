@@ -75,20 +75,18 @@ namespace Umbra {
 
 
     void AppWindow::ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes) {
-        float newAspectRatio = (float) resizedDeviceRes.x / resizedDeviceRes.y;
-        sf::FloatRect ResizeViewport(0, 0, 1, 1);
-        if (newAspectRatio > aspectRatio) {
-            ResizeViewport.width = aspectRatio / newAspectRatio;
-            ResizeViewport.left  = (1 - ResizeViewport.width) / 2.f;
-        } else {
-            ResizeViewport.height = newAspectRatio / aspectRatio;
-            ResizeViewport.top    = (1 - ResizeViewport.height) / 2.f;
-            // resizedWidth  = 1;
-        }
+        // float newAspectRatio = (float) resizedDeviceRes.x / resizedDeviceRes.y;
+        // sf::FloatRect ResizeViewport(0, 0, 1, 1);
+        // if (newAspectRatio > aspectRatio) {
+        //     ResizeViewport.width = aspectRatio / newAspectRatio;
+        //     ResizeViewport.left  = (1 - ResizeViewport.width) / 2.f;
+        // } else {
+        //     ResizeViewport.height = newAspectRatio / aspectRatio;
+        //     ResizeViewport.top    = (1 - ResizeViewport.height) / 2.f;
+        // }
 
-        mView->setViewport(ResizeViewport);
-        mView->setCenter(sf::Vector2f(0, 0));
-        mWindow->setView(*mView);
+        // mView->setViewport(ResizeViewport);
+        // mWindow->setView(*mView);
     }
     void AppWindow::RefreshDisplay() {
         mWindow->display();
@@ -110,4 +108,7 @@ namespace Umbra {
         return mWindow;
     }
 
+    sf::View* AppWindow::GetRenderWindowView() {
+        return mView;
+    }
 } // namespace Umbra

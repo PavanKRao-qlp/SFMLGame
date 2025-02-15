@@ -21,15 +21,37 @@ namespace Umbra {
     void World::InitializeCoreSystems() {
         mWorldRegister->RegisterComponent<SpriteComponent>();
         mWorldRegister->RegisterComponent<TransformComponent>();
-        mRenderSystem = std::make_shared<RenderSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowHandle());
-        mWorldRegister->AddSystem(mRenderSystem);
+        mWorldRegister->RegisterComponent<CameraComponent>();
+        mCameraSystem = std::make_shared<CameraSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowView());
+        mCameraSystem->SetRenderSize(
+            Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));
+        mCameraSystem->SetScreenSize(Math::Vector2f(GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().x,
+            GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().y));
+        mRenderSystem  = std::make_shared<RenderSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowHandle());
+        mPhysicsSystem = std::make_shared<PhysicsSystem>();
+
+
+        mWorldRegister->AddSystem(ESystemPhase::PreRender, mCameraSystem);
+        mWorldRegister->AddSystem(ESystemPhase::Render, mRenderSystem);
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, mPhysicsSystem);
     }
 
     World::World() {
         mWorldRegister = std::make_shared<ECSRegister>();
     }
 
+
     void World::Update() {
-        mWorldRegister->Update();
+        mWorldRegister->CleanUp();
+    }
+
+    void World::Simulate() {
+        mWorldRegister->Update(ESystemPhase::Simulation);
+    }
+
+    void World::Render() {
+        mWorldRegister->Update(ESystemPhase::PreRender);
+        mWorldRegister->Update(ESystemPhase::Render);
+        mWorldRegister->Update(ESystemPhase::FrameEnd);
     }
 } // namespace Umbra

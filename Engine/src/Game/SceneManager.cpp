@@ -1,13 +1,15 @@
 #include "Game/SceneManager.h"
 namespace Umbra {
+
     void SceneManager::Simulate() {
         if (mCurrentScene) {
-            mCurrentScene->FixedUpdate();
+            mCurrentScene->Simulate();
         }
     }
+
     void Umbra::SceneManager::Render() {
         if (mCurrentScene) {
-            mCurrentScene->Update();
+            mCurrentScene->Render();
         }
     }
 

@@ -57,7 +57,7 @@ namespace Umbra {
         }
         String FormattedMessage = LogLevelString(_verbosity) + FormatString(_message, _args...);
         if (mConfig.bVerboseLog || _verbosity >= ELogLevel::Warning) {
-            FormattedMessage += FormatString(" - at %s : %d", _traceFile, _traceLineNo);
+            FormattedMessage += FormatString(" - at %s(%d)", _traceFile, _traceLineNo);
         }
         if (mConfig.ConsoleLogLevel <= _verbosity) {
             LogToConsole(_verbosity, FormattedMessage.c_str());

@@ -80,9 +80,10 @@ namespace Umbra {
             if (mGameInstance == nullptr) {
                 UMBRA_LOG_CRITICAL("GameInstance not Found, Exiting App");
             }
-            mGameConfig        = mGameInstance->LoadGameConfig();
-            mAppWindow         = std::make_shared<AppWindow>();
-            bool windowSuccess = mAppWindow->CreateWindow();
+            mGameConfig               = mGameInstance->LoadGameConfig();
+            GEngineStatics.GameConfig = &mGameConfig;
+            mAppWindow                = std::make_shared<AppWindow>();
+            bool windowSuccess        = mAppWindow->CreateWindow();
             if (!windowSuccess) {
                 UMBRA_LOG_CRITICAL("Window Creation Failed, Exiting App!");
                 return false;
@@ -138,7 +139,7 @@ namespace Umbra {
                 float deltaTime = EngineTime::Tick();
                 if (!bAppPaused) {
                     if (deltaTime > mGameConfig.MaxPhysicsDeltaTime) { // Handle spiral of death
-                        UMBRA_LOG_WARNING("Long frame detected %f", deltaTime * 1000);
+                        UMBRA_LOG_WARNING("Long frame detected %f", deltaTime);
                         deltaTime = mGameConfig.MaxPhysicsDeltaTime;
                     }
                     accumulatedDelta += deltaTime;

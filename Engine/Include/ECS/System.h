@@ -13,6 +13,7 @@ namespace Umbra {
         Render, // Actual drawing
         FrameEnd // Cleanup
     };
+
     class System {
     private:
         /* data */
@@ -45,7 +46,8 @@ namespace Umbra {
 
     protected:
         BaseView* mView;
-        bool bEnabled = true;
+        bool bEnabled      = true;
+        ESystemPhase phase = ESystemPhase::Simulation;
     };
 
     class SystemManager {};

@@ -16,7 +16,9 @@ namespace Umbra {
         void ClearDisplay();
         void CloseWindow();
         sf::RenderWindow* GetRenderWindowHandle();
+        sf::View* GetRenderWindowView();
         bool bWindowClosed = true;
+
 
     private:
         void ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes);

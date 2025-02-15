@@ -17,8 +17,8 @@ namespace Umbra {
         return mWorldRegister->IsTag(_entity, _tag);
     }
 
-    inline void World::AddSystem(SharedPtr<System> _system) {
-        mWorldRegister->AddSystem(_system);
+    inline void World::AddSystem(ESystemPhase _phase, SharedPtr<System> _system) {
+        mWorldRegister->AddSystem(_phase, _system);
     }
 
     inline void World::RemoveSystem(SharedPtr<System>& _system) {
@@ -47,7 +47,7 @@ namespace Umbra {
 
     template <typename T>
     inline T* World::GetComponent(EntityID _entity) {
-        return return mWorldRegister->GetComponent<T>(_entity);
+        return mWorldRegister->GetComponent<T>(_entity);
     }
 
 

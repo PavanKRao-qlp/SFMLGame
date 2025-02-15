@@ -132,7 +132,8 @@ namespace Umbra {
     }
 
 
-    inline void ECSRegister::AddSystem(SharedPtr<System> _system) {
+    inline void ECSRegister::AddSystem(ESystemPhase _systemPhase, SharedPtr<System> _system) {
+        mSystemMap[_systemPhase].emplace_back(_system);
         mSystems.emplace_back(_system);
         _system->AssignRegistry(this);
     }
@@ -167,6 +168,33 @@ namespace Umbra {
             if (system->GetEnabled()) {
                 system->Update();
             }
+        }
+    }
+
+    inline void ECSRegister::Update(ESystemPhase _systemPhase) {
+        for (const SharedPtr<System>& system : mSystemMap[_systemPhase]) {
+            if (system->GetEnabled()) {
+                system->Update();
+            }
+        }
+    }
+
+    inline void ECSRegister::CleanUp() {
+        if (bRegisterDirty) {
+            RemoveDestroyedEntities();
+            AddCreatedEntities();
+
+            for (const SharedPtr<System>& system : mSystems) {
+                for (EntityID entity : mEntityManager.Entities) // has to be sparse set
+                {
+                    if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
+                        system->AddEntity(entity);
+                    } else {
+                        system->RemoveEntity(entity);
+                    }
+                }
+            }
+            bRegisterDirty = false;
         }
     }
 

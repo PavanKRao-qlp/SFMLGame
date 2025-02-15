@@ -43,10 +43,12 @@ namespace Umbra {
         template <typename T>
         T* GetComponent(EntityID _entity);
 
-        void AddSystem(SharedPtr<System> _system);
+        void AddSystem(ESystemPhase _systemPhase, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
 
         void Update();
+        void Update(ESystemPhase _systemPhase);
+        void CleanUp();
 
     private:
         void RemoveDestroyedEntities();

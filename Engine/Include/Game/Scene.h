@@ -7,8 +7,8 @@ namespace Umbra {
         Scene();
         virtual ~Scene();
         void Construct();
-        void Update();
-        void FixedUpdate();
+        void Render();
+        void Simulate();
         virtual void Initialize()     = 0;
         virtual void OnBeginPlay()    = 0;
         virtual void OnFixedUpdated() = 0;
@@ -21,8 +21,11 @@ namespace Umbra {
 
         void SetGameInstance(class IGameInstance* _gameInstance);
         class IGameInstance* GetGameInstance();
+        EntityID GetCameraEntity();
+
 
     private:
+        EntityID mCameraEntity = MAX_ENTITY;
         String mSceneIdentifier;
         UniquePtr<World> mWorld;
         SharedPtr<class IGameInstance> mGameInstance;

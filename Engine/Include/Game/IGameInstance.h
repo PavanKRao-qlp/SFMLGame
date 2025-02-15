@@ -9,12 +9,6 @@
 
 #include "SFML/Graphics.hpp"
 namespace Umbra {
-    struct FGameConfig {
-        Math::Vector2i WindowSize = Math::Vector2i(800, 800);
-        bool bFullScreen;
-        float FixedDeltaTime      = 0.02f;
-        float MaxPhysicsDeltaTime = 0.1f;
-    };
 
     class IGameInstance {
     public:
@@ -38,6 +32,9 @@ namespace Umbra {
         Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& _screenPosition);
         Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& _worldPosition);
 
+
+        class AppWindow* mAppWindowRef;
+
     protected:
         class World* mCurrentWorld;
         IGameInstance(const IGameInstance&)            = delete; // NO COPY CONSTRUCTOR
@@ -45,7 +42,6 @@ namespace Umbra {
 
 #pragma region moveToPC?
 
-        class AppWindow* mAppWindowRef;
 
     private:
         class ECSRegister* mWorldRegister;
