@@ -41,7 +41,7 @@ namespace Umbra {
         template <typename T>
         T* GetComponent(EntityID _entity);
 
-        void AddSystem(ESystemPhase _phase, SharedPtr<System> _system);
+        void AddSystem(ESystemPhase _phase, int _priority, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
 
 

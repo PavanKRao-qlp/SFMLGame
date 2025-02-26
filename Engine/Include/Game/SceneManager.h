@@ -16,9 +16,11 @@ namespace Umbra {
 
         SceneManager(/* args */);
         ~SceneManager();
+        void SetGameInstance(IGameInstance* _GameInstance);
 
     private:
         SharedPtr<Scene> mCurrentScene;
         UMap<String, SharedPtr<Scene>> mSceneMap;
+        IGameInstance* mGameInstance;
     };
 } // namespace Umbra

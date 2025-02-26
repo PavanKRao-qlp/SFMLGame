@@ -17,8 +17,8 @@ namespace Umbra {
         return mWorldRegister->IsTag(_entity, _tag);
     }
 
-    inline void World::AddSystem(ESystemPhase _phase, SharedPtr<System> _system) {
-        mWorldRegister->AddSystem(_phase, _system);
+    inline void World::AddSystem(ESystemPhase _phase, int _priority, SharedPtr<System> _system) {
+        mWorldRegister->AddSystem(_phase, _priority, _system);
     }
 
     inline void World::RemoveSystem(SharedPtr<System>& _system) {

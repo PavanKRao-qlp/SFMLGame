@@ -46,8 +46,9 @@ namespace Umbra {
 
     protected:
         BaseView* mView;
-        bool bEnabled      = true;
-        ESystemPhase phase = ESystemPhase::Simulation;
+        bool bEnabled       = true;
+        ESystemPhase mPhase = ESystemPhase::Simulation;
+        int mPriority       = 0;
     };
 
     class SystemManager {};

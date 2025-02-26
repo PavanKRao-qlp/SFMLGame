@@ -31,9 +31,9 @@ namespace Umbra {
         mPhysicsSystem = std::make_shared<PhysicsSystem>();
 
 
-        mWorldRegister->AddSystem(ESystemPhase::PreRender, mCameraSystem);
-        mWorldRegister->AddSystem(ESystemPhase::Render, mRenderSystem);
-        mWorldRegister->AddSystem(ESystemPhase::Simulation, mPhysicsSystem);
+        mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
+        mWorldRegister->AddSystem(ESystemPhase::Render, 0, mRenderSystem);
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
     }
 
     World::World() {

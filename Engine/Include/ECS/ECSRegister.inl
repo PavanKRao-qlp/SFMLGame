@@ -24,9 +24,9 @@ namespace Umbra {
     inline void ECSRegister::FlushRegister() {
         mEntityManager.Flush();
         mComponentManager->Flush();
-        for (auto system : mSystems) {
-            system->Flush();
-        }
+        // for (auto system : mSystems) {
+        //     system->Flush();
+        // }
         mEntityComponentSignatures.clear();
     }
 
@@ -132,41 +132,30 @@ namespace Umbra {
     }
 
 
-    inline void ECSRegister::AddSystem(ESystemPhase _systemPhase, SharedPtr<System> _system) {
+    inline void ECSRegister::AddSystem(ESystemPhase _systemPhase, int _priority, SharedPtr<System> _system) {
+        if (mSystemMap.find(_systemPhase) == mSystemMap.end()) {
+            mSystemMap.emplace(_systemPhase, Vector<SharedPtr<System>>());
+        }
         mSystemMap[_systemPhase].emplace_back(_system);
-        mSystems.emplace_back(_system);
         _system->AssignRegistry(this);
     }
 
     inline void ECSRegister::RemoveSystem(SharedPtr<System>& _system) {
-        for (auto it = mSystems.begin(); it != mSystems.end(); ++it) {
-            if (*it == _system) {
-                mSystems.erase(it);
-                break; // Stop after removing the first match
-            }
-        }
+        // for (auto it = mSystems.begin(); it != mSystems.end(); ++it) {
+        //     if (*it == _system) {
+        //         mSystems.erase(it);
+        //         break; // Stop after removing the first match
+        //     }
+        // }
     }
 
     inline void ECSRegister::Update() {
-        if (bRegisterDirty) {
-            RemoveDestroyedEntities();
-            AddCreatedEntities();
-
-            for (const SharedPtr<System>& system : mSystems) {
-                for (EntityID entity : mEntityManager.Entities) // has to be sparse set
-                {
-                    if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
-                        system->AddEntity(entity);
-                    } else {
-                        system->RemoveEntity(entity);
-                    }
+        CleanUp();
+        for (const auto& pair : mSystemMap) {
+            for (const SharedPtr<System>& system : pair.second) {
+                if (system->GetEnabled()) {
+                    system->Update();
                 }
-            }
-            bRegisterDirty = false;
-        }
-        for (const SharedPtr<System>& system : mSystems) {
-            if (system->GetEnabled()) {
-                system->Update();
             }
         }
     }
@@ -183,14 +172,16 @@ namespace Umbra {
         if (bRegisterDirty) {
             RemoveDestroyedEntities();
             AddCreatedEntities();
-
-            for (const SharedPtr<System>& system : mSystems) {
-                for (EntityID entity : mEntityManager.Entities) // has to be sparse set
-                {
-                    if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
-                        system->AddEntity(entity);
-                    } else {
-                        system->RemoveEntity(entity);
+            for (const auto& pair : mSystemMap) {
+                for (const SharedPtr<System>& system : pair.second) {
+                    for (EntityID entity : mEntityManager.Entities) // has to be sparse set
+                    {
+                        if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
+                            == system->SystemSignature) {
+                            system->AddEntity(entity);
+                        } else {
+                            system->RemoveEntity(entity);
+                        }
                     }
                 }
             }
@@ -212,10 +203,6 @@ namespace Umbra {
                 }
             }
             mEntityComponentSignatures.at(entity).reset();
-            // remove from systems
-            // for (System* system : mSystems) {
-            //     system->RemoveEntity(entity);
-            // }
         }
         mEntityManager.EntitiesDestroyed.clear();
     }

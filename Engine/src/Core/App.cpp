@@ -68,7 +68,8 @@ namespace Umbra {
 
         // Initialize Engine Layer
         Input::Initialize();
-        mSceneManager = std::make_shared<SceneManager>();
+        mSceneManager = std::make_unique<SceneManager>();
+        // GEngineStatics.
 
         return true;
     }
@@ -90,7 +91,6 @@ namespace Umbra {
             }
             EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
             UMBRA_LOG_INFO("App Initalized!");
-            mGameInstance->SetSceneManager(mSceneManager);
             return true;
         }
         return false;
@@ -102,6 +102,7 @@ namespace Umbra {
         mSceneManager.reset();
         mAppWindow->CloseWindow();
         mAppWindow.reset();
+        mGameInstance->ShutDown();
 
         Input::Destroy();
         EventBus::Destroy();
@@ -131,6 +132,8 @@ namespace Umbra {
         // // Unload Scenes
 
         try {
+            mGameInstance->mSceneManager = mSceneManager.get();
+            mSceneManager->SetGameInstance(mGameInstance.get());
             mGameInstance->Initialize();
             float accumulatedDelta = 0.f;
             EngineTime::Reset();

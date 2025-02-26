@@ -35,7 +35,9 @@ namespace Umbra {
         mWorld->Simulate();
     }
 
-    void Scene::ShutDown() {}
+    void Scene::ShutDown() {
+        mWorld.reset();
+    }
 
     bool Scene::IsLoaded() {
         return bLoaded;
@@ -49,16 +51,30 @@ namespace Umbra {
         return mWorld.get();
     }
 
-    void Scene::SetGameInstance(IGameInstance* _gameInstance) {}
 
-    IGameInstance* Scene::GetGameInstance() {
+    void Scene::SetGameInstance(IGameInstance* _gameInstance) {
+        mGameInstance = _gameInstance;
+    }
 
+    void Scene::SetSceneManager(SceneManager* _sceneManager) {
+        mSceneManager = _sceneManager;
+    }
 
-        return mGameInstance.get();
+    IGameInstance& Scene::GetGameInstance() {
+        return *mGameInstance;
+    }
+
+    SceneManager& Scene::GetSceneManager() {
+        return *mSceneManager;
     }
 
     EntityID Scene::GetCameraEntity() {
         return mCameraEntity;
+    }
+    Umbra::Scene::Scene(const Scene& _scene) {
+        mSceneIdentifier = _scene.mSceneIdentifier;
+        mSceneManager    = _scene.mSceneManager;
+        mGameInstance    = _scene.mGameInstance;
     }
 
 } // namespace Umbra

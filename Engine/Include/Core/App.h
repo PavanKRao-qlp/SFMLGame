@@ -25,7 +25,7 @@ namespace Umbra {
         // class RenderSystem* mRenderSystem;
         SharedPtr<class AppWindow> mAppWindow;
         SharedPtr<class IGameInstance> mGameInstance;
-        SharedPtr<class SceneManager> mSceneManager;
+        UniquePtr<class SceneManager> mSceneManager;
 
     public:
         App(SharedPtr<IGameInstance>& _gameInstance);

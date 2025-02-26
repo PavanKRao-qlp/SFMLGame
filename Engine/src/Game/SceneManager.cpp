@@ -1,4 +1,5 @@
 #include "Game/SceneManager.h"
+
 namespace Umbra {
 
     void SceneManager::Simulate() {
@@ -15,6 +16,8 @@ namespace Umbra {
 
     void SceneManager::AddScene(SharedPtr<Scene> _Scene) {
         mSceneMap.emplace(_Scene->GetSceneID(), _Scene);
+        _Scene->SetSceneManager(this);
+        _Scene->SetGameInstance(mGameInstance);
     }
 
     const SharedPtr<Scene>& SceneManager::GetCurrentScene() {
@@ -29,7 +32,7 @@ namespace Umbra {
     void SceneManager::ShutDown() {
         if (mCurrentScene) {
             mCurrentScene->ShutDown();
-            mCurrentScene = nullptr;
+            mCurrentScene.reset();
         }
         for (auto pair : mSceneMap) {
             pair.second->ShutDown();
@@ -39,13 +42,21 @@ namespace Umbra {
 
     void SceneManager::GoToScene(SharedPtr<Scene>& _scene) {
         if (mCurrentScene) {
-            // mCurrentScene->Unload();
+            mCurrentScene->ShutDown();
+            mCurrentScene.reset();
         }
-        mCurrentScene = _scene;
+        mCurrentScene = _scene->InsatiateCopy();
         mCurrentScene->Construct();
         mCurrentScene->OnBeginPlay();
     }
     SceneManager::SceneManager() {}
 
-    SceneManager::~SceneManager() {}
+    SceneManager::~SceneManager() {
+        UMBRA_LOG_WARNING("Scene Manager Destroyed!");
+    }
+
+    void SceneManager::SetGameInstance(IGameInstance* _GameInstance) {
+        mGameInstance = _GameInstance;
+    }
+
 } // namespace Umbra

@@ -15,8 +15,8 @@ SimpleGameInstance::~SimpleGameInstance()
 void SimpleGameInstance::Initialize()
 {
     Umbra::SharedPtr<Umbra::Scene> NewScene = std::make_shared<SimpleScene>();
-    GetSceneManger()->AddScene(NewScene);
-    GetSceneManger()->GoToScene(NewScene);
+    GetSceneManger().AddScene(NewScene);
+    GetSceneManger().GoToScene(NewScene);
 }
 
 void SimpleGameInstance::ShutDown()

@@ -17,11 +17,11 @@ void SimpleScene::OnUpdate()
 {
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Escape))
     {
-        GetGameInstance()->QuitApplication();
+        GetGameInstance().QuitApplication();
     }
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Space))
     {
-        auto a = GetGameInstance()->GetSceneManger();
+        GetSceneManager().GoToScene(this->GetSceneID());
     }
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Right))
     {
@@ -61,6 +61,11 @@ void SimpleScene::OnUpdate()
             GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(orthographic);
         }
     }
+}
+
+Umbra::SharedPtr<Umbra::Scene> SimpleScene::InsatiateCopy()
+{
+    return std::make_shared<SimpleScene>(*this);
 }
 
 void SimpleScene::OnBeginPlay()
