@@ -22,5 +22,7 @@ namespace Umbra {
         SharedPtr<Scene> mCurrentScene;
         UMap<String, SharedPtr<Scene>> mSceneMap;
         IGameInstance* mGameInstance;
+        SharedPtr<Scene> mDeletedScene;
+        bool bCurrentSceneStarted = false;
     };
 } // namespace Umbra

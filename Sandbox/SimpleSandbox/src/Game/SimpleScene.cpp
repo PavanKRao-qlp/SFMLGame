@@ -23,17 +23,17 @@ void SimpleScene::OnUpdate()
     {
         GetSceneManager().GoToScene(this->GetSceneID());
     }
-    if (Umbra::Input::GetKey(Umbra::KeyBoard::Right))
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Right))
     {
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
             GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.x += 10 * Umbra::EngineTime::GetDeltaTime();
     }
-    if (Umbra::Input::GetKey(Umbra::KeyBoard::Left))
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Left))
     {
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
             GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.x -= 10 * Umbra::EngineTime::GetDeltaTime();
     }
-    if (Umbra::Input::GetKey(Umbra::KeyBoard::Up))
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Up))
     {
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
             GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.y += 10 * Umbra::EngineTime::GetDeltaTime();
@@ -43,7 +43,7 @@ void SimpleScene::OnUpdate()
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
             GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.y -= 10 * Umbra::EngineTime::GetDeltaTime();
     }
-    if (Umbra::Input::GetKey(Umbra::KeyBoard::Q))
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Q))
     {
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
         {
@@ -52,7 +52,7 @@ void SimpleScene::OnUpdate()
             GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(orthographic);
         }
     }
-    if (Umbra::Input::GetKey(Umbra::KeyBoard::E))
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::E))
     {
         if (GetCameraEntity() != Umbra::MAX_ENTITY)
         {

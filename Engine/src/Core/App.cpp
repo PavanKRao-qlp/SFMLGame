@@ -160,12 +160,12 @@ namespace Umbra {
     }
 
     void App::OnUpdate(float _dt) {
+        Input::Refresh();
         mAppWindow->Update();
         mSceneManager->Render();
     }
 
     void App::OnFixedUpdate() {
-        Input::Refresh();
         mSceneManager->Simulate();
     }
 

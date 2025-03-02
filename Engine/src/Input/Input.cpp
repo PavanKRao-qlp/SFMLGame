@@ -67,5 +67,6 @@ namespace Umbra {
 
     void Input::RefreshImpl() {
         PrevMouseButtonPressedState = MouseButtonPressedState;
+        PrevKeyPressedState         = KeyPressedState;
     }
 } // namespace  Umbra

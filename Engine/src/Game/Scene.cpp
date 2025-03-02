@@ -51,7 +51,6 @@ namespace Umbra {
         return mWorld.get();
     }
 
-
     void Scene::SetGameInstance(IGameInstance* _gameInstance) {
         mGameInstance = _gameInstance;
     }

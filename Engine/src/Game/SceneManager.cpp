@@ -3,13 +3,26 @@
 namespace Umbra {
 
     void SceneManager::Simulate() {
+        if (mDeletedScene) {
+            mDeletedScene->ShutDown();
+            mDeletedScene.reset();
+            mCurrentScene->OnBeginPlay();
+        }
         if (mCurrentScene) {
             mCurrentScene->Simulate();
         }
     }
 
     void Umbra::SceneManager::Render() {
+        if (mDeletedScene) {
+            mDeletedScene->ShutDown();
+            mDeletedScene.reset();
+        }
         if (mCurrentScene) {
+            if (!bCurrentSceneStarted) {
+                bCurrentSceneStarted = true;
+                mCurrentScene->OnBeginPlay();
+            }
             mCurrentScene->Render();
         }
     }
@@ -42,12 +55,11 @@ namespace Umbra {
 
     void SceneManager::GoToScene(SharedPtr<Scene>& _scene) {
         if (mCurrentScene) {
-            mCurrentScene->ShutDown();
-            mCurrentScene.reset();
+            mDeletedScene = std::move(mCurrentScene);
         }
         mCurrentScene = _scene->InsatiateCopy();
         mCurrentScene->Construct();
-        mCurrentScene->OnBeginPlay();
+        bCurrentSceneStarted = false;
     }
     SceneManager::SceneManager() {}
 

@@ -38,8 +38,12 @@ namespace Umbra {
 
     World::World() {
         mWorldRegister = std::make_shared<ECSRegister>();
+        UMBRA_LOG_INFO("World Generated!");
     }
 
+    World::~World() {
+        UMBRA_LOG_INFO("World Destroyed!");
+    }
 
     void World::Update() {
         mWorldRegister->CleanUp();

@@ -13,6 +13,7 @@ namespace Umbra {
         // ECSRegister* GetRegister();
         // void FlushWorld();
         World();
+        ~World();
         void Update();
         void Simulate();
         void Render();
