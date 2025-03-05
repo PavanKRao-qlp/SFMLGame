@@ -11,4 +11,5 @@ public:
     void OnBeginPlay() override;
 
 private:
+    Umbra::SharedPtr<class PointObjectSpawnSystem> ObjectSpawner;
 };

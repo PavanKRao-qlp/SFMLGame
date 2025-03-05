@@ -64,7 +64,7 @@ namespace Umbra {
     SceneManager::SceneManager() {}
 
     SceneManager::~SceneManager() {
-        UMBRA_LOG_WARNING("Scene Manager Destroyed!");
+        UMBRA_LOG_DEBUG("Scene Manager Destroyed!");
     }
 
     void SceneManager::SetGameInstance(IGameInstance* _GameInstance) {

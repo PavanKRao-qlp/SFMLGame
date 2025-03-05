@@ -42,6 +42,7 @@ namespace Umbra::Math {
 
     using FVector2D   = TVector<float>;
     using IntVector2D = TVector<int>;
+    using Vector2lf   = TVector<double>;
     using Vector2f    = TVector<float>;
     using Vector2i    = TVector<int>;
 

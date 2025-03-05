@@ -28,7 +28,7 @@ namespace Umbra {
 #endif
     struct PhysicsWorldConfig {
     public:
-        Math::Vector2f GravityVector;
+        Math::Vector2f GravityVector = Math::Vector2f(0, -9.8f);
     };
 
     class PhysicsSystem : public System {
@@ -41,11 +41,26 @@ namespace Umbra {
                 TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
                 PhysicsBodyComponent* physicsBodyComponent =
                     mView->ecsRegister->GetComponent<PhysicsBodyComponent>(entity);
+                // sum all force applied to this object by f = ma;
+                if (physicsBodyComponent->bAffectedByGravity) {
+                    if (physicsBodyComponent->mInverseMass > 0) {
+                        Math::Vector2f gravityForce =
+                            mPhysicsWorldConfig.GravityVector / physicsBodyComponent->mInverseMass;
+                        physicsBodyComponent->mForceAccumulated += gravityForce;
+                    }
+                }
+                // calculate acceleration based on f = ma
+                physicsBodyComponent->mAcceleration =
+                    physicsBodyComponent->mForceAccumulated * physicsBodyComponent->mInverseMass;
                 // Calculate displacement using s = vt + ((1/2) * at^2)
-                // transform->Position += (physicsBodyComponent->mVelocity * fixedDeltaTime)
-                //                      + (PhysicsBodyComponent->mAcceleration * Math::Pow(fixedDeltaTime, 2) * 0.5f);
-                // physicsBodyComponent->mVelocity += physicsBodyComponent->mAcceleration * fixedDeltaTime;
-                // physicsBodyComponent->mVelocity *= Math::Pow(mDamping, fixedDeltaTime);
+                transform->Position += (physicsBodyComponent->mVelocity * fixedDeltaTime)
+                                     + (physicsBodyComponent->mAcceleration * Math::Pow(fixedDeltaTime, 2) * 0.5f);
+                // applyAcceleration for next frame
+                physicsBodyComponent->mVelocity += physicsBodyComponent->mAcceleration * fixedDeltaTime;
+                // Apply Damping
+                physicsBodyComponent->mVelocity *= Math::Pow(mDamping, fixedDeltaTime);
+                // reset all force accumulation
+                physicsBodyComponent->mForceAccumulated = Math::Vector2f(0, 0);
             }
         }
 

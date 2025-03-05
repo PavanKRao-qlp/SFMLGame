@@ -22,6 +22,7 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<SpriteComponent>();
         mWorldRegister->RegisterComponent<TransformComponent>();
         mWorldRegister->RegisterComponent<CameraComponent>();
+        mWorldRegister->RegisterComponent<PhysicsBodyComponent>();
         mCameraSystem = std::make_shared<CameraSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowView());
         mCameraSystem->SetRenderSize(
             Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));
@@ -54,6 +55,7 @@ namespace Umbra {
     }
 
     void World::Render() {
+        mWorldRegister->Update(ESystemPhase::FrameStart);
         mWorldRegister->Update(ESystemPhase::PreRender);
         mWorldRegister->Update(ESystemPhase::Render);
         mWorldRegister->Update(ESystemPhase::FrameEnd);

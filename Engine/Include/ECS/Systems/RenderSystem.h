@@ -12,7 +12,7 @@ namespace Umbra {
             : System(new ECView<TransformComponent, SpriteComponent>()) {
             mWindowHandle = _WindowHandle;
         }
-        inline ~RenderSystem() {};
+        inline ~RenderSystem() {}
         inline void Update() override {
             mWindowHandle->clear(sf::Color::Black);
             for (EntityID entity : mView->mEntities) {
@@ -22,7 +22,7 @@ namespace Umbra {
                 // sf::Vector2<String>
                 quadShape.setSize(sf::Vector2f(transform->Size.x, transform->Size.y));
                 quadShape.setOrigin(transform->Pivot.x * transform->Size.x, transform->Pivot.y * quadShape.getSize().y);
-                quadShape.setPosition(sf::Vector2f((float) transform->Position.x, (float) transform->Position.y));
+                quadShape.setPosition(sf::Vector2f((float) transform->Position.x, (float) -transform->Position.y));
                 quadShape.setRotation(transform->Angle);
                 quadShape.setFillColor(sprite->color);
                 if (sprite->refTexture != nullptr) {

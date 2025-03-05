@@ -2,11 +2,15 @@
 #include "Umbra.h"
 #include "Input/Input.h"
 #include "Game/IGameInstance.h"
+#include "ECS/Components/PhysicsBodyComponent.h"
+#include "PointObjectSpawnSystem.h"
 
 void SimpleScene::Initialize()
 {
     UMBRA_LOG_INFO("SimpleScene Initialized !!");
-    // AddSystem();
+    ObjectSpawner = std::make_shared<PointObjectSpawnSystem>();
+    GetWorld()->AddSystem(Umbra::ESystemPhase::FrameStart, 1, ObjectSpawner);
+    //  AddSystem();
 }
 
 void SimpleScene::OnFixedUpdated()
@@ -70,21 +74,27 @@ Umbra::SharedPtr<Umbra::Scene> SimpleScene::InsatiateCopy()
 
 void SimpleScene::OnBeginPlay()
 {
-    Umbra::EntityID entity = GetWorld()->CreateEntity();
-    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
-    GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-                                                                    Umbra::Math::Vector2f(0, 0),
-                                                                    Umbra::Math::Vector2f(50, 50)));
-    entity = GetWorld()->CreateEntity();
-    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Blue);
-    GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-                                                                    Umbra::Math::Vector2f(0, 50),
-                                                                    Umbra::Math::Vector2f(50, 50)));
-    entity = GetWorld()->CreateEntity();
-    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Green);
-    GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-                                                                    Umbra::Math::Vector2f(0, -50),
-                                                                    Umbra::Math::Vector2f(50, 50)));
-    //   GetWorld()->Create
-    //   GetWorld()->Create
+    // Umbra::EntityID entity = GetWorld()->CreateEntity();
+    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+    //                                                                 Umbra::Math::Vector2f(0, 50),
+    //                                                                 Umbra::Math::Vector2f(10, 10)));
+    // Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    // physicsBodyComponent.SetMass(1);
+    // physicsBodyComponent.mVelocity = Umbra::Math::Vector2f(10, 0);
+    // physicsBodyComponent.mAcceleration = Umbra::Math::Vector2f(0, -9.8f);
+    // GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
+
+    // entity = GetWorld()->CreateEntity();
+    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Blue);
+    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+    //                                                                 Umbra::Math::Vector2f(0, 50),
+    //                                                                 Umbra::Math::Vector2f(50, 50)));
+    // entity = GetWorld()->CreateEntity();
+    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Green);
+    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+    //                                                                 Umbra::Math::Vector2f(0, -50),
+    //                                                                 Umbra::Math::Vector2f(50, 50)));
+    // GetWorld()->Create
+    // //   GetWorld()->Create
 }

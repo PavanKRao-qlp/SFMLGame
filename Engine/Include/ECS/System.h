@@ -23,13 +23,13 @@ namespace Umbra {
             SystemSignature = view->GetSignature();
         }
         // ~System();
-        inline void AddEntity(EntityID _entity) {
+        inline virtual void AddEntity(EntityID _entity) {
             mView->AddEntity(_entity);
         }
         inline void Flush() {
             mView->Flush();
         }
-        inline void RemoveEntity(EntityID _entity) {
+        inline virtual void RemoveEntity(EntityID _entity) {
             mView->RemoveEntity(_entity);
         }
         inline void AssignRegistry(ECSRegister* _register) {
