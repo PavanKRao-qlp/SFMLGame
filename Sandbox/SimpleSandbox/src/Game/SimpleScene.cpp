@@ -3,14 +3,17 @@
 #include "Input/Input.h"
 #include "Game/IGameInstance.h"
 #include "ECS/Components/PhysicsBodyComponent.h"
+#include "Physics/ForceGenerator.h"
 #include "PointObjectSpawnSystem.h"
 
 void SimpleScene::Initialize()
 {
     UMBRA_LOG_INFO("SimpleScene Initialized !!");
     ObjectSpawner = std::make_shared<PointObjectSpawnSystem>();
-    GetWorld()->AddSystem(Umbra::ESystemPhase::FrameStart, 1, ObjectSpawner);
-    //  AddSystem();
+    // GetWorld()->AddSystem(Umbra::ESystemPhase::FrameStart, 1, ObjectSpawner);
+    //   AddSystem();
+    if (GetCameraEntity() != Umbra::MAX_ENTITY)
+        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
 }
 
 void SimpleScene::OnFixedUpdated()
@@ -74,27 +77,47 @@ Umbra::SharedPtr<Umbra::Scene> SimpleScene::InsatiateCopy()
 
 void SimpleScene::OnBeginPlay()
 {
-    // Umbra::EntityID entity = GetWorld()->CreateEntity();
-    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
-    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-    //                                                                 Umbra::Math::Vector2f(0, 50),
-    //                                                                 Umbra::Math::Vector2f(10, 10)));
-    // Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
-    // physicsBodyComponent.SetMass(1);
-    // physicsBodyComponent.mVelocity = Umbra::Math::Vector2f(10, 0);
-    // physicsBodyComponent.mAcceleration = Umbra::Math::Vector2f(0, -9.8f);
-    // GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
 
-    // entity = GetWorld()->CreateEntity();
-    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Blue);
-    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-    //                                                                 Umbra::Math::Vector2f(0, 50),
-    //                                                                 Umbra::Math::Vector2f(50, 50)));
-    // entity = GetWorld()->CreateEntity();
-    // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Green);
-    // GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
-    //                                                                 Umbra::Math::Vector2f(0, -50),
-    //                                                                 Umbra::Math::Vector2f(50, 50)));
-    // GetWorld()->Create
-    // //   GetWorld()->Create
+    Umbra::EntityID entity = GetWorld()->CreateEntity();
+    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+    GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+                                                                    Umbra::Math::Vector2f(0, 0),
+                                                                    Umbra::Math::Vector2f(2, 2)));
+    Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    physicsBodyComponent.SetMass(1);
+    physicsBodyComponent.bAffectedByGravity = true;
+    GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
+
+    Umbra::EntityID entity2 = GetWorld()->CreateEntity();
+    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
+    GetWorld()->AddComponent<Umbra::TransformComponent>(entity2, Umbra::TransformComponent(
+                                                                     Umbra::Math::Vector2f(70, 0),
+                                                                     Umbra::Math::Vector2f(10, 10)));
+    physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    physicsBodyComponent.SetMass(0);
+    physicsBodyComponent.mVelocity = Umbra::Math::Vector2f(0, 0);
+    GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
+
+    Umbra::SharedPtr<Umbra::IForceGenerator> spring = std::make_shared<Umbra::SpringForceGenerator>(entity, entity2, 1.f, 70.f);
+
+    GetWorld()->GetPhysicsSystem()->AddForceGenerator(spring);
+
+    Umbra::EntityID entity3 = GetWorld()->CreateEntity();
+    GetWorld()->AddComponent<Umbra::SpriteComponent>(entity3, sf::Color::Green);
+    GetWorld()->AddComponent<Umbra::TransformComponent>(entity3, Umbra::TransformComponent(
+                                                                     Umbra::Math::Vector2f(0, 0),
+                                                                     Umbra::Math::Vector2f(2, 2)));
+
+    //   entity = GetWorld()->CreateEntity();
+    //   GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Blue);
+    //   GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+    //                                                                   Umbra::Math::Vector2f(0, 50),
+    //                                                                   Umbra::Math::Vector2f(50, 50)));
+    //   entity = GetWorld()->CreateEntity();
+    //   GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Green);
+    //   GetWorld()->AddComponent<Umbra::TransformComponent>(entity, Umbra::TransformComponent(
+    //                                                                   Umbra::Math::Vector2f(0, -50),
+    //                                                                   Umbra::Math::Vector2f(50, 50)));
+    //   GetWorld()->Create
+    //   //   GetWorld()->Create
 }

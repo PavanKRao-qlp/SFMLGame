@@ -8,9 +8,10 @@ namespace Umbra {
         // * Speed of movement of Body
         Math::Vector2f mVelocity         = 0;
         Math::Vector2f mForceAccumulated = 0;
-        inline double GetInverseMass() {
-            return mInverseMass = 0;
+        inline bool IsStatic() {
+            return mInverseMass <= 0;
         }
+
         inline void SetMass(double _mass) {
             if (_mass > 0) {
                 mInverseMass = 1 / _mass;

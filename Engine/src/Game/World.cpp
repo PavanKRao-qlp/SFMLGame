@@ -60,4 +60,9 @@ namespace Umbra {
         mWorldRegister->Update(ESystemPhase::Render);
         mWorldRegister->Update(ESystemPhase::FrameEnd);
     }
+
+    PhysicsSystem* World::GetPhysicsSystem() {
+        return mPhysicsSystem.get();
+    }
+
 } // namespace Umbra

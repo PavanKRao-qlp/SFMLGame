@@ -10,7 +10,7 @@ namespace Umbra {
     struct FGameConfig {
         Math::Vector2i WindowSize = Math::Vector2i(800, 800);
         bool bFullScreen;
-        float FixedDeltaTime      = 0.02f;
+        float FixedDeltaTime      = 0.01f;
         float MaxPhysicsDeltaTime = 0.1f;
     };
 

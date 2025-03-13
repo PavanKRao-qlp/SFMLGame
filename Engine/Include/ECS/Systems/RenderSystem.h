@@ -33,10 +33,27 @@ namespace Umbra {
             for (sf::Drawable* drawObj : RenderSystem::DebugDrawCache) {
                 mWindowHandle->draw(*drawObj);
             }
-            RenderSystem::DebugDrawCache.clear();
+            // RenderSystem::DebugDrawCache.clear();
 
             mWindowHandle->display();
         }
+
+        static inline void DebugDrawLine(
+            const Math::Vector2f& from, const Math::Vector2f& to, const sf::Color& color = sf::Color::Green) {
+            // Create a vertex array to represent the line
+            sf::VertexArray* lines = new sf::VertexArray(sf::LinesStrip, 2);
+            // Set the starting position of the line
+            (*lines)[0].position =
+                sf::Vector2f((float) from.x, (float) -from.y); // Negate y for SFML's coordinate system
+            (*lines)[0].color = color;
+            // Set the end position of the line
+            (*lines)[1].position = sf::Vector2f((float) to.x, (float) -to.y); // Negate y for SFML's coordinate system
+            (*lines)[1].color    = color;
+
+            // Add the line to the debug draw cache
+            RenderSystem::DebugDrawCache.push_back(lines);
+        }
+
         inline static Vector<sf::Drawable*> DebugDrawCache;
 
     protected:

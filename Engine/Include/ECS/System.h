@@ -45,6 +45,7 @@ namespace Umbra {
         ComponentMask SystemSignature;
 
     protected:
+        // todo memory manage this
         BaseView* mView;
         bool bEnabled       = true;
         ESystemPhase mPhase = ESystemPhase::Simulation;

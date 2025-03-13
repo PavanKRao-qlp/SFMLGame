@@ -45,6 +45,7 @@ namespace Umbra {
         void AddSystem(ESystemPhase _phase, int _priority, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
 
+        PhysicsSystem* GetPhysicsSystem();
 
     private:
         SharedPtr<ECSRegister> mWorldRegister;
