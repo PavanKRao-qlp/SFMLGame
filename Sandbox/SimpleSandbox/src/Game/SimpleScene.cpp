@@ -106,7 +106,12 @@ void SimpleScene::OnBeginPlay()
     GetWorld()->AddComponent<Umbra::SpriteComponent>(entity3, sf::Color::Green);
     GetWorld()->AddComponent<Umbra::TransformComponent>(entity3, Umbra::TransformComponent(
                                                                      Umbra::Math::Vector2f(0, 0),
-                                                                     Umbra::Math::Vector2f(2, 2)));
+                                                                     Umbra::Math::Vector2f(45, 45)));
+    physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    physicsBodyComponent.SetMass(0);
+    physicsBodyComponent.mVelocity = Umbra::Math::Vector2f(0, 0);
+    physicsBodyComponent.mAngularVelocity = Umbra::Math::PI * 2.f;
+    GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity3, physicsBodyComponent);
 
     //   entity = GetWorld()->CreateEntity();
     //   GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Blue);

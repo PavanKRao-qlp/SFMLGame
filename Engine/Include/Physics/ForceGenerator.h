@@ -21,6 +21,26 @@ namespace Umbra {
         BaseView* mView;
     };
 
+
+    class ITorqueGenerator {
+    private:
+    public:
+        virtual void ApplyTorque(float _deltaTime)        = 0;
+        virtual bool IsTorqueEnactingOn(EntityID _entity) = 0;
+        void ProvideECSView(BaseView* _view) {
+            mView = _view;
+        }
+
+    protected:
+        BaseView& GetECSView() {
+            return *mView;
+        }
+
+    private:
+        BaseView* mView;
+    };
+
+
     class SpringForceGenerator : public IForceGenerator {
     public:
         SpringForceGenerator(EntityID _entityA, EntityID _entityB, float _hookConstant, float _restLength)
@@ -38,14 +58,14 @@ namespace Umbra {
                 positionB, positionB - length.GetNormalized() * mRestLength, sf::Color::Magenta);
             Math::Vector2f force = length.GetNormalized() * (-mHooksConstant * (mRestLength - length.Magnitude()));
             RenderSystem::DebugDrawLine(positionA, positionA + force);
-            UMBRA_LOG_DEBUG("force applied %f %f ", length.Magnitude() - mRestLength, force.Magnitude());
+            //   UMBRA_LOG_DEBUG("force applied %f %f ", length.Magnitude() - mRestLength, force.Magnitude());
             PhysicsBodyComponent* bodyA = GetECSView().ecsRegister->GetComponent<PhysicsBodyComponent>(mEntityA);
             PhysicsBodyComponent* bodyB = GetECSView().ecsRegister->GetComponent<PhysicsBodyComponent>(mEntityB);
             if (bodyA->mInverseMass > 0) {
-                bodyA->mForceAccumulated += force;
+                bodyA->ApplyForce(force);
             }
             if (bodyB->mInverseMass > 0) {
-                bodyB->mForceAccumulated += force * -1;
+                bodyB->ApplyForce(force * -1);
             }
         }
 

@@ -23,7 +23,7 @@ namespace Umbra {
                 quadShape.setSize(sf::Vector2f(transform->Size.x, transform->Size.y));
                 quadShape.setOrigin(transform->Pivot.x * transform->Size.x, transform->Pivot.y * quadShape.getSize().y);
                 quadShape.setPosition(sf::Vector2f((float) transform->Position.x, (float) -transform->Position.y));
-                quadShape.setRotation(transform->Angle);
+                quadShape.setRotation(-transform->Angle);
                 quadShape.setFillColor(sprite->color);
                 if (sprite->refTexture != nullptr) {
                     quadShape.setTexture(sprite->refTexture->GetSfmlTexture());

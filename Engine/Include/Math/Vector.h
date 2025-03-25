@@ -18,6 +18,7 @@ namespace Umbra::Math {
         float SquareMagnitude();
         void Normalize();
         TVector<T> GetNormalized();
+        TVector<T> GetRotated(float _Angle);
 
         static float Angle(TVector& _from, TVector& _to);
         static float AngleSigned(TVector& _from, TVector& _to);
@@ -136,6 +137,13 @@ namespace Umbra::Math {
         TVector normalized(x, y);
         normalized.Normalize();
         return normalized;
+    }
+
+    template <typename T>
+    inline TVector<T> TVector<T>::GetRotated(float _angle) {
+        TVector<T> rotated(x, y);
+        rotated.x = (rotated.x * Cos(_angle) - rotated.y * Sin(_angle));
+        rotated.y = (rotated.x * Sin(_angle) + rotated.y * Cos(_angle));
     }
 
     template <typename T>

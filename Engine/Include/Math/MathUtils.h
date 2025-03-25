@@ -5,6 +5,7 @@ namespace Umbra::Math {
 
     const float PI = 3.14159265358979323846f;
 
+
     static inline float RadianToDegree(float _radians) {
         return _radians * (180 / PI);
     }
@@ -65,7 +66,7 @@ namespace Umbra::Math {
         return log10(_value);
     }
 
-    static inline float Fmod(float Value, float Modulus) {
+    static inline float Fmod(double Value, double Modulus) {
         return fmod(Value, Modulus);
     }
 
