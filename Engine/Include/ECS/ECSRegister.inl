@@ -128,6 +128,9 @@ namespace Umbra {
         }
         ComponentID id          = ComponentIDHelper::GetID<T>();
         ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
+        if (!pool->Has(_entity)) {
+            return nullptr;
+        }
         return &(pool->Get(_entity));
     }
 

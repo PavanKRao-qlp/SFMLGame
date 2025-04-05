@@ -12,4 +12,5 @@ public:
 
 private:
     Umbra::SharedPtr<class PointObjectSpawnSystem> ObjectSpawner;
+    Umbra::EntityID entity;
 };

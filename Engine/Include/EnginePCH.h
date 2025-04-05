@@ -1,6 +1,7 @@
 #pragma once
 #include <bitset>
 #define NDEBUG
+#include <algorithm>
 #include <cassert>
 #include <deque>
 #include <functional>
@@ -43,6 +44,8 @@ namespace Umbra {
     template <typename T>
     using WeakPtr = std::weak_ptr<T>;
 
+    template <typename T, typename U>
+    using Tuple = std::tuple<T, U>; // tuple
     template <typename T>
     using Vector = std::vector<T>; // dynamic Array
 

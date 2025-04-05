@@ -23,6 +23,8 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<TransformComponent>();
         mWorldRegister->RegisterComponent<CameraComponent>();
         mWorldRegister->RegisterComponent<PhysicsBodyComponent>();
+        mWorldRegister->RegisterComponent<BoxColliderComponent>();
+        mWorldRegister->RegisterComponent<CircleColliderComponent>();
         mCameraSystem = std::make_shared<CameraSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowView());
         mCameraSystem->SetRenderSize(
             Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));

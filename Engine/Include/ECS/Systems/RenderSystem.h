@@ -39,19 +39,33 @@ namespace Umbra {
         }
 
         static inline void DebugDrawLine(
-            const Math::Vector2f& from, const Math::Vector2f& to, const sf::Color& color = sf::Color::Green) {
+            const Math::Vector2f& _from, const Math::Vector2f& _to, const sf::Color& _color = sf::Color::Green) {
             // Create a vertex array to represent the line
             sf::VertexArray* lines = new sf::VertexArray(sf::LinesStrip, 2);
             // Set the starting position of the line
             (*lines)[0].position =
-                sf::Vector2f((float) from.x, (float) -from.y); // Negate y for SFML's coordinate system
-            (*lines)[0].color = color;
+                sf::Vector2f((float) _from.x, (float) -_from.y); // Negate y for SFML's coordinate system
+            (*lines)[0].color = _color;
             // Set the end position of the line
-            (*lines)[1].position = sf::Vector2f((float) to.x, (float) -to.y); // Negate y for SFML's coordinate system
-            (*lines)[1].color    = color;
+            (*lines)[1].position = sf::Vector2f((float) _to.x, (float) -_to.y); // Negate y for SFML's coordinate system
+            (*lines)[1].color    = _color;
 
             // Add the line to the debug draw cache
             RenderSystem::DebugDrawCache.push_back(lines);
+        }
+
+        static inline void DebugDrawCircle(const Math::Vector2f& _position, const float _radius, bool _bFilled = false,
+            const sf::Color& _color = sf::Color::White) {
+            sf::CircleShape* shape = new sf::CircleShape(_radius);
+            shape->setPosition(sf::Vector2f((float) _position.x - _radius, (float) -_position.y - _radius));
+            if (_bFilled) {
+                shape->setFillColor(_color);
+            } else {
+                shape->setOutlineThickness(0.2f);
+                shape->setOutlineColor(_color);
+                shape->setFillColor(sf::Color::Transparent);
+            }
+            RenderSystem::DebugDrawCache.push_back(shape);
         }
 
         inline static Vector<sf::Drawable*> DebugDrawCache;

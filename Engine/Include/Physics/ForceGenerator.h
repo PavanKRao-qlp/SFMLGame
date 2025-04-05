@@ -54,10 +54,10 @@ namespace Umbra {
             if (length.Magnitude() - mRestLength == 0) {
                 return;
             }
-            RenderSystem::DebugDrawLine(
-                positionB, positionB - length.GetNormalized() * mRestLength, sf::Color::Magenta);
+            // RenderSystem::DebugDrawLine(
+            //     positionB, positionB - length.GetNormalized() * mRestLength, sf::Color::Magenta);
             Math::Vector2f force = length.GetNormalized() * (-mHooksConstant * (mRestLength - length.Magnitude()));
-            RenderSystem::DebugDrawLine(positionA, positionA + force);
+            // RenderSystem::DebugDrawLine(positionA, positionA + force);
             //   UMBRA_LOG_DEBUG("force applied %f %f ", length.Magnitude() - mRestLength, force.Magnitude());
             PhysicsBodyComponent* bodyA = GetECSView().ecsRegister->GetComponent<PhysicsBodyComponent>(mEntityA);
             PhysicsBodyComponent* bodyB = GetECSView().ecsRegister->GetComponent<PhysicsBodyComponent>(mEntityB);

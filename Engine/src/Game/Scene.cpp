@@ -31,6 +31,7 @@ namespace Umbra {
     }
 
     void Scene::Simulate() {
+        RenderSystem::DebugDrawCache.clear();
         this->OnFixedUpdated();
         mWorld->Simulate();
     }

@@ -8,6 +8,7 @@
 #include "ECS/System.h"
 #include "ECS/Systems/RenderSystem.h"
 #include "Math/MathUtils.h"
+#include "Physics/Collision.h"
 #include "Physics/ForceGenerator.h"
 
 namespace Umbra {
@@ -35,26 +36,28 @@ namespace Umbra {
 
     class PhysicsSystem : public System {
     public:
-        inline PhysicsSystem() : System(new ECView<PhysicsBodyComponent, TransformComponent>()) {}
+        inline PhysicsSystem() : System(new ECView<PhysicsBodyComponent, TransformComponent>()) {
+            mContactResolver              = std::make_unique<ContactResolver>();
+            mCollisionDetector            = std::make_unique<CollisionDetector>();
+            mCollisionDetector->mBaseView = (mView);
+            mContactResolver->mBaseView   = (mView);
+        }
         inline ~PhysicsSystem() {}
         inline void Update() override {
-            RenderSystem::DebugDrawCache.clear();
             float fixedDeltaTime = GEngineStatics.GameConfig->FixedDeltaTime;
+            //  apply the force generators
             for (SharedPtr<IForceGenerator> forceGenerator : mForceGenerators) {
                 forceGenerator->ApplyForce(fixedDeltaTime);
             }
+            // Then integrate the objects
             for (EntityID entity : mView->mEntities) {
                 TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
                 PhysicsBodyComponent* physicsBodyComponent =
                     mView->ecsRegister->GetComponent<PhysicsBodyComponent>(entity);
+
                 // RenderSystem::DebugDrawLine(transform->Position,
                 //  transform->Position + physicsBodyComponent->mForceAccumulated, sf::Color::Blue);
 
-                if (!physicsBodyComponent->IsStatic()) {
-                    // UMBRA_LOG_DEBUG("force applied %f %f %llu",
-                    // physicsBodyComponent->mForceAccumulated.Magnitude(),
-                    //   transform->Position.x, entity);
-                }
                 // sum all force applied to this object by f = ma;
                 if (physicsBodyComponent->bAffectedByGravity) {
                     if (physicsBodyComponent->mInverseMass > 0) {
@@ -62,12 +65,6 @@ namespace Umbra {
                             mPhysicsWorldConfig.GravityVector / physicsBodyComponent->mInverseMass;
                         physicsBodyComponent->ApplyForce(gravityForce);
                     }
-                }
-
-
-                if (physicsBodyComponent->IsStatic() == false) {
-                    // UMBRA_LOG_DEBUG("pos vel ts %f %f %llu %llu ", transform->Position.y,
-                    //     physicsBodyComponent->mVelocity.y, EngineTime::GetTimestampMS(), entity);
                 }
 
                 // calculate acceleration based on f = ma
@@ -100,11 +97,17 @@ namespace Umbra {
                 physicsBodyComponent->mAcceleration = acceleration;
                 // Apply Damping
                 physicsBodyComponent->mVelocity *= Math::Pow(mLinearDamping, fixedDeltaTime);
-                // physicsBodyComponent->mAngularVelocity *= Math::Pow(mAngularDamping, fixedDeltaTime);
+                physicsBodyComponent->mAngularVelocity *= Math::Pow(mAngularDamping, fixedDeltaTime);
+
+
                 //  reset all force accumulation
                 physicsBodyComponent->mForceAccumulated  = Math::Vector2f(0, 0);
                 physicsBodyComponent->mTorqueAccumulated = 0;
             }
+            // solve collisions
+            Vector<Tuple<EntityID, EntityID>> PossibleCollisions = mCollisionDetector->RunBroadPhase();
+            Vector<Collision> collisions = mCollisionDetector->RunNarrowPhase(PossibleCollisions);
+            mContactResolver->ResolveContacts(collisions, fixedDeltaTime);
         }
 
         inline void AddForceGenerator(SharedPtr<IForceGenerator> forceGenerator) {
@@ -117,11 +120,16 @@ namespace Umbra {
 
     protected:
         Vector<SharedPtr<IForceGenerator>> mForceGenerators;
+        Vector<SharedPtr<ITorqueGenerator>> mTorqueGenerators;
         PhysicsWorldConfig mPhysicsWorldConfig;
+
         // * Fake linear Damping added to motion to counter the numerical instability during integrating steps
         double mLinearDamping = 0.975; // 0.975;
         // * Fake Angular Damping added to motion to counter the numerical instability during integrating steps
         double mAngularDamping = 0.975; // 0.975;
+        //
+        UniquePtr<ContactResolver> mContactResolver;
+        UniquePtr<CollisionDetector> mCollisionDetector;
     };
 
 } // namespace Umbra

@@ -46,5 +46,8 @@ namespace Umbra {
         double mAngularAcceleration = 0;
         // * Should gravity be applied to the body
         bool bAffectedByGravity = true;
+        // * How bouncy is the surface? A value of 0 will not bounce. A value of 1 will bounce without any loss of
+        // energy. Value between 0-1
+        float mCofOfRestitution = 0;
     };
 } // namespace Umbra

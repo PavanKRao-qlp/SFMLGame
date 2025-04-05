@@ -158,7 +158,7 @@ namespace Umbra::Math {
 
     template <typename T>
     inline float TVector<T>::Dot(TVector& _vectorA, TVector& _vectorB) {
-        return (_vectorA.x * _vectorB);
+        return (_vectorA.x * _vectorB.x + _vectorA.y * _vectorB.y);
     }
 
     template <typename T>
