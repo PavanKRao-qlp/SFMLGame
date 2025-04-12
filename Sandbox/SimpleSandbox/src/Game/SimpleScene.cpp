@@ -7,6 +7,7 @@
 #include "Physics/ForceGenerator.h"
 #include "PointObjectSpawnSystem.h"
 #include "Umbra.h"
+#include "imgui.h"
 
 void SimpleScene::Initialize() {
     UMBRA_LOG_INFO("SimpleScene Initialized !!");
@@ -15,11 +16,16 @@ void SimpleScene::Initialize() {
     if (GetCameraEntity() != Umbra::MAX_ENTITY) {
         GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(150);
     }
+    // UMBRA_LOG_CRITICAL("%s", IMGUI_VERSION);
 }
 
 void SimpleScene::OnFixedUpdated() {}
 
 void SimpleScene::OnUpdate() {
+    bool bShow = true;
+    ImGui::ShowDemoWindow(&bShow);
+    ImGui::Begin("a", &bShow);
+    ImGui::End();
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Escape)) {
         GetGameInstance().QuitApplication();
     }
@@ -90,39 +96,69 @@ Umbra::SharedPtr<Umbra::Scene> SimpleScene::InsatiateCopy() {
 }
 
 void SimpleScene::OnBeginPlay() {
+    // {
+    //     entity = GetWorld()->CreateEntity();
+    //     // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+    //     GetWorld()->AddComponent<Umbra::TransformComponent>(
+    //         entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, -100), Umbra::Math::Vector2f(50, 50)));
+    //     Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    //     physicsBodyComponent.SetMass(1);
+    //     physicsBodyComponent.bAffectedByGravity = false;
+    //     physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
+    //     GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
+    //     Umbra::CircleColliderComponent circleColliderComponent;
+    //     circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
+    //     circleColliderComponent.Radius = 20;
+    //     GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity, circleColliderComponent);
+    // }
     {
         entity = GetWorld()->CreateEntity();
-        // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+        GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
         GetWorld()->AddComponent<Umbra::TransformComponent>(
-            entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, -100), Umbra::Math::Vector2f(50, 50)));
+            entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(50, 50)));
         Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
         physicsBodyComponent.SetMass(1);
         physicsBodyComponent.bAffectedByGravity = false;
         physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
         GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
-        Umbra::CircleColliderComponent circleColliderComponent;
-        circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
-        circleColliderComponent.Radius = 20;
-        GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity, circleColliderComponent);
+        Umbra::BoxColliderComponent boxColliderComponent;
+        boxColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
+        boxColliderComponent.Size   = Umbra::Math::Vector2f(50, 50);
+        GetWorld()->AddComponent<Umbra::BoxColliderComponent>(entity, boxColliderComponent);
     }
+    // {
+    //     Umbra::EntityID entity2 = GetWorld()->CreateEntity();
+    //     // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
+    //     GetWorld()->AddComponent<Umbra::TransformComponent>(
+    //         entity2, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 40), Umbra::Math::Vector2f(20, 20)));
+    //     Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    //     physicsBodyComponent.SetMass(10);
+    //     physicsBodyComponent.bAffectedByGravity = false;
+    //     physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, -50);
+    //     GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
 
-    {
-        Umbra::EntityID entity2 = GetWorld()->CreateEntity();
-        // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
-        GetWorld()->AddComponent<Umbra::TransformComponent>(
-            entity2, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 40), Umbra::Math::Vector2f(20, 20)));
-        Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
-        physicsBodyComponent.SetMass(10);
-        physicsBodyComponent.bAffectedByGravity = false;
-        physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, -50);
-        GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
+    //     Umbra::CircleColliderComponent circleColliderComponent;
+    //     circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
+    //     circleColliderComponent.Radius = 10;
+    //     GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity2, circleColliderComponent);
+    // }
 
-        Umbra::CircleColliderComponent circleColliderComponent;
-        circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
-        circleColliderComponent.Radius = 10;
-        GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity2, circleColliderComponent);
-    }
+    // {
+    //     Umbra::EntityID entity2 = GetWorld()->CreateEntity();
+    //     // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
+    //     GetWorld()->AddComponent<Umbra::TransformComponent>(
+    //         entity2, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 100), Umbra::Math::Vector2f(20, 20)));
+    //     Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+    //     physicsBodyComponent.SetMass(0);
+    //     physicsBodyComponent.bAffectedByGravity = false;
+    //     physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
+    //     GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
 
+    //     Umbra::CircleColliderComponent circleColliderComponent;
+    //     circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
+    //     circleColliderComponent.Radius = 20;
+    //     GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity2, circleColliderComponent);
+    // }
     {
         Umbra::EntityID entity2 = GetWorld()->CreateEntity();
         // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
@@ -134,10 +170,10 @@ void SimpleScene::OnBeginPlay() {
         physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
         GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
 
-        Umbra::CircleColliderComponent circleColliderComponent;
-        circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
-        circleColliderComponent.Radius = 20;
-        GetWorld()->AddComponent<Umbra::CircleColliderComponent>(entity2, circleColliderComponent);
+        Umbra::BoxColliderComponent boxColliderComponent;
+        boxColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
+        boxColliderComponent.Size   = Umbra::Math::Vector2f(50, 50);
+        GetWorld()->AddComponent<Umbra::BoxColliderComponent>(entity2, boxColliderComponent);
     }
     // // {
 
@@ -184,3 +220,5 @@ void SimpleScene::OnBeginPlay() {
     // //   GetWorld()->Create
     // //   //   GetWorld()->Create
 }
+
+void SimpleScene::OnEndPlay() {}

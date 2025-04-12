@@ -35,8 +35,10 @@ namespace Umbra {
 
 
     private:
+        bool CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision);
         bool CheckCircleCircleOverlap(Math::Vector2f _positionA, Math::Vector2f _positionB, float _radiusA,
             float _radiusB, Collision& _collision);
+        bool CheckBoxBoxOverlapAABB(Math::Bounds2D _boundsA, Math::Bounds2D _boundsB, Collision& _collision);
     };
 
     class ContactResolver {
@@ -46,6 +48,10 @@ namespace Umbra {
 
     private:
         void ResolveContact(ContactPoint* _contact, EntityID _entityA, EntityID _entityB, double _deltaTime);
+        /* Calculate the relative velocity of the particles after collision
+        based on Total momentum before collision = Total momentum after collision
+          m₁vi + m₂ui = m₁vf + m₂uf
+        */
         void CalculateSeparatingVelocity(ContactPoint* _contact, PhysicsBodyComponent* _physicsBodyA,
             PhysicsBodyComponent* _physicsBodyB, double _deltaTime);
         void ResolvePenetration(ContactPoint* _contact, PhysicsBodyComponent* _physicsBodyA,

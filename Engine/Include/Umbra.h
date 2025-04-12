@@ -5,6 +5,7 @@
 #include "Diag/Logger.h"
 #include "EnginePCH.h"
 #include "Math/Vector.h"
+#include "UI/ImGuiBackend.h"
 
 namespace Umbra {
     struct FGameConfig {
@@ -17,6 +18,7 @@ namespace Umbra {
     struct GEngineStatics {
         class AppWindow* AppWindowPtr;
         struct FGameConfig* GameConfig;
+        class ImGuiBackend* ImGuiBackend;
     } inline GEngineStatics;
 
 } // namespace Umbra

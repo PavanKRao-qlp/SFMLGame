@@ -9,6 +9,7 @@ namespace Umbra {
     }
 
     void Scene::Construct() {
+        UMBRA_LOG_INFO("Construct Scene %s", mSceneIdentifier.c_str());
         mWorld = std::make_unique<World>();
         mWorld->InitializeCoreSystems();
 
@@ -25,8 +26,11 @@ namespace Umbra {
     }
 
     void Scene::Render() {
+        GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->clear(sf::Color::Black);
+        mGameInstance->GetUIManager().NewFrame(EngineTime::GetDeltaTime());
         this->OnUpdate();
         mWorld->Update();
+        mGameInstance->GetUIManager().Render();
         mWorld->Render();
     }
 
@@ -37,6 +41,7 @@ namespace Umbra {
     }
 
     void Scene::ShutDown() {
+        UMBRA_LOG_INFO("ShutDown Scene %s", mSceneIdentifier.c_str());
         mWorld.reset();
     }
 
@@ -71,10 +76,14 @@ namespace Umbra {
     EntityID Scene::GetCameraEntity() {
         return mCameraEntity;
     }
-    Umbra::Scene::Scene(const Scene& _scene) {
+
+    Scene::Scene(const Scene& _scene) {
         mSceneIdentifier = _scene.mSceneIdentifier;
         mSceneManager    = _scene.mSceneManager;
         mGameInstance    = _scene.mGameInstance;
     }
 
+    void Scene::SetSceneId(String _sceneId) {
+        mSceneIdentifier = _sceneId;
+    }
 } // namespace Umbra

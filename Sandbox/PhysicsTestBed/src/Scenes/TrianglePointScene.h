@@ -1,7 +1,8 @@
+
 #pragma once
 #include "Game/Scene.h"
 
-class SimpleScene : public Umbra::Scene {
+class TrianglePointScene : public Umbra::Scene {
 public:
     virtual void Initialize() override;
     virtual void OnFixedUpdated() override;
@@ -11,6 +12,10 @@ public:
     void OnEndPlay() override;
 
 private:
-    Umbra::SharedPtr<class PointObjectSpawnSystem> ObjectSpawner;
-    Umbra::EntityID entity;
+    Umbra::Math::Vector2f mPoint;
+    Umbra::Math::Vector2f mSize;
+    float mRadius         = 10;
+    float mDistance       = 0;
+    float mDistanceToProj = 0;
+    float mOrthoDistance  = 0;
 };

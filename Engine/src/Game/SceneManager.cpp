@@ -1,14 +1,14 @@
 #include "Game/SceneManager.h"
 
+#include "Game/IGameInstance.h"
 namespace Umbra {
 
     void SceneManager::Simulate() {
         if (mDeletedScene) {
             mDeletedScene->ShutDown();
             mDeletedScene.reset();
-            mCurrentScene->OnBeginPlay();
         }
-        if (mCurrentScene) {
+        if (bCurrentSceneStarted && mCurrentScene) {
             mCurrentScene->Simulate();
         }
     }
@@ -27,9 +27,10 @@ namespace Umbra {
         }
     }
 
-    void SceneManager::AddScene(SharedPtr<Scene> _Scene) {
-        mSceneMap.emplace(_Scene->GetSceneID(), _Scene);
+    void SceneManager::AddScene(String _sceneId, SharedPtr<Scene> _Scene) {
+        mSceneMap.emplace(_sceneId, _Scene);
         _Scene->SetSceneManager(this);
+        _Scene->SetSceneId(_sceneId);
         _Scene->SetGameInstance(mGameInstance);
     }
 
@@ -38,7 +39,13 @@ namespace Umbra {
     }
 
     void SceneManager::GoToScene(const String& _sceneId) {
-        GoToScene(mSceneMap[_sceneId]);
+        if (mSceneMap.find(_sceneId) == mSceneMap.end()) {
+            UMBRA_LOG_CRITICAL("Trying To Load Unkown Scene!:%s", _sceneId.c_str());
+            mGameInstance->QuitApplication();
+        }
+        {
+            GoToScene(mSceneMap[_sceneId]);
+        }
     }
 
 
@@ -55,12 +62,15 @@ namespace Umbra {
 
     void SceneManager::GoToScene(SharedPtr<Scene>& _scene) {
         if (mCurrentScene) {
+            UMBRA_LOG_INFO("GoToScene exiting %s", mCurrentScene->GetSceneID().c_str());
             mDeletedScene = std::move(mCurrentScene);
         }
-        mCurrentScene = _scene->InsatiateCopy();
+
+        mCurrentScene = std::move(_scene->InsatiateCopy());
         mCurrentScene->Construct();
         bCurrentSceneStarted = false;
     }
+
     SceneManager::SceneManager() {}
 
     SceneManager::~SceneManager() {

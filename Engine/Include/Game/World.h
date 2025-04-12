@@ -18,9 +18,12 @@ namespace Umbra {
         void Simulate();
         void Render();
 
-        /** Creates an entity. */
+        /**
+         * @brief  Creates a new entity
+         * @return Handle for created entity
+         */
         const EntityID CreateEntity();
-        /** Marks Entity as Destroyed.*/
+
         void DestroyEntity(EntityID _entity);
 
         template <typename T>
@@ -46,6 +49,8 @@ namespace Umbra {
         void RemoveSystem(SharedPtr<System>& _system);
 
         PhysicsSystem* GetPhysicsSystem();
+
+        Math::Vector2f GetScreenToWorldPosition(Math::Vector2i _screenPos);
 
     private:
         SharedPtr<ECSRegister> mWorldRegister;

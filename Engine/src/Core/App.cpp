@@ -14,6 +14,7 @@
 #include "Game/SceneManager.h"
 #include "Game/World.h"
 #include "Input/Input.h"
+#include "UI/Backends/SfmlImguiImpl.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -58,7 +59,7 @@ namespace Umbra {
 
         EventBus::Initialize();
 
-        Random::SetSeed(EngineTime::GetTimestampMS(), EngineTime::GetTimestampMS() / 2);
+        Random::SetSeed(EngineTime::GetTimestamp(), EngineTime::GetTimestamp() / 2);
         // Initialize Resource Layer
 
         /*
@@ -69,6 +70,7 @@ namespace Umbra {
         // Initialize Engine Layer
         Input::Initialize();
         mSceneManager = std::make_unique<SceneManager>();
+        mUIManager    = std::make_unique<SfmlImguiImpl>();
         // GEngineStatics.
 
         return true;
@@ -90,6 +92,8 @@ namespace Umbra {
                 return false;
             }
             EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
+            mUIManager->Init(mAppWindow->GetRenderWindowHandle(), 800, 800);
+            GEngineStatics.ImGuiBackend = mUIManager.get();
             UMBRA_LOG_INFO("App Initalized!");
             return true;
         }
@@ -98,6 +102,8 @@ namespace Umbra {
 
     int App::Exit() {
         UMBRA_LOG_INFO("App Exiting!");
+        mUIManager->Shutdown();
+        mUIManager.reset();
         mSceneManager->ShutDown();
         mSceneManager.reset();
         mAppWindow->CloseWindow();
@@ -133,6 +139,7 @@ namespace Umbra {
 
         try {
             mGameInstance->mSceneManager = mSceneManager.get();
+            mGameInstance->mUIBackend    = mUIManager.get();
             mSceneManager->SetGameInstance(mGameInstance.get());
             mGameInstance->Initialize();
             float accumulatedDelta = 0.f;
@@ -140,6 +147,9 @@ namespace Umbra {
             while (!bAppRequestExit) {
 
                 float deltaTime = EngineTime::Tick();
+                if (deltaTime == 0) {
+                    UMBRA_LOG_CRITICAL("0 DT !! suffering from success");
+                }
                 if (!bAppPaused) {
                     if (deltaTime > mGameConfig.MaxPhysicsDeltaTime) { // Handle spiral of death
                         UMBRA_LOG_WARNING("Long frame detected %f", deltaTime);

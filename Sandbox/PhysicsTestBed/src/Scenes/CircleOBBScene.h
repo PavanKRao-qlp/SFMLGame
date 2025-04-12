@@ -1,7 +1,8 @@
+
 #pragma once
 #include "Game/Scene.h"
 
-class SimpleScene : public Umbra::Scene {
+class CircleOBBScene : public Umbra::Scene {
 public:
     virtual void Initialize() override;
     virtual void OnFixedUpdated() override;
@@ -11,6 +12,7 @@ public:
     void OnEndPlay() override;
 
 private:
-    Umbra::SharedPtr<class PointObjectSpawnSystem> ObjectSpawner;
-    Umbra::EntityID entity;
+    Umbra::EntityID mBoxEntity = Umbra::MAX_ENTITY;
+    float mRadius;
+    float mDistance;
 };

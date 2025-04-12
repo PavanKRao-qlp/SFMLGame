@@ -4,18 +4,24 @@
 #include "Math/Vector.h"
 namespace Umbra {
     class ColliderComponent {
+
     public:
         Math::Vector2f Offset;
     };
 
+
     class BoxColliderComponent : public ColliderComponent {
     public:
-        Math::Bounds2D Bounds;
+        Math::Vector2f Size;
     };
 
 
     class CircleColliderComponent : public ColliderComponent {
     public:
         float Radius;
+    };
+
+    class CapsuleCollider : public ColliderComponent {
+    public:
     };
 } // namespace Umbra

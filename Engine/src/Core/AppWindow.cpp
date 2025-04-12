@@ -69,6 +69,8 @@ namespace Umbra {
                     Math::Vector2i resizedDeviceRes = Math::Vector2i(sfEvent.size.width, sfEvent.size.height);
                     ResizeViewport(resizedDeviceRes);
                 }
+                Umbra::SFMLAppWindowEvent* event = new Umbra::SFMLAppWindowEvent(sfEvent);
+                Umbra::EventBus::FireEvent<Umbra::SFMLAppWindowEvent>(event);
             }
         }
     }

@@ -1,7 +1,7 @@
 #pragma once
 #include "Game/Scene.h"
 
-class SimpleScene : public Umbra::Scene {
+class PointLineSegmentScene : public Umbra::Scene {
 public:
     virtual void Initialize() override;
     virtual void OnFixedUpdated() override;
@@ -11,6 +11,9 @@ public:
     void OnEndPlay() override;
 
 private:
-    Umbra::SharedPtr<class PointObjectSpawnSystem> ObjectSpawner;
-    Umbra::EntityID entity;
+    Umbra::Math::Vector2f mPointA;
+    Umbra::Math::Vector2f mPointB;
+    float mDistance      = 0;
+    float mOrthoDistance = 0;
+    bool bOnLine         = false;
 };

@@ -45,10 +45,11 @@ namespace Umbra {
 
     void ContactResolver::CalculateSeparatingVelocity(ContactPoint* _contact, PhysicsBodyComponent* _physicsBodyA,
         PhysicsBodyComponent* _physicsBodyB, double _deltaTime) {
-        // based on Total momentum before collision = Total momentum after collision
-        //    m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'
-        // velocity of object in the direction of the contact.
-        // if  < 0 object are moving towards each other
+
+        /*
+             velocity of object in the direction of the contact.
+             if  < 0 object are moving towards each other
+        */
         double separatingVelocity =
             Math::Vector2f::Dot((_physicsBodyA->mVelocity - _physicsBodyB->mVelocity), _contact->mContactNormal);
         if (separatingVelocity > 0) {
@@ -113,7 +114,6 @@ namespace Umbra {
         _transformB->Position -= displacementPerUnitInverseMass * _physicsBodyB->mInverseMass;
     }
 
-
     Vector<Tuple<EntityID, EntityID>> Umbra::CollisionDetector::RunBroadPhase() {
         return Vector<Tuple<EntityID, EntityID>>();
     }
@@ -122,34 +122,55 @@ namespace Umbra {
         Vector<Collision> collisions;
 
         for (auto itA = mBaseView->mEntities.begin(); itA != mBaseView->mEntities.end(); ++itA) {
-            EntityID entityA                   = *itA;
-            TransformComponent* transformA     = mBaseView->ecsRegister->GetComponent<TransformComponent>(entityA);
-            PhysicsBodyComponent* physicsBodyA = mBaseView->ecsRegister->GetComponent<PhysicsBodyComponent>(entityA);
-            CircleColliderComponent* circleColliderA =
-                mBaseView->ecsRegister->GetComponent<CircleColliderComponent>(entityA);
+            EntityID entityA = *itA;
             for (auto itB = std::next(itA); itB != mBaseView->mEntities.end(); ++itB) {
-                EntityID entityB               = *itB;
-                TransformComponent* transformB = mBaseView->ecsRegister->GetComponent<TransformComponent>(entityB);
-                PhysicsBodyComponent* physicsBodyB =
-                    mBaseView->ecsRegister->GetComponent<PhysicsBodyComponent>(entityB);
-                CircleColliderComponent* circleColliderB =
-                    mBaseView->ecsRegister->GetComponent<CircleColliderComponent>(entityB);
-                if (circleColliderA != nullptr && circleColliderB != nullptr) {
-                    Math::Vector2f positionA = transformA->Position + circleColliderA->Offset;
-                    Math::Vector2f positionB = transformB->Position + circleColliderB->Offset;
-                    Collision collision;
-                    if (CheckCircleCircleOverlap(
-                            positionA, positionB, circleColliderA->Radius, circleColliderB->Radius, collision)) {
-                        collision.mBodyA = entityA;
-                        collision.mBodyB = entityB;
-                        collision.mCofOfRestitution =
-                            Math::Min(physicsBodyA->mCofOfRestitution, physicsBodyB->mCofOfRestitution);
-                        collisions.emplace_back(collision);
-                    }
+                EntityID entityB = *itB;
+                Collision collision;
+                if (CheckCollision(entityA, entityB, collision)) {
+                    collisions.emplace_back(collision);
                 }
             }
         }
         return collisions;
+    }
+
+    bool CollisionDetector::CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision) {
+        bool bCollision                    = false;
+        TransformComponent* transformA     = mBaseView->ecsRegister->GetComponent<TransformComponent>(_entityA);
+        PhysicsBodyComponent* physicsBodyA = mBaseView->ecsRegister->GetComponent<PhysicsBodyComponent>(_entityA);
+        TransformComponent* transformB     = mBaseView->ecsRegister->GetComponent<TransformComponent>(_entityB);
+        PhysicsBodyComponent* physicsBodyB = mBaseView->ecsRegister->GetComponent<PhysicsBodyComponent>(_entityB);
+        if (mBaseView->ecsRegister->HasComponent<CircleColliderComponent>(_entityA)
+            && mBaseView->ecsRegister->HasComponent<CircleColliderComponent>(_entityB)) {
+            CircleColliderComponent* circleColliderA =
+                mBaseView->ecsRegister->GetComponent<CircleColliderComponent>(_entityA);
+            CircleColliderComponent* circleColliderB =
+                mBaseView->ecsRegister->GetComponent<CircleColliderComponent>(_entityB);
+            if (CheckCircleCircleOverlap(transformA->Position + circleColliderA->Offset,
+                    transformB->Position + circleColliderB->Offset, circleColliderA->Radius, circleColliderB->Radius,
+                    _collision)) {
+                bCollision = true;
+            }
+        } else if (mBaseView->ecsRegister->HasComponent<BoxColliderComponent>(_entityA)
+                   && mBaseView->ecsRegister->HasComponent<BoxColliderComponent>(_entityB)) {
+            BoxColliderComponent* boxColliderA = mBaseView->ecsRegister->GetComponent<BoxColliderComponent>(_entityA);
+            BoxColliderComponent* boxColliderB = mBaseView->ecsRegister->GetComponent<BoxColliderComponent>(_entityB);
+            if (transformA->Angle == 0 && transformB->Angle == 0) {
+                Math::Bounds2D boundsA(transformA->Position + boxColliderA->Offset, boxColliderA->Size);
+                Math::Bounds2D boundsB(transformB->Position + boxColliderB->Offset, boxColliderB->Size);
+                if (CheckBoxBoxOverlapAABB(boundsA, boundsB, _collision)) {
+                    bCollision = true;
+                }
+            } else {
+            }
+        }
+        if (bCollision) {
+            _collision.mBodyA            = _entityA;
+            _collision.mBodyB            = _entityB;
+            _collision.mCofOfRestitution = Math::Min(physicsBodyA->mCofOfRestitution, physicsBodyB->mCofOfRestitution);
+        }
+
+        return bCollision;
     }
 
 
@@ -184,9 +205,20 @@ namespace Umbra {
         }
         return false;
     }
+
+    bool CollisionDetector::CheckBoxBoxOverlapAABB(
+        Math::Bounds2D _boundsA, Math::Bounds2D _boundsB, Collision& _collision) {
+        RenderSystem::DrawDebugBox(_boundsA);
+        RenderSystem::DrawDebugBox(_boundsB);
+        if (_boundsA.Intersects(_boundsB)) {
+        }
+        return false;
+    }
+
     void Collision::AddContact(ContactPoint& _contact) {
         mContacts.emplace_back(_contact);
     }
+
     Vector<ContactPoint>& Collision::GetContacts() {
         return mContacts;
     }

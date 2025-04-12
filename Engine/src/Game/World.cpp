@@ -4,6 +4,8 @@
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Systems/RenderSystem.h"
 
+#include < SFML/Graphics/View.hpp>
+
 namespace Umbra {
 
     // void World::SetECSRegister(ECSRegister* _worldRegister) {
@@ -30,7 +32,8 @@ namespace Umbra {
             Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));
         mCameraSystem->SetScreenSize(Math::Vector2f(GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().x,
             GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().y));
-        mRenderSystem  = std::make_shared<RenderSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowHandle());
+        mRenderSystem = std::make_shared<RenderSystem>(
+            GEngineStatics.AppWindowPtr->GetRenderWindowHandle(), GEngineStatics.ImGuiBackend);
         mPhysicsSystem = std::make_shared<PhysicsSystem>();
 
 
@@ -65,6 +68,12 @@ namespace Umbra {
 
     PhysicsSystem* World::GetPhysicsSystem() {
         return mPhysicsSystem.get();
+    }
+
+    Math::Vector2f World::GetScreenToWorldPosition(Math::Vector2i _screenPos) {
+        sf::Vector2f worldPos = GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->mapPixelToCoords(
+            sf::Vector2i(_screenPos.x, _screenPos.y));
+        return Math::Vector2f(worldPos.x, -worldPos.y);
     }
 
 } // namespace Umbra

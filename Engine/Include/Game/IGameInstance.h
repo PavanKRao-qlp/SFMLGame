@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/AppWindow.h"
 #include "Game/SceneManager.h"
+#include "UI/ImGuiBackend.h"
 #include "Umbra.h"
 
 #include "SFML/Graphics.hpp"
@@ -14,6 +15,7 @@ namespace Umbra {
         virtual void ShutDown()   = 0;
         void QuitApplication();
         SceneManager& GetSceneManger();
+        ImGuiBackend& GetUIManager();
 
         // virtual void OnUpdate(float dt) = 0;
         // virtual void OnBeginPlay()      = 0;
@@ -33,5 +35,6 @@ namespace Umbra {
     private:
         friend class App;
         SceneManager* mSceneManager;
+        ImGuiBackend* mUIBackend;
     };
 } // namespace Umbra

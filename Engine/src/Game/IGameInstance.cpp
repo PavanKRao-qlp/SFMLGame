@@ -14,5 +14,9 @@ namespace Umbra {
     SceneManager& IGameInstance::GetSceneManger() {
         return *mSceneManager;
     }
+    ImGuiBackend& Umbra::IGameInstance::GetUIManager() {
+        return *mUIBackend;
+    }
+
 
 } // namespace Umbra
