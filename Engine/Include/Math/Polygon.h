@@ -10,6 +10,7 @@ namespace Umbra::Math {
      */
     class Polygon {
     public:
+        Polygon();
         Polygon(Vector<Math::Vector2f>& _vertices) : mVertices(_vertices) {}
         ~Polygon();
 
@@ -30,7 +31,7 @@ namespace Umbra::Math {
          */
         virtual Vector<Math::Vector2f> GetEdges();
 
-    private:
+    protected:
         /// List of 2D points defining the polygon (assumed to be in order, forming edges)
         Vector<Math::Vector2f> mVertices;
     };

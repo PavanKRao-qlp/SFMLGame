@@ -1,5 +1,6 @@
 #pragma once
 #include "Math/Bounds.h"
+#include "Math/Ray.h"
 #include "Math/Vector.h"
 namespace Umbra::Math {
 
@@ -54,11 +55,33 @@ namespace Umbra::Math {
     Vector2f GetClosestPointOnBoundEdge(Bounds2D _bounds, Vector2f _point);
 
     /**
-     * @brief Computes the closest point on the edge of an oriented bounding box (OBB) to a given position.
+     * @brief Returns the closest point to a given position that lies inside the OBB.
      *
-     * If the point lies inside the oriented bounds, the closest point on the edge is returned instead.
+     * The point is clamped to the bounds of the OBB. If the point is already inside, it is returned as-is.
      */
-    Vector2f GetClosestPointOnOrientedBound(Bounds2D _bounds, float _angle, Vector2f _point);
+    Vector2f GetClosestPointInsideOrientedBound(Bounds2D _bounds, float _angle, Vector2f _point);
 
+    /**
+     * @brief Returns the closest point on the edge of the OBB to a given position.
+     *
+     * If the point is inside the OBB, the closest point on the edge is returned instead.
+     */
+    Vector2f GetClosestPointOnOrientedBoundEdge(Bounds2D _bounds, float _angle, Vector2f _point);
+    /**
+     * Returns true if a 2D ray intersects a line segment; outputs the hit point if so.
+     * @param _outHitPoint : sets provided vector to the result of intersection
+     */
+    bool TestRayLineSegment(Ray2D _ray, Vector2f _pointA, Vector2f _pointB, Vector2f& _outHitPoint);
 
+    /**
+     * Returns true if a 2D ray intersects a AABB; outputs the hit point if so.
+     * @param _outHitPoint : sets provided vector to the result of intersection
+     */
+    bool TestRayAABB(Ray2D _ray, Bounds2D _bounds, Vector2f& _outHitPoint);
+
+    /**
+     * Returns true if a 2D ray intersects a OBB; outputs the hit point if so.
+     * @param _outHitPoint : sets provided vector to the result of intersection
+     */
+    bool TestRayOBB(Ray2D _ray, Bounds2D _bounds, float _angle, Vector2f& _outHitPoint);
 } // namespace Umbra::Math

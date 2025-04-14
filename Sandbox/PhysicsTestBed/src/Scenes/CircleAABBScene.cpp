@@ -24,7 +24,7 @@ void CircleAABBScene::OnFixedUpdated() {
     mDistanceToProj                      = (worldMousePos - pointOnBox).Magnitude();
     Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Red);
     Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, sf::Color::White);
-    Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, sf::Color::Blue);
+    Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, sf::Color::Yellow);
     Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, sf::Color::Green);
     Umbra::RenderSystem::DrawDebugBox(RectAABB);
     bool bColliding = (mDistance <= mRadius);

@@ -1,4 +1,6 @@
 #pragma once
+#include "EnginePCH.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_precision.hpp>
 
@@ -113,7 +115,19 @@ namespace Umbra {
             return !(*this == other);
         }
 
+        inline uint32 Color::ToInteger() const {
+            return static_cast<uint32>((value.r << 24) | (value.g << 16) | (value.b << 8) | value.a);
+        }
         // Predefined Colors
+        // inline static const Color White       = Color(1.0f, 1.0f, 1.0f, 1.0f);
+        // inline static const Color Black       = Color(0.0f, 0.0f, 0.0f, 1.0f);
+        // inline static const Color Red         = Color(1.0f, 0.0f, 0.0f, 1.0f);
+        // inline static const Color Green       = Color(0.0f, 1.0f, 0.0f, 1.0f);
+        // inline static const Color Blue        = Color(0.0f, 0.0f, 1.0f, 1.0f);
+        // inline static const Color Yellow      = Color(1.0f, 1.0f, 0.0f, 1.0f);
+        // inline static const Color Magenta     = Color(1.0f, 0.0f, 1.0f, 1.0f);
+        // inline static const Color Cyan        = Color(0.0f, 1.0f, 1.0f, 1.0f);
+        // inline static const Color Transparent = Color(0.0f, 0.0f, 0.0f, 0.0f);
     };
 
 

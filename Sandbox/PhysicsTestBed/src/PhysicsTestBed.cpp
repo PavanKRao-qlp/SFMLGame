@@ -5,11 +5,17 @@
 #include "Scenes/CircleOBBScene.h"
 #include "Scenes/LandingScene.h"
 #include "Scenes/PointLineSegmentScene.h"
+#include "Scenes/RaycastAABB.h"
+#include "Scenes/RaycastCircle.h"
+#include "Scenes/RaycastLineSegment.h"
+#include "Scenes/RaycastOBB.h"
 #include "Scenes/TrianglePointScene.h"
 
 PhysicsTestBed::PhysicsTestBed(/* args */) {}
 
-PhysicsTestBed::~PhysicsTestBed() {}
+PhysicsTestBed::~PhysicsTestBed() {
+    sf::ConvexShape shape;
+}
 
 inline void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> mainMenu               = std::make_shared<LandingScene>();
@@ -18,12 +24,20 @@ inline void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> circleAABBScene        = std::make_shared<CircleAABBScene>();
     Umbra::SharedPtr<Umbra::Scene> circleOBBScene         = std::make_shared<CircleOBBScene>();
     Umbra::SharedPtr<Umbra::Scene> trianglePointScene     = std::make_shared<TrianglePointScene>();
+    Umbra::SharedPtr<Umbra::Scene> raycastCircle          = std::make_shared<RaycastCircle>();
+    Umbra::SharedPtr<Umbra::Scene> raycastLineSegment     = std::make_shared<RaycastLineSegment>();
+    Umbra::SharedPtr<Umbra::Scene> raycastAABB            = std::make_shared<RaycastAABB>();
+    Umbra::SharedPtr<Umbra::Scene> raycastOBB             = std::make_shared<RaycastOBB>();
     GetSceneManger().AddScene("Scene0", mainMenu);
     GetSceneManger().AddScene("Scene1", pointLineSegmentScene);
     GetSceneManger().AddScene("Scene2", circleLineSegmentScene);
     GetSceneManger().AddScene("Scene3", circleAABBScene);
     GetSceneManger().AddScene("Scene4", circleOBBScene);
     GetSceneManger().AddScene("Scene5", trianglePointScene);
+    GetSceneManger().AddScene("Scene6", raycastCircle);
+    GetSceneManger().AddScene("Scene7", raycastLineSegment);
+    GetSceneManger().AddScene("Scene8", raycastAABB);
+    GetSceneManger().AddScene("Scene9", raycastOBB);
     GetSceneManger().GoToScene(mainMenu);
 }
 

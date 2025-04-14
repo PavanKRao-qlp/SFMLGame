@@ -5,6 +5,7 @@
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
+#include "Graphics/Color.h"
 #include "Math/Bounds.h"
 #include "UI/ImGuiBackend.h"
 
@@ -57,6 +58,24 @@ namespace Umbra {
             // Add the line to the debug draw cache
             RenderSystem::DebugDrawCache.push_back(lines);
         }
+
+        // static inline void DebugDrawLine(
+        //     const Math::Vector2f& _from, const Math::Vector2f& _to, const Color& _color = Color::Green) {
+        //     // Create a vertex array to represent the line
+        //     sf::VertexArray* lines = new sf::VertexArray(sf::LinesStrip, 2);
+        //     // Set the starting position of the line
+        //     (*lines)[0].position =
+        //         sf::Vector2f((float) _from.x, (float) -_from.y); // Negate y for SFML's coordinate system
+        //     (*lines)[0].color = sf::Color(_color.ToInteger());
+        //     // Set the end position of the line
+        //     (*lines)[1].position = sf::Vector2f((float) _to.x, (float) -_to.y); // Negate y for SFML's coordinate
+        //     system
+        //     (*lines)[1].color    = sf::Color(_color.ToInteger());
+        //     ;
+
+        //     // Add the line to the debug draw cache
+        //     RenderSystem::DebugDrawCache.push_back(lines);
+        // }
 
         static inline void DebugDrawCircle(const Math::Vector2f& _position, const float _radius, bool _bFilled = false,
             const sf::Color& _color = sf::Color::White) {

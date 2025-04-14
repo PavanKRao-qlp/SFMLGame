@@ -22,9 +22,11 @@ void CircleOBBScene::OnFixedUpdated() {
     Umbra::TransformComponent* transform = GetWorld()->GetComponent<Umbra::TransformComponent>(mBoxEntity);
     Umbra::Math::Vector2f worldMousePos  = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     Umbra::Math::Bounds2D bounds         = Umbra::Math::Bounds2D(transform->Position, transform->Size);
+    Umbra::Math::Vector2f pointInOBB =
+        Umbra::Math::GetClosestPointInsideOrientedBound(bounds, transform->Angle, worldMousePos);
     Umbra::Math::Vector2f pointOnOBB =
-        Umbra::Math::GetClosestPointOnOrientedBound(bounds, transform->Angle, worldMousePos);
-    mDistance       = (pointOnOBB - worldMousePos).Magnitude();
+        Umbra::Math::GetClosestPointOnOrientedBoundEdge(bounds, transform->Angle, worldMousePos);
+    mDistance       = (pointInOBB - worldMousePos).Magnitude();
     bool bColliding = mDistance <= mRadius;
     {
         Umbra::Math::Vector2f halfSize = transform->Size * 0.5f;
@@ -100,7 +102,8 @@ void CircleOBBScene::OnFixedUpdated() {
         }
 
         Umbra::RenderSystem::DebugDrawCircle(transform->Position, 0.75f, true, sf::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(pointOnOBB, 3.f, true, sf::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(pointInOBB, 3.f, true, sf::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(pointOnOBB, 2.5f, true, sf::Color::White);
         Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Cyan);
         Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, sf::Color::White);
         Umbra::RenderSystem::DebugDrawCircle(
@@ -172,7 +175,7 @@ void CircleOBBScene::OnUpdate() {
     ImGui::Text("rect size x %f", transform->Size.x);
     ImGui::Text("rect size y     %f", transform->Size.y);
     ImGui::SliderFloat("Angle", &transform->Angle, 0, 360);
-    ImGui::SliderFloat("Radius", &mRadius, 0, 360);
+    ImGui::SliderFloat("Radius", &mRadius, 10, 50);
     ImGui::Text("distance     %f", mDistance);
     // ImGui::SliderFloat("Radius", &mRadius, 5, 50);
     if (ImGui::Button("Main Menu")) {
