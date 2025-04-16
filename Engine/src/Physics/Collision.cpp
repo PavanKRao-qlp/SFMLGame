@@ -134,6 +134,36 @@ namespace Umbra {
         return collisions;
     }
 
+
+    bool CollisionDetector::CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB) {
+        Vector<Math::Vector2f> normalsA = _shapeA.GetNormals();
+        Vector<Math::Vector2f> normalsB = _shapeB.GetNormals();
+        Vector<Math::Vector2f> axes;
+        axes.insert(axes.end(), normalsA.begin(), normalsA.end());
+        axes.insert(axes.end(), normalsB.begin(), normalsB.end());
+        float minOverLap = fInf;
+        Math::Vector2f minAxis;
+        // For every axis project both shape and find if any axis exist which has no overlap
+        // if overlap is not found objects are separated
+        // else find the axis with minimum overlap to find minimum translation vector
+        for (Math::Vector2f axis : axes) {
+            Math::Polygon::Projection projectionA = _shapeA.GetProjectionOntoAxis(axis);
+            Math::Polygon::Projection projectionB = _shapeB.GetProjectionOntoAxis(axis);
+            if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
+                // axis is the separating axis theorem
+                return false;
+            }
+            float overlap = Math::Min(projectionA.Max, projectionB.Max) - Math::Max(projectionA.Min, projectionB.Min);
+            if (overlap < minOverLap) {
+                minOverLap = overlap;
+                minAxis    = axis;
+            }
+        }
+        // find contact points
+
+        return true;
+    }
+
     bool CollisionDetector::CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision) {
         bool bCollision                    = false;
         TransformComponent* transformA     = mBaseView->ecsRegister->GetComponent<TransformComponent>(_entityA);

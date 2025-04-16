@@ -28,14 +28,14 @@ void RaycastAABB::OnFixedUpdated() {
     Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, sf::Color::Cyan);
     Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, sf::Color::Cyan);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Min().x - 500, RectAABB.Min().y),
-        Umbra::Math::Vector2f(RectAABB.Min().x + 500, RectAABB.Min().y), sf::Color::Yellow);
+        Umbra::Math::Vector2f(RectAABB.Min().x + 500, RectAABB.Min().y), sf::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Max().x - 500, RectAABB.Max().y),
-        Umbra::Math::Vector2f(RectAABB.Max().x + 500, RectAABB.Max().y), sf::Color::Yellow);
+        Umbra::Math::Vector2f(RectAABB.Max().x + 500, RectAABB.Max().y), sf::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y - 500),
-        Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y + 500), sf::Color::Yellow);
+        Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y + 500), sf::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y - 500),
-        Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y + 500), sf::Color::Yellow);
-    Umbra::RenderSystem::DrawDebugBox(RectAABB, false, bHit ? sf::Color::Red : sf::Color::White);
+        Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y + 500), sf::Color::Blue);
+    Umbra::RenderSystem::DrawDebugBox(RectAABB, false, bHit ? sf::Color::Green : sf::Color::White);
 
     // p = r + dt
     // t = (p-r)/d
@@ -74,7 +74,7 @@ void RaycastAABB::OnFixedUpdated() {
     // ray hit exit
     float nearestFarPoint = Umbra::Math::Min(furthestX, furthestY);
     if (bHit) {
-        Umbra::RenderSystem::DebugDrawCircle(outPoint, 2, true, sf::Color::Black);
+        Umbra::RenderSystem::DebugDrawCircle(outPoint, 2, true, sf::Color::Green);
         Umbra::RenderSystem::DebugDrawLine(
             mRay.Position + mRay.Direction * furthestNearPoint, mRay.Position + mRay.Direction * nearestFarPoint);
     }

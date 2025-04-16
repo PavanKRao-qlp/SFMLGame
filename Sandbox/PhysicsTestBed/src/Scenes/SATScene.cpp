@@ -1,0 +1,336 @@
+#include "SATScene.h"
+
+#include "Core/Random.h"
+#include "ECS/Components/SpriteQuad.h"
+#include "ECS/Components/Transfrom.h"
+#include "ECS/Systems/RenderSystem.h"
+#include "EnginePCH.h"
+#include "Game/IGameInstance.h"
+#include "Input/Input.h"
+#include "LandingScene.h"
+#include "Math/Box.h"
+#include "Math/GeometryUtils.h"
+#include "Umbra.h"
+#include "imgui.h"
+#include <ctime>
+#include <random>
+
+
+void SATScene::Initialize() {
+    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
+    }
+    mCollisionDetector = std::make_shared<Umbra::CollisionDetector>();
+}
+
+void SATScene::OnFixedUpdated() {
+
+    Umbra::Math::Vector2f worldMousePos   = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
+    Umbra::TransformComponent* transformA = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityA);
+    Umbra::TransformComponent* transformB = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityB);
+    Umbra::UniquePtr<Umbra::Math::Polygon> shapeA;
+    Umbra::UniquePtr<Umbra::Math::Polygon> shapeB;
+    if (mShapeA == Box) {
+        shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
+        Umbra::Math::Bounds2D boundsA(transformA->Position, transformA->Size);
+        Umbra::RenderSystem::DrawDebugOrientedBox(boundsA, transformA->Angle, false, sf::Color::Cyan);
+    } else if (mShapeA == Polygon) {
+        Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
+        for (int i = 0; i < pointsA.size(); i++) {
+            pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
+        }
+        shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
+        for (int i = 0; i < pointsA.size(); i++) {
+            Umbra::RenderSystem::DebugDrawLine(pointsA[(i + 1) % pointsA.size()], pointsA[i], sf::Color::Cyan);
+        }
+    }
+    if (mShapeB == Box) {
+        shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
+        Umbra::Math::Bounds2D boundsB(transformB->Position, transformB->Size);
+        Umbra::RenderSystem::DrawDebugOrientedBox(boundsB, transformB->Angle, false, sf::Color::Magenta);
+    } else if (mShapeB == Polygon) {
+        Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
+        for (int i = 0; i < pointsB.size(); i++) {
+            pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
+        }
+        shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
+        for (int i = 0; i < pointsB.size(); i++) {
+            Umbra::RenderSystem::DebugDrawLine(pointsB[(i + 1) % pointsB.size()], pointsB[i], sf::Color::Magenta);
+        }
+    }
+
+    if (mShapeA != Circle && mShapeB != Circle) {
+        bool bCollided = mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB);
+        if (bCollided) {
+            Umbra::RenderSystem::DebugDrawLine(transformA->Position, transformB->Position, sf::Color::Green);
+        }
+    }
+
+    if (mShapeA == Box) {
+        shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
+    } else if (mShapeA == Polygon) {
+        Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
+        for (int i = 0; i < pointsA.size(); i++) {
+            pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
+        }
+        shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
+    }
+    if (mShapeB == Box) {
+        shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
+    } else if (mShapeB == Polygon) {
+        Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
+        for (int i = 0; i < pointsB.size(); i++) {
+            pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
+        }
+        shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
+    }
+
+
+    if (bShowProjections) {
+        if (mShapeA != Circle) {
+            Umbra::Vector<Umbra::Math::Vector2f> normals = shapeA->GetNormals();
+            for (auto normal : normals) {
+                Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 100, sf::Color(0, 75, 75));
+            }
+        }
+        if (mShapeB != Circle) {
+            Umbra::Vector<Umbra::Math::Vector2f> normals = shapeB->GetNormals();
+            for (auto normal : normals) {
+                Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 100, sf::Color(75, 0, 75));
+            }
+        }
+        Umbra::Vector<Umbra::Math::Vector2f> normalsA = shapeA->GetNormals();
+        Umbra::Vector<Umbra::Math::Vector2f> normalsB = shapeB->GetNormals();
+        Umbra::Vector<Umbra::Math::Vector2f> axes;
+        axes.insert(axes.end(), normalsA.begin(), normalsA.end());
+        axes.insert(axes.end(), normalsB.begin(), normalsB.end());
+        float minOverLap = Umbra::fInf;
+        Umbra::Math::Vector2f minAxis;
+        // For every axis project both shape and find if any axis exist which has no overlap
+        // if overlap is not found objects are separated
+        // else find the axis with minimum overlap to find minimum translation vector
+        for (Umbra::Math::Vector2f axis : normalsA) {
+            Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
+            Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
+            Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
+            Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
+            if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
+                // axis is the separating axis theorem
+            } else {
+                Umbra::RenderSystem::DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
+                    axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), sf::Color::Yellow);
+            }
+        }
+        for (Umbra::Math::Vector2f axis : normalsB) {
+            Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
+            Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
+            Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
+            Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
+            if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
+                // axis is the separating axis theorem
+            } else {
+                Umbra::RenderSystem::DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
+                    axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), sf::Color::Yellow);
+            }
+        }
+    }
+
+    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 2.f, true, sf::Color::White);
+    Umbra::RenderSystem::DebugDrawCircle(transformA->Position, 2.f, true, sf::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(transformA->Position,
+        transformA->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformA->Angle) * 10, sf::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(transformB->Position, 2.f, true, sf::Color::Magenta);
+    Umbra::RenderSystem::DebugDrawLine(transformB->Position,
+        transformB->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformB->Angle) * 10, sf::Color::Magenta);
+}
+
+void SATScene::OnUpdate() {
+    ImGui::Begin("SAT Demo");
+    if (ImGui::Button("Restart")) {
+        GetSceneManager().GoToScene(this->GetSceneID());
+    }
+    {
+        ImGui::BeginChild("Body A", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Border);
+        Umbra::TransformComponent* transform = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityA);
+        if (transform != nullptr) {
+            ImGui::Text("BODY A");
+            int pos[2] = {transform->Position.x, transform->Position.y};
+            if (ImGui::InputInt2("Position", pos)) {
+                transform->Position.x = pos[0];
+                transform->Position.y = pos[1];
+            }
+            ImGui::SliderFloat("Angle", &transform->Angle, 0, 360);
+            int selectedShape = mShapeA;
+            ImGui::Text("Select Shape:");
+            ImGui::RadioButton("Circle", &selectedShape, ShapeType::Circle);
+            ImGui::SameLine();
+            ImGui::RadioButton("Box", &selectedShape, ShapeType::Box);
+            ImGui::SameLine();
+            ImGui::RadioButton("Polygon", &selectedShape, ShapeType::Polygon);
+            mShapeA = (ShapeType) selectedShape;
+        }
+        ImGui::EndChild();
+    }
+    {
+        ImGui::BeginChild("Body B", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Border);
+        Umbra::TransformComponent* transform = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityB);
+        if (transform != nullptr) {
+            ImGui::Text("BODY B");
+            int pos[2] = {transform->Position.x, transform->Position.y};
+            if (ImGui::InputInt2("Position", pos)) {
+                transform->Position.x = pos[0];
+                transform->Position.y = pos[1];
+            }
+            ImGui::SliderFloat("Angle", &transform->Angle, 0, 360);
+
+            int selectedShape = mShapeB;
+            ImGui::Text("Select Shape:");
+            ImGui::RadioButton("Circle", &selectedShape, ShapeType::Circle);
+            ImGui::SameLine();
+            ImGui::RadioButton("Box", &selectedShape, ShapeType::Box);
+            ImGui::SameLine();
+            ImGui::RadioButton("Polygon", &selectedShape, ShapeType::Polygon);
+            mShapeB = (ShapeType) selectedShape;
+        }
+        ImGui::EndChild();
+    }
+    ImGui::Checkbox("showProjections", &bShowProjections);
+    if (ImGui::Button("Main Menu")) {
+        GetSceneManager().GoToScene("Scene0");
+    }
+    ImGui::End();
+}
+
+Umbra::SharedPtr<Umbra::Scene> SATScene::InsatiateCopy() {
+    return std::make_shared<SATScene>(*this);
+}
+
+void SATScene::OnBeginPlay() {
+    mEntityA = GetWorld()->CreateEntity();
+    mEntityB = GetWorld()->CreateEntity();
+    {
+        int transformX = Umbra::Random::RandomRange(-75, 75);
+        int transformY = Umbra::Random::RandomRange(-75, 75);
+        int sizeRX     = Umbra::Random::RandomRange(30, 70);
+        int sizeRY     = Umbra::Random::RandomRange(30, 70);
+        float angle    = Umbra::Random::RandomRange(0, 360);
+        GetWorld()->AddComponent<Umbra::TransformComponent>(
+            mEntityA, Umbra::Math::Vector2f(transformX, transformY), Umbra::Math::Vector2f(sizeRX, sizeRY), angle);
+    }
+    {
+        int transformX = Umbra::Random::RandomRange(-75, 75);
+        int transformY = Umbra::Random::RandomRange(-75, 75);
+        int sizeRX     = Umbra::Random::RandomRange(30, 70);
+        int sizeRY     = Umbra::Random::RandomRange(30, 70);
+        float angle    = Umbra::Random::RandomRange(0, 360);
+        GetWorld()->AddComponent<Umbra::TransformComponent>(
+            mEntityB, Umbra::Math::Vector2f(transformX, transformY), Umbra::Math::Vector2f(sizeRX, sizeRY), angle);
+    }
+    {
+        int randomEdge = Umbra::Random::RandomRange(3, 12);
+        int sizeR      = Umbra::Random::RandomRange(30, 70);
+        mPolygonA      = Umbra::Math::Polygon(GetRandomPolygon(randomEdge, sizeR));
+    }
+    {
+        int randomEdge = Umbra::Random::RandomRange(3, 12);
+        int sizeR      = Umbra::Random::RandomRange(30, 70);
+        mPolygonB      = Umbra::Math::Polygon(GetRandomPolygon(randomEdge, sizeR));
+    }
+}
+
+void SATScene::OnEndPlay() {}
+
+Umbra::Vector<Umbra::Math::Vector2f> SATScene::GetRandomPolygon(int _edges, int _sizeRadius) {
+    // Generate two lists of random X and Y coordinates
+    Umbra::Vector<float> xPool;
+    Umbra::Vector<float> yPool;
+    for (int i = 0; i < _edges; i++) {
+        xPool.emplace_back(Umbra::Random::RandomRange(-_sizeRadius, _sizeRadius));
+        yPool.emplace_back(Umbra::Random::RandomRange(-_sizeRadius, _sizeRadius));
+    }
+    // Sort them
+    std::sort(xPool.begin(), xPool.end());
+    std::sort(yPool.begin(), yPool.end());
+
+    // Isolate the extreme points
+    float minX = xPool.front();
+    float maxX = xPool.back();
+    float minY = xPool.front();
+    float maxY = xPool.back();
+
+    // Divide the interior points into two chains & Extract the vector components
+    float lastTop = minX;
+    float lastBot = minX;
+    Umbra::Vector<float> xVec;
+    Umbra::Vector<float> yVec;
+
+    for (int i = 0; i < _edges - 1; i++) {
+        float x = xPool[i];
+        if (Umbra::Random::GetRandom() > 0.5f) {
+            xVec.emplace_back(x - lastTop);
+            lastTop = x;
+        } else {
+            xVec.emplace_back(lastBot - x);
+            lastBot = x;
+        }
+    }
+    xVec.emplace_back(maxX - lastTop);
+    xVec.emplace_back(lastBot - maxX);
+
+    float lastLeft  = minY;
+    float lastRight = minY;
+    for (int i = 0; i < _edges - 1; i++) {
+        float y = yPool[i];
+        if (Umbra::Random::GetRandom() > 0.5f) {
+            yVec.emplace_back(y - lastLeft);
+            lastLeft = y;
+        } else {
+            yVec.emplace_back(lastRight - y);
+            lastRight = y;
+        }
+    }
+    yVec.emplace_back(maxY - lastLeft);
+    yVec.emplace_back(lastRight - maxY);
+    // Randomly pair up the X- and Y-components
+    std::shuffle(yVec.begin(), yVec.end(), std::mt19937(std::time(nullptr)));
+
+    // Combine the paired up components into vectors
+    Umbra::Vector<Umbra::Math::Vector2f> vectors;
+    for (int i = 0; i < _edges; i++) {
+        vectors.emplace_back(Umbra::Math::Vector2f(xVec[i], yVec[i]));
+    }
+
+    // Sort the vectors by angle
+    std::sort(vectors.begin(), vectors.end(), [](const Umbra::Math::Vector2f& a, const Umbra::Math::Vector2f& b) {
+        return Umbra::Math::Atan2(a.y, a.x) < Umbra::Math::Atan2(b.y, b.x);
+    });
+
+    // Lay them end-to-end
+    float x = 0, y = 0;
+    float minPolygonX = 0;
+    float minPolygonY = 0;
+    Umbra::Vector<Umbra::Math::Vector2f> points;
+    for (int i = 0; i < _edges; i++) {
+        points.emplace_back(Umbra::Math::Vector2f(x, y));
+        x += vectors[i].x;
+        y += vectors[i].y;
+        minPolygonX = Umbra::Math::Min(minPolygonX, x);
+        minPolygonY = Umbra::Math::Min(minPolygonY, y);
+    }
+
+    // Compute centroid
+    Umbra::Math::Vector2f centroid(0.0f, 0.0f);
+    for (const auto& p : points) {
+        centroid.x += p.x;
+        centroid.y += p.y;
+    }
+    centroid.x /= static_cast<float>(points.size());
+    centroid.y /= static_cast<float>(points.size());
+
+    // Shift all points so that centroid is at (0, 0)
+    for (auto& p : points) {
+        p.x -= centroid.x;
+        p.y -= centroid.y;
+    }
+    return points;
+}

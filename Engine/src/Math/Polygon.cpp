@@ -1,5 +1,6 @@
 #include "Math/Polygon.h"
 
+
 namespace Umbra::Math {
 
     Vector<Vector2f> Polygon::GetVertices() {
@@ -14,6 +15,18 @@ namespace Umbra::Math {
         }
 
         return edges;
+    }
+
+    Polygon::Projection Polygon::GetProjectionOntoAxis(Math::Vector2f _axis) {
+        Projection projection;
+        projection.Min = fInf;
+        projection.Max = -fInf;
+        for (Math::Vector2f vertex : mVertices) {
+            float vertexProjection = Math::Vector2f::Dot(vertex, _axis);
+            projection.Min         = Math::Min(projection.Min, vertexProjection);
+            projection.Max         = Math::Max(projection.Max, vertexProjection);
+        }
+        return projection;
     }
 
     Vector<Vector2f> Polygon::GetNormals() {

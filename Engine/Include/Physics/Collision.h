@@ -3,6 +3,7 @@
 #include "ECS/Components/PhysicsBodyComponent.h"
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Enity.h"
+#include "Math/Polygon.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -26,13 +27,13 @@ namespace Umbra {
         Vector<ContactPoint> mContacts;
     };
 
-
     class CollisionDetector {
     public:
         Vector<Tuple<EntityID, EntityID>> RunBroadPhase();
         Vector<Collision> RunNarrowPhase(Vector<Tuple<EntityID, EntityID>>& PossibleCollisions);
         class BaseView* mBaseView;
 
+        bool CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB);
 
     private:
         bool CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision);

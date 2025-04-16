@@ -6,6 +6,7 @@
 #include <deque>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <queue>
@@ -19,6 +20,7 @@
 #include <vector>
 
 namespace Umbra {
+
 #define CAST(X, Y) reinterpret_cast<X>(Y)
     template <size_t T>
     using BitField = std::bitset<T>;
@@ -33,6 +35,8 @@ namespace Umbra {
     using uint32 = uint32_t;
     using uint64 = uint64_t;
     using String = std::string;
+
+    constexpr float fInf = std::numeric_limits<float>::infinity();
 
     using Timestamp = uint64_t;
     // template <typename T>

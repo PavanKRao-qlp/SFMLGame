@@ -9,6 +9,7 @@
 #include "Scenes/RaycastCircle.h"
 #include "Scenes/RaycastLineSegment.h"
 #include "Scenes/RaycastOBB.h"
+#include "Scenes/SATScene.h"
 #include "Scenes/TrianglePointScene.h"
 
 PhysicsTestBed::PhysicsTestBed(/* args */) {}
@@ -28,6 +29,7 @@ inline void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> raycastLineSegment     = std::make_shared<RaycastLineSegment>();
     Umbra::SharedPtr<Umbra::Scene> raycastAABB            = std::make_shared<RaycastAABB>();
     Umbra::SharedPtr<Umbra::Scene> raycastOBB             = std::make_shared<RaycastOBB>();
+    Umbra::SharedPtr<Umbra::Scene> satScene               = std::make_shared<SATScene>();
     GetSceneManger().AddScene("Scene0", mainMenu);
     GetSceneManger().AddScene("Scene1", pointLineSegmentScene);
     GetSceneManger().AddScene("Scene2", circleLineSegmentScene);
@@ -38,6 +40,7 @@ inline void PhysicsTestBed::Initialize() {
     GetSceneManger().AddScene("Scene7", raycastLineSegment);
     GetSceneManger().AddScene("Scene8", raycastAABB);
     GetSceneManger().AddScene("Scene9", raycastOBB);
+    GetSceneManger().AddScene("Scene10", satScene);
     GetSceneManger().GoToScene(mainMenu);
 }
 

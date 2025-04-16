@@ -10,6 +10,14 @@ namespace Umbra::Math {
      */
     class Polygon {
     public:
+        /**
+         * @brief Projection of Polygon vertices
+         */
+        struct Projection {
+            float Min;
+            float Max;
+        };
+
         Polygon();
         Polygon(Vector<Math::Vector2f>& _vertices) : mVertices(_vertices) {}
         ~Polygon();
@@ -29,7 +37,12 @@ namespace Umbra::Math {
         /**
          * @brief Returns the list of edges as vectors (vertex[i+1] - vertex[i]).
          */
-        virtual Vector<Math::Vector2f> GetEdges();
+        Vector<Math::Vector2f> GetEdges();
+
+        /**
+         * @brief Projects all vertices onto axis and return min to max projection.
+         */
+        Projection GetProjectionOntoAxis(Math::Vector2f _axis);
 
     protected:
         /// List of 2D points defining the polygon (assumed to be in order, forming edges)

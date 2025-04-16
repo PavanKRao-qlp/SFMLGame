@@ -253,15 +253,19 @@ namespace Umbra::Math {
     }
 
     bool TestRayOBB(Ray2D _ray, Bounds2D _bounds, float _angle, Vector2f& _outHitPoint) {
-        Vector2f boxXBasis     = Vector2f(Cos(_angle), Sin(_angle));
-        Vector2f boxYBasis     = Vector2f(-Sin(_angle), Cos(_angle));
-        Vector2f boxToPoint    = (_ray.Position - _bounds.Center);
+        float angleRad     = DegreeToRadian(_angle);
+        Vector2f boxXBasis = Vector2f(Cos(angleRad), Sin(angleRad));
+        Vector2f boxYBasis = Vector2f(-Sin(angleRad), Cos(angleRad));
+
+        Vector2f boxToPoint = (_ray.Position - _bounds.Center);
+
         Vector2f rayPosInLocal = Vector2f(Vector2f::Dot(boxToPoint, boxXBasis), Vector2f::Dot(boxToPoint, boxYBasis));
         Vector2f rayDirInLocal =
             Vector2f(Vector2f::Dot(_ray.Direction, boxXBasis), Vector2f::Dot(_ray.Direction, boxYBasis));
         // must  be in local (centered at 0) space
         Vector2f localMin = -1 * _bounds.Size * 0.5f;
         Vector2f localMax = 1 * _bounds.Size * 0.5f;
+
         Vector2f rayToMin = (localMin - rayPosInLocal);
         float tMinX       = (rayToMin.x) / (rayDirInLocal.x);
         float tMinY       = (rayToMin.y) / (rayDirInLocal.y);
