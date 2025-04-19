@@ -18,7 +18,7 @@
 
 void SATScene::Initialize() {
     if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
+        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(150);
     }
     mCollisionDetector = std::make_shared<Umbra::CollisionDetector>();
 }
@@ -33,7 +33,7 @@ void SATScene::OnFixedUpdated() {
     if (mShapeA == Box) {
         shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
         Umbra::Math::Bounds2D boundsA(transformA->Position, transformA->Size);
-        Umbra::RenderSystem::DrawDebugOrientedBox(boundsA, transformA->Angle, false, sf::Color::Cyan);
+        Umbra::RenderSystem::DrawDebugOrientedBox(boundsA, transformA->Angle, false, sf::Color(60, 60, 60));
     } else if (mShapeA == Polygon) {
         Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
         for (int i = 0; i < pointsA.size(); i++) {
@@ -41,13 +41,13 @@ void SATScene::OnFixedUpdated() {
         }
         shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
         for (int i = 0; i < pointsA.size(); i++) {
-            Umbra::RenderSystem::DebugDrawLine(pointsA[(i + 1) % pointsA.size()], pointsA[i], sf::Color::Cyan);
+            Umbra::RenderSystem::DebugDrawLine(pointsA[(i + 1) % pointsA.size()], pointsA[i], sf::Color(60, 60, 60));
         }
     }
     if (mShapeB == Box) {
         shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
         Umbra::Math::Bounds2D boundsB(transformB->Position, transformB->Size);
-        Umbra::RenderSystem::DrawDebugOrientedBox(boundsB, transformB->Angle, false, sf::Color::Magenta);
+        Umbra::RenderSystem::DrawDebugOrientedBox(boundsB, transformB->Angle, false, sf::Color(60, 60, 60));
     } else if (mShapeB == Polygon) {
         Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
         for (int i = 0; i < pointsB.size(); i++) {
@@ -55,16 +55,180 @@ void SATScene::OnFixedUpdated() {
         }
         shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
         for (int i = 0; i < pointsB.size(); i++) {
-            Umbra::RenderSystem::DebugDrawLine(pointsB[(i + 1) % pointsB.size()], pointsB[i], sf::Color::Magenta);
+            Umbra::RenderSystem::DebugDrawLine(pointsB[(i + 1) % pointsB.size()], pointsB[i], sf::Color(60, 60, 60));
         }
     }
 
     if (mShapeA != Circle && mShapeB != Circle) {
-        bool bCollided = mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB);
+        Umbra::Collision collision;
+        bool bCollided = mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB, collision);
         if (bCollided) {
-            Umbra::RenderSystem::DebugDrawLine(transformA->Position, transformB->Position, sf::Color::Green);
+            Umbra::RenderSystem::DebugDrawLine(transformA->Position, collision.mContactNormal * 100, sf::Color::Green);
+            for (auto point : collision.GetContacts()) {
+                if (bDrawContactPoint) {
+                    Umbra::RenderSystem::DebugDrawCircle(point.mContactPosition, 1.5, true, sf::Color::White);
+                }
+            }
+            if (bDrawContactPoint) {
+                Umbra::Vector<Umbra::Math::Vector2f> collisionPoint;
+
+                // first we find the vertex in A  that is  furthest along collision normal
+                int vaIx                                       = -1;
+                float vaProj                                   = -Umbra::fInf;
+                Umbra::Vector<Umbra::Math::Vector2f> verticesA = shapeA->GetVertices();
+                for (int i = 0; i < verticesA.size(); i++) {
+                    float projection = Umbra::Math::Vector2f::Dot(collision.mContactNormal, verticesA[i]);
+                    if (projection >= vaProj) {
+                        vaIx   = i;
+                        vaProj = projection;
+                    }
+                }
+                // find the edge that is perpendicular to contact normal
+                Umbra::Math::Vector2f vertexNextA     = verticesA[(vaIx + 1) % verticesA.size()];
+                Umbra::Math::Vector2f vertexPrevA     = verticesA[(vaIx - 1) % verticesA.size()];
+                Umbra::Math::Vector2f vertToNextEdgeA = (vertexNextA - verticesA[vaIx]).GetNormalized();
+                Umbra::Math::Vector2f prevToVertEdgeA = (verticesA[vaIx] - vertexPrevA).GetNormalized();
+                float prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeA, collision.mContactNormal);
+                float nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeA, collision.mContactNormal);
+                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
+                if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
+                    bestEdgeA = {vertexPrevA, verticesA[vaIx]};
+                } else {
+                    bestEdgeA = {verticesA[vaIx], vertexNextA};
+                }
+
+                // next we find the vertex in B  that is  furthest along collision normal
+                int vbIx                                       = -1;
+                float vbProj                                   = -Umbra::fInf;
+                Umbra::Vector<Umbra::Math::Vector2f> verticesB = shapeB->GetVertices();
+                for (int i = 0; i < verticesB.size(); i++) {
+                    float projection = Umbra::Math::Vector2f::Dot(-1 * collision.mContactNormal, verticesB[i]);
+                    if (projection >= vbProj) {
+                        vbIx   = i;
+                        vbProj = projection;
+                    }
+                }
+                // find the edge that is perpendicular to contact normal
+                Umbra::Math::Vector2f vertexNextB     = verticesB[(vbIx + 1) % verticesB.size()];
+                Umbra::Math::Vector2f vertexPrevB     = verticesB[(vbIx - 1) % verticesB.size()];
+                Umbra::Math::Vector2f vertToNextEdgeB = (vertexNextB - verticesB[vbIx]).GetNormalized();
+                Umbra::Math::Vector2f prevToVertEdgeB = (verticesB[vbIx] - vertexPrevB).GetNormalized();
+                prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeB, -1 * collision.mContactNormal);
+                nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeB, -1 * collision.mContactNormal);
+                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeB;
+                if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
+                    bestEdgeB = {vertexPrevB, verticesB[vbIx]};
+                } else {
+                    bestEdgeB = {verticesB[vbIx], vertexNextB};
+                }
+
+                // since we know norm is a to b so a is going to be inc and b is ref
+                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> referenceEdge;
+                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> incidentEdge;
+                float e1Dot = Umbra::Math::Abs(
+                    Umbra::Math::Vector2f::Dot((bestEdgeA.second - bestEdgeA.first), collision.mContactNormal));
+                float e2Dot = Umbra::Math::Abs(
+                    Umbra::Math::Vector2f::Dot((bestEdgeB.second - bestEdgeB.first), -1 * collision.mContactNormal));
+                bool bFlipInc = false;
+                if (e1Dot <= e2Dot) {
+                    bFlipInc      = false;
+                    referenceEdge = bestEdgeA;
+                    incidentEdge  = bestEdgeB;
+                } else {
+                    referenceEdge = bestEdgeB;
+                    incidentEdge  = bestEdgeA;
+                    bFlipInc      = true;
+                }
+                auto refNorm = (referenceEdge.second - referenceEdge.first).GetNormalized();
+
+                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints;
+                {
+                    float clipV1Cutoff = Umbra::Math::Vector2f::Dot(refNorm, referenceEdge.first);
+                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refNorm, incidentEdge.first) - clipV1Cutoff;
+                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refNorm, incidentEdge.second) - clipV1Cutoff;
+                    if (inclV1Dist >= 0) {
+                        clippedPoints.emplace_back(incidentEdge.first);
+                    }
+                    if (inclV2Dist >= 0) {
+                        clippedPoints.emplace_back(incidentEdge.second);
+                    }
+                    if (inclV1Dist * inclV2Dist < 0) {
+                        clippedPoints.emplace_back(
+                            (incidentEdge.second - incidentEdge.first) * (inclV1Dist / (inclV1Dist - inclV2Dist))
+                            + incidentEdge.first);
+                    }
+
+
+                    UMBRA_LOG_INFO("inc ref %f ", clipV1Cutoff);
+                }
+                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints2;
+                if (clippedPoints.size() >= 2) {
+                    float clipV2Cutoff = Umbra::Math::Vector2f::Dot(refNorm, referenceEdge.second) * -1;
+                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refNorm * -1, clippedPoints[0]) - clipV2Cutoff;
+                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refNorm * -1, clippedPoints[1]) - clipV2Cutoff;
+                    if (inclV1Dist >= 0) {
+                        clippedPoints2.emplace_back(clippedPoints[0]);
+                    }
+                    if (inclV2Dist >= 0) {
+                        clippedPoints2.emplace_back(clippedPoints[1]);
+                    }
+                    if (inclV1Dist * inclV2Dist < 0) {
+                        clippedPoints.emplace_back(
+                            (clippedPoints[1] - clippedPoints[0]) * (inclV1Dist / (inclV1Dist - inclV2Dist))
+                            + clippedPoints[0]);
+                    }
+                }
+
+                auto refPerp = Umbra::Math::Vector2f::Perpendicular(refNorm);
+                if (bFlipInc) {
+                    refPerp *= -1;
+                }
+                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints3;
+                if (clippedPoints2.size() >= 2) {
+                    float clipV3Cutoff = Umbra::Math::Vector2f::Dot(refPerp, referenceEdge.first);
+                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refPerp, clippedPoints2[0]) - clipV3Cutoff;
+                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refPerp, clippedPoints2[1]) - clipV3Cutoff;
+                    if (inclV1Dist >= 0) {
+                        clippedPoints3.emplace_back(clippedPoints2[0]);
+                    }
+                    if (inclV2Dist >= 0) {
+                        clippedPoints3.emplace_back(clippedPoints2[1]);
+                    }
+                }
+
+
+                // Sutherland-Hodgman Clipping Algorithm
+                for (auto v : clippedPoints) {
+                    Umbra::RenderSystem::DebugDrawCircle(v, 3.45, false, sf::Color(70, 70, 70));
+                }
+                for (auto v : clippedPoints2) {
+                    Umbra::RenderSystem::DebugDrawCircle(v, 3.5, false, sf::Color(120, 120, 120));
+                }
+                for (auto v : clippedPoints3) {
+                    Umbra::RenderSystem::DebugDrawCircle(v, 3.5, true, sf::Color(255, 255, 120));
+                }
+
+                Umbra::RenderSystem::DebugDrawCircle(verticesA[vaIx], 2.5, false, sf::Color::Red);
+                Umbra::RenderSystem::DebugDrawCircle(verticesB[vbIx], 2.5, false, sf::Color::Green);
+                Umbra::RenderSystem::DebugDrawCircle(vertexPrevA, 2.5, false, sf::Color::Blue);
+                Umbra::RenderSystem::DebugDrawCircle(vertexNextA, 2.5, false, sf::Color::Yellow);
+                Umbra::RenderSystem::DebugDrawCircle(vertexPrevB, 2.5, false, sf::Color::Blue);
+                Umbra::RenderSystem::DebugDrawCircle(vertexNextB, 2.5, false, sf::Color::Yellow);
+                Umbra::RenderSystem::DebugDrawLine(referenceEdge.first, referenceEdge.second, sf::Color::Red);
+                Umbra::RenderSystem::DebugDrawLine(incidentEdge.first, incidentEdge.second, sf::Color::Green);
+            }
+
+
+            // // find the edge from the vertex such that it is most perpendicular to the collision normal
+            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> prevVertEdgeA = {
+            //     verticesA[vaIx - 1 % verticesA.size()], verticesA[vaIx]};
+            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> nextVertEdgeA = {
+            //     verticesA[vaIx], verticesA[vaIx + 1 % verticesA.size()]};
+            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
+            // if ()
         }
     }
+
 
     if (mShapeA == Box) {
         shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
@@ -86,6 +250,8 @@ void SATScene::OnFixedUpdated() {
     }
 
 
+    Umbra::Math::Vector2f minAxis;
+    bool flip = false;
     if (bShowProjections) {
         if (mShapeA != Circle) {
             Umbra::Vector<Umbra::Math::Vector2f> normals = shapeA->GetNormals();
@@ -105,32 +271,45 @@ void SATScene::OnFixedUpdated() {
         axes.insert(axes.end(), normalsA.begin(), normalsA.end());
         axes.insert(axes.end(), normalsB.begin(), normalsB.end());
         float minOverLap = Umbra::fInf;
-        Umbra::Math::Vector2f minAxis;
         // For every axis project both shape and find if any axis exist which has no overlap
         // if overlap is not found objects are separated
         // else find the axis with minimum overlap to find minimum translation vector
         for (Umbra::Math::Vector2f axis : normalsA) {
             Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
             Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
-            Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
-            Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
+            // Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
+            // Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
             if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
                 // axis is the separating axis theorem
             } else {
                 Umbra::RenderSystem::DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
                     axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), sf::Color::Yellow);
+                float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
+                              - Umbra::Math::Max(projectionA.Min, projectionB.Min);
+                if (overlap < minOverLap) {
+                    minOverLap = overlap;
+                    minAxis    = axis;
+                    flip       = false;
+                }
             }
         }
         for (Umbra::Math::Vector2f axis : normalsB) {
             Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
             Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
-            Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
-            Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
+            // Umbra::RenderSystem::DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, sf::Color::Blue);
+            // Umbra::RenderSystem::DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, sf::Color::Red);
             if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
                 // axis is the separating axis theorem
             } else {
-                Umbra::RenderSystem::DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
-                    axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), sf::Color::Yellow);
+                // Umbra::RenderSystem::DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
+                // axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), sf::Color::Yellow);
+                float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
+                              - Umbra::Math::Max(projectionA.Min, projectionB.Min);
+                if (overlap < minOverLap) {
+                    minOverLap = overlap;
+                    minAxis    = axis;
+                    flip       = true;
+                }
             }
         }
     }
@@ -139,6 +318,8 @@ void SATScene::OnFixedUpdated() {
     Umbra::RenderSystem::DebugDrawCircle(transformA->Position, 2.f, true, sf::Color::Cyan);
     Umbra::RenderSystem::DebugDrawLine(transformA->Position,
         transformA->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformA->Angle) * 10, sf::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(
+        transformA->Position, transformA->Position + minAxis * 70, flip ? sf::Color::Cyan : sf::Color::White);
     Umbra::RenderSystem::DebugDrawCircle(transformB->Position, 2.f, true, sf::Color::Magenta);
     Umbra::RenderSystem::DebugDrawLine(transformB->Position,
         transformB->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformB->Angle) * 10, sf::Color::Magenta);
@@ -146,6 +327,47 @@ void SATScene::OnFixedUpdated() {
 
 void SATScene::OnUpdate() {
     ImGui::Begin("SAT Demo");
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Right)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.x +=
+                10 * Umbra::EngineTime::GetDeltaTime();
+        }
+    }
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Left)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.x -=
+                10 * Umbra::EngineTime::GetDeltaTime();
+        }
+    }
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Up)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.y +=
+                10 * Umbra::EngineTime::GetDeltaTime();
+        }
+    }
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Down)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            GetWorld()->GetComponent<Umbra::TransformComponent>(GetCameraEntity())->Position.y -=
+                10 * Umbra::EngineTime::GetDeltaTime();
+        }
+    }
+
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::Q)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            float orthographic =
+                GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->GetOrthographicSize();
+            orthographic += 40 * Umbra::EngineTime::GetDeltaTime();
+            GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(orthographic);
+        }
+    }
+    if (Umbra::Input::GetKeyDown(Umbra::KeyBoard::E)) {
+        if (GetCameraEntity() != Umbra::MAX_ENTITY) {
+            float orthographic =
+                GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->GetOrthographicSize();
+            orthographic -= 40 * Umbra::EngineTime::GetDeltaTime();
+            GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(orthographic);
+        }
+    }
     if (ImGui::Button("Restart")) {
         GetSceneManager().GoToScene(this->GetSceneID());
     }
@@ -194,7 +416,39 @@ void SATScene::OnUpdate() {
         }
         ImGui::EndChild();
     }
-    ImGui::Checkbox("showProjections", &bShowProjections);
+    ImGui::BeginChild("Projection", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Border);
+    ImGui::Checkbox("show Projections", &bShowProjections);
+    ImGui::ColorButton(
+        "##NearVecColor1", ImVec4(0.0f, 0.0f, 1.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::Text("Shape A");
+    ImGui::SameLine(0, 20);
+    ImGui::ColorButton(
+        "##NearVecColor2", ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::Text("Shape B");
+    ImGui::SameLine(0, 20);
+    ImGui::ColorButton(
+        "##NearVecColor3", ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::Text("Overlap");
+    ImGui::EndChild();
+    ImGui::BeginChild("Contact", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Border);
+    ImGui::Checkbox("show contacts", &bDrawContactPoint);
+    ImGui::ColorButton(
+        "##NearVecColor1", ImVec4(0.0f, 0.0f, 1.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::Text("incident edge");
+    ImGui::SameLine(0, 20);
+    ImGui::ColorButton(
+        "##NearVecColor2", ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::Text("reference edge");
+    ImGui::SameLine(0, 20);
+    ImGui::ColorButton(
+        "##NearVecColor3", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+    ImGui::SameLine(0, 20);
+    ImGui::EndChild();
     if (ImGui::Button("Main Menu")) {
         GetSceneManager().GoToScene("Scene0");
     }

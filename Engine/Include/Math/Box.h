@@ -15,7 +15,7 @@ namespace Umbra::Math {
         Box(const Vector2f& _position, const Vector2f& _size, float _angle);
         // Box(const Vector2f& _position, const Vector2f& _xExtent, const Vector2f& _yExtent);
         // overriding since we know 2 normals are parallel
-        virtual Vector<Math::Vector2f> GetNormals() override;
+        //  virtual Vector<Math::Vector2f> GetNormals() override;
 
     private:
         float mAngle;

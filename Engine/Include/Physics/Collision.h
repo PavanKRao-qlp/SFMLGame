@@ -20,7 +20,9 @@ namespace Umbra {
         EntityID mBodyA;
         EntityID mBodyB;
         double mCofOfRestitution;
+        Math::Vector2f mContactNormal;
         void AddContact(ContactPoint& _contact);
+        void AddContacts(Vector<ContactPoint>& _contacts);
         Vector<ContactPoint>& GetContacts();
 
     private:
@@ -33,9 +35,16 @@ namespace Umbra {
         Vector<Collision> RunNarrowPhase(Vector<Tuple<EntityID, EntityID>>& PossibleCollisions);
         class BaseView* mBaseView;
 
-        bool CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB);
+        bool CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB, Collision& _collision);
 
     private:
+        Vector<Math::Vector2f> GetContactPointsNaive(Math::Polygon& _shapeA, Math::Polygon& _shapeB);
+        /**
+         *
+         */
+        int Clip(const Math::Vector2f& _normal, Pair<Math::Vector2f, Math::Vector2f>& _edge, float _clippingPlaneProj);
+        Vector<ContactPoint> GetContactPointsViaClipping(
+            Math::Polygon& _shapeA, Math::Polygon& _shapeB, Math::Vector2f& _normal);
         bool CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision);
         bool CheckCircleCircleOverlap(Math::Vector2f _positionA, Math::Vector2f _positionB, float _radiusA,
             float _radiusB, Collision& _collision);

@@ -135,7 +135,8 @@ namespace Umbra {
     }
 
 
-    bool CollisionDetector::CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB) {
+    bool CollisionDetector::CheckPolygonPolygonOverlapSAT(
+        Math::Polygon& _shapeA, Math::Polygon& _shapeB, Collision& _collision) {
         Vector<Math::Vector2f> normalsA = _shapeA.GetNormals();
         Vector<Math::Vector2f> normalsB = _shapeB.GetNormals();
         Vector<Math::Vector2f> axes;
@@ -146,7 +147,10 @@ namespace Umbra {
         // For every axis project both shape and find if any axis exist which has no overlap
         // if overlap is not found objects are separated
         // else find the axis with minimum overlap to find minimum translation vector
+        int i = 0;
+        int v = 0;
         for (Math::Vector2f axis : axes) {
+            i++;
             Math::Polygon::Projection projectionA = _shapeA.GetProjectionOntoAxis(axis);
             Math::Polygon::Projection projectionB = _shapeB.GetProjectionOntoAxis(axis);
             if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
@@ -157,11 +161,184 @@ namespace Umbra {
             if (overlap < minOverLap) {
                 minOverLap = overlap;
                 minAxis    = axis;
+                v          = i;
             }
         }
-        // find contact points
+        // inverse if axis is from b to a
+        auto AB    = _shapeB.GetCenter() - _shapeA.GetCenter();
+        float bInv = (Math::Vector2f::Dot(AB, minAxis));
+        if (bInv < 0) {
+            minAxis = -1 * minAxis;
+        }
 
+        _collision.mContactNormal = minAxis;
+        _collision.AddContacts(GetContactPointsViaClipping(_shapeA, _shapeB, _collision.mContactNormal));
         return true;
+    }
+
+    int CollisionDetector::Clip(
+        const Math::Vector2f& _normal, Pair<Math::Vector2f, Math::Vector2f>& _edge, float _clippingPlaneProj) {
+        Vector<Math::Vector2f> result;
+        float dist1 = Math::Vector2f::Dot(_normal, _edge.first) - _clippingPlaneProj;
+        float dist2 = Math::Vector2f::Dot(_normal, _edge.second) - _clippingPlaneProj;
+
+        // If points are inside, keep them
+        if (dist1 >= 0.0f) {
+            result.emplace_back(_edge.first);
+        }
+        if (dist2 >= 0.0f) {
+            result.emplace_back(_edge.second);
+        }
+
+        // If the points are on different sides, clip the edge
+        if (dist1 * dist2 < 0.0f) {
+            float t                 = dist1 / (dist1 - dist2);
+            Math::Vector2f newPoint = _edge.first + t * (_edge.second - _edge.first);
+            result.push_back(newPoint);
+        }
+
+        if (result.size() < 2) {
+            return 0;
+        }
+
+        _edge.first  = result[0];
+        _edge.second = result[1];
+        return 1;
+    }
+
+    Vector<ContactPoint> Umbra::CollisionDetector::GetContactPointsViaClipping(
+        Math::Polygon& _shapeA, Math::Polygon& _shapeB, Math::Vector2f& _normal) {
+        Vector<ContactPoint> collisionPoint;
+
+        int vaIx                         = -1;
+        float vaProj                     = -fInf;
+        Vector<Math::Vector2f> verticesA = _shapeA.GetVertices();
+        for (int i = 0; i < verticesA.size(); i++) {
+            float projection = Math::Vector2f::Dot(_normal, verticesA[i]);
+            if (projection >= vaProj) {
+                vaIx   = i;
+                vaProj = projection;
+            }
+        }
+        Math::Vector2f vertexNextA     = verticesA[(vaIx + 1) % verticesA.size()];
+        Math::Vector2f vertexPrevA     = verticesA[(vaIx - 1) % verticesA.size()];
+        Math::Vector2f vertToNextEdgeA = (vertexNextA - verticesA[vaIx]).GetNormalized();
+        Math::Vector2f prevToVertEdgeA = (verticesA[vaIx] - vertexPrevA).GetNormalized();
+        float prevProj                 = Math::Vector2f::Dot(prevToVertEdgeA, _normal);
+        float nextProj                 = Math::Vector2f::Dot(vertToNextEdgeA, _normal);
+        Pair<Math::Vector2f, Math::Vector2f> bestEdgeA;
+        if (Math::Abs(prevProj) <= Math::Abs(nextProj)) {
+            bestEdgeA = {vertexPrevA, verticesA[vaIx]};
+        } else {
+            bestEdgeA = {verticesA[vaIx], vertexNextA};
+        }
+
+        int vbIx                         = -1;
+        float vbProj                     = -fInf;
+        Vector<Math::Vector2f> verticesB = _shapeB.GetVertices();
+        for (int i = 0; i < verticesB.size(); i++) {
+            float projection = Math::Vector2f::Dot(-1 * _normal, verticesB[i]);
+            if (projection >= vbProj) {
+                vbIx   = i;
+                vbProj = projection;
+            }
+        }
+        // find the edge that is perpendicular to contact normal
+        Math::Vector2f vertexNextB     = verticesB[(vbIx + 1) % verticesB.size()];
+        Math::Vector2f vertexPrevB     = verticesB[(vbIx - 1) % verticesB.size()];
+        Math::Vector2f vertToNextEdgeB = (vertexNextB - verticesB[vbIx]).GetNormalized();
+        Math::Vector2f prevToVertEdgeB = (verticesB[vbIx] - vertexPrevB).GetNormalized();
+        prevProj                       = Math::Vector2f::Dot(prevToVertEdgeB, -1 * _normal);
+        nextProj                       = Math::Vector2f::Dot(vertToNextEdgeB, -1 * _normal);
+        Pair<Math::Vector2f, Math::Vector2f> bestEdgeB;
+        if (Math::Abs(prevProj) <= Math::Abs(nextProj)) {
+            bestEdgeB = {vertexPrevB, verticesB[vbIx]};
+        } else {
+            bestEdgeB = {verticesB[vbIx], vertexNextB};
+        }
+
+        Pair<Math::Vector2f, Math::Vector2f> referenceEdge;
+        Pair<Math::Vector2f, Math::Vector2f> incidentEdge;
+        float e1Dot = Math::Abs(Math::Vector2f::Dot((bestEdgeA.second - bestEdgeA.first), _normal));
+        float e2Dot = Math::Abs(Math::Vector2f::Dot((bestEdgeB.second - bestEdgeB.first), -1 * _normal));
+
+        bool bFlipInc = false;
+        if (e1Dot <= e2Dot) {
+            bFlipInc      = false;
+            referenceEdge = bestEdgeA;
+            incidentEdge  = bestEdgeB;
+        } else {
+            referenceEdge = bestEdgeB;
+            incidentEdge  = bestEdgeA;
+            bFlipInc      = true;
+        }
+
+        Math::Vector2f refEdge   = (referenceEdge.second - referenceEdge.first).GetNormalized();
+        Math::Vector2f refNormal = Math::Vector2f(refEdge.y, -refEdge.x);
+        if (Math::Vector2f::Dot(_normal, refNormal) < 0) {
+            refNormal = -1 * refNormal; // Flip the normal to make sure it points in the correct direction
+        }
+
+        float refC1 = Math::Vector2f::Dot(refNormal, referenceEdge.first);
+        float refC2 = Math::Vector2f::Dot(-1 * refNormal, referenceEdge.second);
+
+        Pair<Math::Vector2f, Math::Vector2f> clipped = incidentEdge;
+        if (!Clip(-1 * refNormal, clipped, refC1)) {
+            return collisionPoint;
+        }
+        if (!Clip(refNormal, clipped, refC2)) {
+            return collisionPoint;
+        }
+
+        float refDepth = Math::Vector2f::Dot(_normal, referenceEdge.first);
+        for (auto& point : {incidentEdge.first, incidentEdge.second}) {
+            float depth = Math::Vector2f::Dot(_normal, point) - refDepth;
+            if (depth <= 0.0f) {
+                ContactPoint cp;
+                cp.mContactPosition = point;
+                cp.mPenetration     = -depth;
+                cp.mContactNormal   = bFlipInc ? -1 * _normal : _normal;
+                collisionPoint.emplace_back(cp);
+            }
+        }
+        return collisionPoint;
+    }
+
+    Vector<Math::Vector2f> CollisionDetector::GetContactPointsNaive(Math::Polygon& _shapeA, Math::Polygon& _shapeB) {
+        Vector<Math::Vector2f> points;
+        for (Math::Vector2f vertex : _shapeA.GetVertices()) {
+            bool bInside = true;
+
+            for (Math::Vector2f normal : _shapeB.GetNormals()) {
+                Math::Polygon::Projection projectionB = _shapeB.GetProjectionOntoAxis(normal);
+                float projectionVert                  = Math::Vector2f::Dot(vertex, normal);
+
+                if (projectionVert < projectionB.Min || projectionVert > projectionB.Max) {
+                    bInside = false;
+                    break;
+                }
+            }
+            if (bInside) {
+                points.emplace_back(vertex);
+            }
+        }
+        for (Math::Vector2f vertex : _shapeB.GetVertices()) {
+            bool bInside = true;
+
+            for (Math::Vector2f normal : _shapeA.GetNormals()) {
+                Math::Polygon::Projection projectionB = _shapeA.GetProjectionOntoAxis(normal);
+                float projectionVert                  = Math::Vector2f::Dot(vertex, normal);
+
+                if (projectionVert < projectionB.Min || projectionVert > projectionB.Max) {
+                    bInside = false;
+                    break;
+                }
+            }
+            if (bInside) {
+                points.emplace_back(vertex);
+            }
+        }
+        return points;
     }
 
     bool CollisionDetector::CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision) {
@@ -247,6 +424,9 @@ namespace Umbra {
 
     void Collision::AddContact(ContactPoint& _contact) {
         mContacts.emplace_back(_contact);
+    }
+    void Collision::AddContacts(Vector<ContactPoint>& _contacts) {
+        mContacts.insert(mContacts.end(), _contacts.begin(), _contacts.end());
     }
 
     Vector<ContactPoint>& Collision::GetContacts() {

@@ -17,6 +17,7 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace Umbra {
@@ -50,6 +51,10 @@ namespace Umbra {
 
     template <typename T, typename U>
     using Tuple = std::tuple<T, U>; // tuple
+
+    template <typename T, typename U>
+    using Pair = std::pair<T, U>; // pair
+
     template <typename T>
     using Vector = std::vector<T>; // dynamic Array
 

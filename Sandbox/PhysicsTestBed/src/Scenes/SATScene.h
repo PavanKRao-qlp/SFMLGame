@@ -24,14 +24,15 @@ private:
     Umbra::Vector<Umbra::Math::Vector2f> GetRandomPolygon(int _edges, int _sizeRadius);
     Umbra::EntityID mEntityA = Umbra::MAX_ENTITY;
     Umbra::EntityID mEntityB = Umbra::MAX_ENTITY;
-    ShapeType mShapeA        = ShapeType::Polygon;
-    ShapeType mShapeB        = ShapeType::Polygon;
+    ShapeType mShapeA        = ShapeType::Box;
+    ShapeType mShapeB        = ShapeType::Box;
     Umbra::Math::Polygon mPolygonA;
     Umbra::Math::Polygon mPolygonB;
     float mRadius;
     float mDistance;
-    float mAngle          = 0;
-    bool bShowProjections = true;
+    float mAngle           = 0;
+    bool bShowProjections  = false;
+    bool bDrawContactPoint = false;
 
     Umbra::SharedPtr<Umbra::CollisionDetector> mCollisionDetector;
 };

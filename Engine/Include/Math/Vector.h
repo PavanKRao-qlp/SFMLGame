@@ -67,7 +67,7 @@ namespace Umbra::Math {
         /**
          * @brief Returns the dot product of two vectors.
          */
-        static float Dot(TVector& _vectorA, TVector& _vectorB);
+        static float Dot(const TVector& _vectorA, const TVector& _vectorB);
 
         /**
          * @brief Returns the 2D cross product (scalar) of two vectors.
@@ -234,7 +234,7 @@ namespace Umbra::Math {
     }
 
     template <typename T>
-    inline float TVector<T>::Dot(TVector& _vectorA, TVector& _vectorB) {
+    inline float TVector<T>::Dot(const TVector& _vectorA, const TVector& _vectorB) {
         return (_vectorA.x * _vectorB.x + _vectorA.y * _vectorB.y);
     }
 

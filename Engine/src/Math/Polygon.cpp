@@ -17,6 +17,10 @@ namespace Umbra::Math {
         return edges;
     }
 
+    Math::Vector2f Polygon::GetCenter() {
+        return mCenter;
+    }
+
     Polygon::Projection Polygon::GetProjectionOntoAxis(Math::Vector2f _axis) {
         Projection projection;
         projection.Min = fInf;
@@ -39,6 +43,13 @@ namespace Umbra::Math {
     }
     Polygon::~Polygon() {}
 
+    Polygon::Polygon(Vector<Math::Vector2f>& _vertices) : mVertices(_vertices) {
+        mCenter = Vector2f(0, 0);
+        for (Vector2f vertex : mVertices) {
+            mCenter += vertex;
+        }
+        mCenter /= mVertices.size() * 1.f;
+    }
 
     Polygon::Polygon() {}
 } // namespace Umbra::Math

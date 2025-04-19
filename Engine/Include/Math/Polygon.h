@@ -19,7 +19,7 @@ namespace Umbra::Math {
         };
 
         Polygon();
-        Polygon(Vector<Math::Vector2f>& _vertices) : mVertices(_vertices) {}
+        Polygon(Vector<Math::Vector2f>& _vertices);
         ~Polygon();
 
         /**
@@ -39,6 +39,12 @@ namespace Umbra::Math {
          */
         Vector<Math::Vector2f> GetEdges();
 
+
+        /**
+         * @brief Returns the centroid of the polygon
+         */
+        Math::Vector2f GetCenter();
+
         /**
          * @brief Projects all vertices onto axis and return min to max projection.
          */
@@ -47,6 +53,8 @@ namespace Umbra::Math {
     protected:
         /// List of 2D points defining the polygon (assumed to be in order, forming edges)
         Vector<Math::Vector2f> mVertices;
+        // centroid position vector
+        Math::Vector2f mCenter;
     };
 
 } // namespace Umbra::Math
