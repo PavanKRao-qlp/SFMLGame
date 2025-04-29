@@ -63,16 +63,16 @@ void SATScene::OnFixedUpdated() {
         Umbra::Collision collision;
         bool bCollided = mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB, collision);
         if (bCollided) {
-            Umbra::RenderSystem::DebugDrawLine(transformA->Position, collision.mContactNormal * 100, sf::Color::Green);
+            Umbra::RenderSystem::DebugDrawLine(
+                transformA->Position, transformA->Position + collision.mContactNormal * 100, sf::Color::Green);
             for (auto point : collision.GetContacts()) {
-                if (bDrawContactPoint) {
-                    Umbra::RenderSystem::DebugDrawCircle(point.mContactPosition, 1.5, true, sf::Color::White);
-                }
+                // if (bDrawContactPoint) {
+                Umbra::RenderSystem::DebugDrawCircle(point.mContactPosition, 1.5, true, sf::Color::White);
+                // }
             }
             if (bDrawContactPoint) {
                 Umbra::Vector<Umbra::Math::Vector2f> collisionPoint;
 
-                // first we find the vertex in A  that is  furthest along collision normal
                 int vaIx                                       = -1;
                 float vaProj                                   = -Umbra::fInf;
                 Umbra::Vector<Umbra::Math::Vector2f> verticesA = shapeA->GetVertices();
@@ -83,7 +83,6 @@ void SATScene::OnFixedUpdated() {
                         vaProj = projection;
                     }
                 }
-                // find the edge that is perpendicular to contact normal
                 Umbra::Math::Vector2f vertexNextA     = verticesA[(vaIx + 1) % verticesA.size()];
                 Umbra::Math::Vector2f vertexPrevA     = verticesA[(vaIx - 1) % verticesA.size()];
                 Umbra::Math::Vector2f vertToNextEdgeA = (vertexNextA - verticesA[vaIx]).GetNormalized();
@@ -97,7 +96,6 @@ void SATScene::OnFixedUpdated() {
                     bestEdgeA = {verticesA[vaIx], vertexNextA};
                 }
 
-                // next we find the vertex in B  that is  furthest along collision normal
                 int vbIx                                       = -1;
                 float vbProj                                   = -Umbra::fInf;
                 Umbra::Vector<Umbra::Math::Vector2f> verticesB = shapeB->GetVertices();
@@ -122,13 +120,13 @@ void SATScene::OnFixedUpdated() {
                     bestEdgeB = {verticesB[vbIx], vertexNextB};
                 }
 
-                // since we know norm is a to b so a is going to be inc and b is ref
                 Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> referenceEdge;
                 Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> incidentEdge;
                 float e1Dot = Umbra::Math::Abs(
                     Umbra::Math::Vector2f::Dot((bestEdgeA.second - bestEdgeA.first), collision.mContactNormal));
                 float e2Dot = Umbra::Math::Abs(
                     Umbra::Math::Vector2f::Dot((bestEdgeB.second - bestEdgeB.first), -1 * collision.mContactNormal));
+
                 bool bFlipInc = false;
                 if (e1Dot <= e2Dot) {
                     bFlipInc      = false;
@@ -139,73 +137,33 @@ void SATScene::OnFixedUpdated() {
                     incidentEdge  = bestEdgeA;
                     bFlipInc      = true;
                 }
-                auto refNorm = (referenceEdge.second - referenceEdge.first).GetNormalized();
 
-                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints;
-                {
-                    float clipV1Cutoff = Umbra::Math::Vector2f::Dot(refNorm, referenceEdge.first);
-                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refNorm, incidentEdge.first) - clipV1Cutoff;
-                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refNorm, incidentEdge.second) - clipV1Cutoff;
-                    if (inclV1Dist >= 0) {
-                        clippedPoints.emplace_back(incidentEdge.first);
-                    }
-                    if (inclV2Dist >= 0) {
-                        clippedPoints.emplace_back(incidentEdge.second);
-                    }
-                    if (inclV1Dist * inclV2Dist < 0) {
-                        clippedPoints.emplace_back(
-                            (incidentEdge.second - incidentEdge.first) * (inclV1Dist / (inclV1Dist - inclV2Dist))
-                            + incidentEdge.first);
-                    }
-
-
-                    UMBRA_LOG_INFO("inc ref %f ", clipV1Cutoff);
-                }
-                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints2;
-                if (clippedPoints.size() >= 2) {
-                    float clipV2Cutoff = Umbra::Math::Vector2f::Dot(refNorm, referenceEdge.second) * -1;
-                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refNorm * -1, clippedPoints[0]) - clipV2Cutoff;
-                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refNorm * -1, clippedPoints[1]) - clipV2Cutoff;
-                    if (inclV1Dist >= 0) {
-                        clippedPoints2.emplace_back(clippedPoints[0]);
-                    }
-                    if (inclV2Dist >= 0) {
-                        clippedPoints2.emplace_back(clippedPoints[1]);
-                    }
-                    if (inclV1Dist * inclV2Dist < 0) {
-                        clippedPoints.emplace_back(
-                            (clippedPoints[1] - clippedPoints[0]) * (inclV1Dist / (inclV1Dist - inclV2Dist))
-                            + clippedPoints[0]);
-                    }
+                Umbra::Math::Vector2f refEdge   = (referenceEdge.second - referenceEdge.first).GetNormalized();
+                Umbra::Math::Vector2f refNormal = Umbra::Math::Vector2f(refEdge.y, -refEdge.x);
+                if (Umbra::Math::Vector2f::Dot(collision.mContactNormal, refNormal) < 0) {
+                    refNormal = -1 * refNormal; // Flip the normal to make sure it points in the correct direction
                 }
 
-                auto refPerp = Umbra::Math::Vector2f::Perpendicular(refNorm);
-                if (bFlipInc) {
-                    refPerp *= -1;
-                }
-                Umbra::Vector<Umbra::Math::Vector2f> clippedPoints3;
-                if (clippedPoints2.size() >= 2) {
-                    float clipV3Cutoff = Umbra::Math::Vector2f::Dot(refPerp, referenceEdge.first);
-                    float inclV1Dist   = Umbra::Math::Vector2f::Dot(refPerp, clippedPoints2[0]) - clipV3Cutoff;
-                    float inclV2Dist   = Umbra::Math::Vector2f::Dot(refPerp, clippedPoints2[1]) - clipV3Cutoff;
-                    if (inclV1Dist >= 0) {
-                        clippedPoints3.emplace_back(clippedPoints2[0]);
+                float refC1 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.first);
+                float refC2 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.second) * -1;
+                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> clipped = incidentEdge;
+                if (!mCollisionDetector->Clip(refEdge, clipped, refC1)) {
+                } else if (!mCollisionDetector->Clip(-1 * refEdge, clipped, refC2)) {
+                } else {
+                    if (bFlipInc) {
+                        refNormal *= -1;
                     }
-                    if (inclV2Dist >= 0) {
-                        clippedPoints3.emplace_back(clippedPoints2[1]);
+                    float refDepth = Umbra::Math::Vector2f::Dot(refNormal, referenceEdge.first);
+                    for (auto& point : {clipped.first, clipped.second}) {
+                        float depth = Umbra::Math::Vector2f::Dot(refNormal, point) - refDepth;
+                        if (depth <= 0.0f) {
+                            collisionPoint.emplace_back(point);
+                        }
                     }
-                }
 
 
-                // Sutherland-Hodgman Clipping Algorithm
-                for (auto v : clippedPoints) {
-                    Umbra::RenderSystem::DebugDrawCircle(v, 3.45, false, sf::Color(70, 70, 70));
-                }
-                for (auto v : clippedPoints2) {
-                    Umbra::RenderSystem::DebugDrawCircle(v, 3.5, false, sf::Color(120, 120, 120));
-                }
-                for (auto v : clippedPoints3) {
-                    Umbra::RenderSystem::DebugDrawCircle(v, 3.5, true, sf::Color(255, 255, 120));
+                    Umbra::RenderSystem::DebugDrawCircle(clipped.first, 2.5, false, sf::Color::White);
+                    Umbra::RenderSystem::DebugDrawCircle(clipped.second, 2.5, false, sf::Color::White);
                 }
 
                 Umbra::RenderSystem::DebugDrawCircle(verticesA[vaIx], 2.5, false, sf::Color::Red);

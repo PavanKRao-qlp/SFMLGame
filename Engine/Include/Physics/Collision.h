@@ -36,13 +36,13 @@ namespace Umbra {
         class BaseView* mBaseView;
 
         bool CheckPolygonPolygonOverlapSAT(Math::Polygon& _shapeA, Math::Polygon& _shapeB, Collision& _collision);
+        int Clip(const Math::Vector2f& _normal, Pair<Math::Vector2f, Math::Vector2f>& _edge, float _clippingPlaneProj);
 
     private:
         Vector<Math::Vector2f> GetContactPointsNaive(Math::Polygon& _shapeA, Math::Polygon& _shapeB);
         /**
          *
          */
-        int Clip(const Math::Vector2f& _normal, Pair<Math::Vector2f, Math::Vector2f>& _edge, float _clippingPlaneProj);
         Vector<ContactPoint> GetContactPointsViaClipping(
             Math::Polygon& _shapeA, Math::Polygon& _shapeB, Math::Vector2f& _normal);
         bool CheckCollision(EntityID _entityA, EntityID _entityB, Collision& _collision);

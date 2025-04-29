@@ -279,20 +279,22 @@ namespace Umbra {
             refNormal = -1 * refNormal; // Flip the normal to make sure it points in the correct direction
         }
 
-        float refC1 = Math::Vector2f::Dot(refNormal, referenceEdge.first);
-        float refC2 = Math::Vector2f::Dot(-1 * refNormal, referenceEdge.second);
+        float refC1 = Math::Vector2f::Dot(refEdge, referenceEdge.first);
+        float refC2 = Math::Vector2f::Dot(-1 * refEdge, referenceEdge.second);
 
         Pair<Math::Vector2f, Math::Vector2f> clipped = incidentEdge;
-        if (!Clip(-1 * refNormal, clipped, refC1)) {
+        if (!Clip(refEdge, clipped, refC1)) {
             return collisionPoint;
         }
-        if (!Clip(refNormal, clipped, refC2)) {
+        if (!Clip(refEdge * -1, clipped, refC2)) {
             return collisionPoint;
         }
-
-        float refDepth = Math::Vector2f::Dot(_normal, referenceEdge.first);
-        for (auto& point : {incidentEdge.first, incidentEdge.second}) {
-            float depth = Math::Vector2f::Dot(_normal, point) - refDepth;
+        if (bFlipInc) {
+            refNormal *= -1;
+        }
+        float refDepth = Umbra::Math::Vector2f::Dot(refNormal, referenceEdge.first);
+        for (auto& point : {clipped.first, clipped.second}) {
+            float depth = Math::Vector2f::Dot(refNormal, point) - refDepth;
             if (depth <= 0.0f) {
                 ContactPoint cp;
                 cp.mContactPosition = point;
