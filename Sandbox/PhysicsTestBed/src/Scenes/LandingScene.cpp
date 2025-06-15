@@ -49,7 +49,7 @@ void LandingScene::OnUpdate() {
         GetSceneManager().GoToScene("Scene10");
     }
     if (ImGui::Button("11 BVH Demo")) {
-        GetSceneManager().GoToScene("Scene5");
+        GetSceneManager().GoToScene("Scene11");
     }
     if (ImGui::Button("5 Point/Circle Triangle Segment Distance")) {
         GetSceneManager().GoToScene("Scene5");

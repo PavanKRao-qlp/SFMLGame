@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Clock.h"
 #include "ECS/Component.h"
+#include "ECS/Components/BoundingVolume.h"
 #include "ECS/Components/PhysicsBodyComponent.h"
 #include "ECS/Components/Rigidbody.h"
 #include "ECS/Components/Transfrom.h"
@@ -9,6 +10,8 @@
 #include "ECS/Systems/RenderSystem.h"
 #include "Math/MathUtils.h"
 #include "Physics/Collision.h"
+#include "Physics/CollisionDetector.h"
+#include "Physics/ContactResolver.h"
 #include "Physics/ForceGenerator.h"
 
 namespace Umbra {
@@ -55,9 +58,6 @@ namespace Umbra {
                 PhysicsBodyComponent* physicsBodyComponent =
                     mView->ecsRegister->GetComponent<PhysicsBodyComponent>(entity);
 
-                // RenderSystem::DebugDrawLine(transform->Position,
-                //  transform->Position + physicsBodyComponent->mForceAccumulated, sf::Color::Blue);
-
                 // sum all force applied to this object by f = ma;
                 if (physicsBodyComponent->bAffectedByGravity) {
                     if (physicsBodyComponent->mInverseMass > 0) {
@@ -98,12 +98,14 @@ namespace Umbra {
                 // Apply Damping
                 physicsBodyComponent->mVelocity *= Math::Pow(mLinearDamping, fixedDeltaTime);
                 physicsBodyComponent->mAngularVelocity *= Math::Pow(mAngularDamping, fixedDeltaTime);
-
-
                 //  reset all force accumulation
                 physicsBodyComponent->mForceAccumulated  = Math::Vector2f(0, 0);
                 physicsBodyComponent->mTorqueAccumulated = 0;
             }
+            // Add Bounding Volume to objects if they dont have
+            BuildBoundingVolumeForEntity();
+            //
+
             // solve collisions
             Vector<Tuple<EntityID, EntityID>> PossibleCollisions = mCollisionDetector->RunBroadPhase();
             Vector<Collision> collisions = mCollisionDetector->RunNarrowPhase(PossibleCollisions);
@@ -117,6 +119,76 @@ namespace Umbra {
         inline void RemoveForceGenerator(SharedPtr<IForceGenerator>* forceGenerator) {
             // mForceGenerators.erase(forceGenerator);
         }
+
+        inline void BuildBoundingVolumeForEntity() {
+
+            mCollisionDetector->ClearBoundingVolumeSpatialData();
+            for (EntityID entity : mView->mEntities) {
+                TransformComponent* transform      = mView->ecsRegister->GetComponent<TransformComponent>(entity);
+                BoundingVolumeAABB* boundingVolume = nullptr;
+                bool bRebuilt                      = false;
+                if (mView->ecsRegister->HasComponent<BoxColliderComponent>(entity)) {
+                    boundingVolume                    = &BoundingVolumeAABB();
+                    boundingVolume->Id                = entity;
+                    BoxColliderComponent* boxCollider = mView->ecsRegister->GetComponent<BoxColliderComponent>(entity);
+                    Math::Vector2f extent             = boxCollider->Size;
+                    float angleRad                    = Math::DegreeToRadian(transform->Angle);
+                    extent.x = Math::Abs(extent.x * Math::Cos(angleRad)) + Math::Abs(extent.y * Math::Sin(angleRad));
+                    extent.y = Math::Abs(extent.x * Math::Sin(angleRad)) + Math::Abs(extent.y * Math::Cos(angleRad));
+                    boundingVolume->SlimBounds = Math::Bounds2D(transform->Position + boxCollider->Offset, extent);
+                    //  if (!boundingVolume->FatBounds.Contains(boundingVolume->SlimBounds)) {
+                    boundingVolume->FatBounds =
+                        Math::Bounds2D(transform->Position + boxCollider->Offset, extent * 1.25f);
+                    // bRebuilt = true;
+                    //}
+                } else if (mView->ecsRegister->HasComponent<CircleColliderComponent>(entity)) {
+                    boundingVolume     = &BoundingVolumeAABB();
+                    boundingVolume->Id = entity;
+                    CircleColliderComponent* circleColliderComponent =
+                        mView->ecsRegister->GetComponent<CircleColliderComponent>(entity);
+                    Math::Vector2f extent =
+                        Math::Vector2f(circleColliderComponent->Radius * 2, circleColliderComponent->Radius * 2);
+                    boundingVolume->SlimBounds =
+                        Math::Bounds2D(transform->Position + circleColliderComponent->Offset, extent);
+                    boundingVolume->FatBounds =
+                        Math::Bounds2D(transform->Position + circleColliderComponent->Offset, extent * 1.25f);
+                }
+                if (boundingVolume != nullptr) {
+                    mCollisionDetector->AddBoundingVolume(*boundingVolume);
+                    RenderSystem::DrawDebugBox(boundingVolume->FatBounds, bRebuilt, sf::Color::Red);
+                    RenderSystem::DrawDebugBox(boundingVolume->SlimBounds, false, sf::Color::Yellow);
+                }
+                /*
+                make a Bounding Volume data
+                update data with transform
+                update BV with new bounds
+                BV build
+                -> broadphase resolve
+                */
+            }
+        }
+
+        inline bool QueryColliderAt(Math::Vector2f _point) {
+            if (mCollisionDetector->BroadphaseQueryColliderAt(_point)) {
+                return true;
+            }
+            return false;
+        }
+
+        inline bool QueryCollidersInsideAABB(Math::Bounds2D _bound) {
+            if (mCollisionDetector->BroadphaseQueryCollidersInsideAABB(_bound)) {
+                return true;
+            }
+            return false;
+        }
+
+        inline bool Raycast(Math::Ray2D _ray) {
+            if (mCollisionDetector->BroadphaseRayCast(_ray)) {
+                return true;
+            }
+            return false;
+        }
+
 
     protected:
         Vector<SharedPtr<IForceGenerator>> mForceGenerators;
