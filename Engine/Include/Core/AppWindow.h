@@ -16,7 +16,9 @@ namespace Umbra {
         void ClearDisplay();
         void CloseWindow();
         sf::RenderWindow* GetRenderWindowHandle();
+        sf::View* GetRenderWindowView();
         bool bWindowClosed = true;
+
 
     private:
         void ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes);
@@ -29,5 +31,9 @@ namespace Umbra {
     };
 
     class AppClosedEvent : public Umbra::Event {};
-
+    class SFMLAppWindowEvent : Event {
+    public:
+        SFMLAppWindowEvent(sf::Event _event) : mSfEvent(_event) {}
+        sf::Event mSfEvent;
+    };
 } // namespace Umbra

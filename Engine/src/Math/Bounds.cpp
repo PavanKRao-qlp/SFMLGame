@@ -1,12 +1,20 @@
 
 #include "Math/Bounds.h"
 
+
 namespace Umbra::Math {
 
     bool Bounds2D::Contains(const Vector2f& _point) const {
         Vector2f minPoint = Min();
         Vector2f maxPoint = Max();
         return (_point.x >= minPoint.x && _point.x <= maxPoint.x && _point.y >= minPoint.y && _point.y <= maxPoint.y);
+    }
+
+    bool Bounds2D::Contains(const Bounds2D& _bound) const {
+        Vector2f minPoint = Min();
+        Vector2f maxPoint = Max();
+        return (_bound.Min().x >= minPoint.x && _bound.Max().x <= maxPoint.x && _bound.Min().y >= minPoint.y
+                && _bound.Max().y <= maxPoint.y);
     }
 
     bool Bounds2D::Intersects(const Bounds2D& _bounds) const {

@@ -5,7 +5,9 @@
 #include "Umbra.h"
 #include "sfmlHelper.h"
 namespace Umbra {
-    AppWindow::AppWindow() {}
+    AppWindow::AppWindow() {
+        GEngineStatics.AppWindowPtr = this;
+    }
 
     AppWindow::~AppWindow() {
         if (mWindow) {
@@ -14,16 +16,15 @@ namespace Umbra {
     }
 
     bool AppWindow::CreateWindow() {
-        Logger::Log(LogType::Verbose, "Creating Window");
+        UMBRA_LOG_INFO("Creating Window");
         mScreenSize       = Math::Vector2i(800, 800);
         mRenderResolution = Math::Vector2i(400, 400);
         aspectRatio       = ((float) mRenderResolution.x) / mRenderResolution.y;
         mWindow           = new sf::RenderWindow(sf::VideoMode(mScreenSize.x, mScreenSize.y), "My window");
         mView             = new sf::View(sf::Vector2f(0, 0), sf::Vector2f(mRenderResolution.x, mRenderResolution.y));
         ResizeViewport(mScreenSize);
-        UM_ASSERT(mWindow != nullptr, "Creating Window Failed");
         bWindowClosed = false;
-        return true;
+        return (mWindow != nullptr);
     }
 
     void AppWindow::Update() { // run the program as long as the window is open
@@ -68,26 +69,26 @@ namespace Umbra {
                     Math::Vector2i resizedDeviceRes = Math::Vector2i(sfEvent.size.width, sfEvent.size.height);
                     ResizeViewport(resizedDeviceRes);
                 }
+                Umbra::SFMLAppWindowEvent* event = new Umbra::SFMLAppWindowEvent(sfEvent);
+                Umbra::EventBus::FireEvent<Umbra::SFMLAppWindowEvent>(event);
             }
         }
     }
 
 
     void AppWindow::ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes) {
-        float newAspectRatio = (float) resizedDeviceRes.x / resizedDeviceRes.y;
-        sf::FloatRect ResizeViewport(0, 0, 1, 1);
-        if (newAspectRatio > aspectRatio) {
-            ResizeViewport.width = aspectRatio / newAspectRatio;
-            ResizeViewport.left  = (1 - ResizeViewport.width) / 2.f;
-        } else {
-            ResizeViewport.height = newAspectRatio / aspectRatio;
-            ResizeViewport.top    = (1 - ResizeViewport.height) / 2.f;
-            // resizedWidth  = 1;
-        }
+        // float newAspectRatio = (float) resizedDeviceRes.x / resizedDeviceRes.y;
+        // sf::FloatRect ResizeViewport(0, 0, 1, 1);
+        // if (newAspectRatio > aspectRatio) {
+        //     ResizeViewport.width = aspectRatio / newAspectRatio;
+        //     ResizeViewport.left  = (1 - ResizeViewport.width) / 2.f;
+        // } else {
+        //     ResizeViewport.height = newAspectRatio / aspectRatio;
+        //     ResizeViewport.top    = (1 - ResizeViewport.height) / 2.f;
+        // }
 
-        mView->setViewport(ResizeViewport);
-        mView->setCenter(sf::Vector2f(0, 0));
-        mWindow->setView(*mView);
+        // mView->setViewport(ResizeViewport);
+        // mWindow->setView(*mView);
     }
     void AppWindow::RefreshDisplay() {
         mWindow->display();
@@ -98,7 +99,8 @@ namespace Umbra {
     }
 
     void AppWindow::CloseWindow() {
-        Logger::Log(LogType::Verbose, "Closing Window");
+        UMBRA_LOG_INFO("Window Closed");
+        // Logger::Log(LogType::Verbose, "Closing Window");
         if (mWindow->isOpen()) {
             mWindow->close();
         }
@@ -108,4 +110,7 @@ namespace Umbra {
         return mWindow;
     }
 
+    sf::View* AppWindow::GetRenderWindowView() {
+        return mView;
+    }
 } // namespace Umbra

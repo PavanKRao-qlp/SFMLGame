@@ -1,7 +1,12 @@
 #pragma once
 #include <bitset>
+#define NDEBUG
+#include <algorithm>
+#include <cassert>
 #include <deque>
 #include <functional>
+#include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <queue>
@@ -12,9 +17,11 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace Umbra {
+
 #define CAST(X, Y) reinterpret_cast<X>(Y)
     template <size_t T>
     using BitField = std::bitset<T>;
@@ -30,6 +37,8 @@ namespace Umbra {
     using uint64 = uint64_t;
     using String = std::string;
 
+    constexpr float fInf = std::numeric_limits<float>::infinity();
+
     using Timestamp = uint64_t;
     // template <typename T>
     // using MakeShared = std::make_shared<T>;
@@ -39,6 +48,12 @@ namespace Umbra {
     using SharedPtr = std::shared_ptr<T>;
     template <typename T>
     using WeakPtr = std::weak_ptr<T>;
+
+    template <typename T, typename U>
+    using Tuple = std::tuple<T, U>; // tuple
+
+    template <typename T, typename U>
+    using Pair = std::pair<T, U>; // pair
 
     template <typename T>
     using Vector = std::vector<T>; // dynamic Array

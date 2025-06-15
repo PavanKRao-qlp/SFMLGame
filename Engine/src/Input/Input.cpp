@@ -1,15 +1,13 @@
 #include "Input/Input.h"
 
 namespace Umbra {
-    Input::Input() {
-        EventBus::Subscribe<KeyPressedEvent>(&Input::OnKeyPressed);
-        EventBus::Subscribe<KeyReleasedEvent>(&Input::OnKeyReleased);
-        EventBus::Subscribe<MouseButtonPressedEvent>(&Input::OnMouseButtonPressed);
-        EventBus::Subscribe<MouseButtonReleasedEvent>(&Input::OnMouseButtonReleased);
-        EventBus::Subscribe<MouseMovedEvent>(&Input::OnMouseMoved);
-    }
 
-    Input::~Input() {}
+    Input::Input() {}
+
+    Input::~Input() {
+        if (GetInstance()) {
+        }
+    }
 
     void Input::OnKeyPressed(const KeyPressedEvent& event) {
         KeyPressedState.set(event.Key, true);
@@ -37,30 +35,38 @@ namespace Umbra {
     }
 
     bool Input::GetMouseButton(Mouse::MouseButton _button) {
-        return MouseButtonPressedState.test(_button);
+        return GetInstance()->MouseButtonPressedState.test(_button);
     }
 
     bool Input::GetMouseButtonDown(Mouse::MouseButton _button) {
-        return !PrevMouseButtonPressedState.test(_button) && MouseButtonPressedState.test(_button);
+        return !GetInstance()->PrevMouseButtonPressedState.test(_button)
+            && GetInstance()->MouseButtonPressedState.test(_button);
     }
 
     bool Input::GetMouseButtonUp(Mouse::MouseButton _button) {
-        return PrevMouseButtonPressedState.test(_button) && !MouseButtonPressedState.test(_button);
+        return GetInstance()->PrevMouseButtonPressedState.test(_button)
+            && !GetInstance()->MouseButtonPressedState.test(_button);
     }
 
     Math::Vector2i Input::GetMousePosition() {
-        return MousePosition;
+        return GetInstance()->MousePosition;
     }
 
     bool Input::GetKey(KeyBoard::Keycode _code) {
-        return !PrevKeyPressedState.test(_code) && KeyPressedState.test(_code);
+
+        return !GetInstance()->PrevKeyPressedState.test(_code) && GetInstance()->KeyPressedState.test(_code);
     }
 
     bool Input::GetKeyDown(KeyBoard::Keycode _code) {
-        return KeyPressedState.test(_code);
+        return GetInstance()->KeyPressedState.test(_code);
     }
 
     bool Input::GetKeyUp(KeyBoard::Keycode _code) {
-        return PrevKeyPressedState.test(_code) && !KeyPressedState.test(_code);
+        return GetInstance()->PrevKeyPressedState.test(_code) && !GetInstance()->KeyPressedState.test(_code);
+    }
+
+    void Input::RefreshImpl() {
+        PrevMouseButtonPressedState = MouseButtonPressedState;
+        PrevKeyPressedState         = KeyPressedState;
     }
 } // namespace  Umbra

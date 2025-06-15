@@ -6,7 +6,8 @@ namespace Umbra {
     class Clock {
     public:
         inline Timestamp GetMS() {
-            return clock.getElapsedTime().asMilliseconds();
+            Timestamp t = clock.getElapsedTime().asMilliseconds();
+            return t;
         }
         inline Timestamp Get() {
             return clock.getElapsedTime().asMicroseconds();
@@ -16,8 +17,8 @@ namespace Umbra {
             deltaTime = 0;
         }
         inline void Tick() {
-            deltaTime  = (GetMS() - lastTickTS) / 1000.f;
-            lastTickTS = GetMS();
+            deltaTime  = ((Get() - lastTickTS) / 1000.f) / 1000.f;
+            lastTickTS = Get();
         }
         inline float GetDeltaTime() {
             return deltaTime;

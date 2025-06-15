@@ -7,7 +7,7 @@ namespace Umbra {
         RegisterComponent<TagComponent>();
     }
 
-    inline ECSRegister::~ECSRegister() {};
+    inline ECSRegister::~ECSRegister() {}
 
     inline EntityID ECSRegister::CreateEntity() {
         EntityID id                    = mEntityManager.CreateEntity();
@@ -24,9 +24,9 @@ namespace Umbra {
     inline void ECSRegister::FlushRegister() {
         mEntityManager.Flush();
         mComponentManager->Flush();
-        for (System* system : mSystems) {
-            system->Flush();
-        }
+        // for (auto system : mSystems) {
+        //     system->Flush();
+        // }
         mEntityComponentSignatures.clear();
     }
 
@@ -128,36 +128,67 @@ namespace Umbra {
         }
         ComponentID id          = ComponentIDHelper::GetID<T>();
         ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
+        if (!pool->Has(_entity)) {
+            return nullptr;
+        }
         return &(pool->Get(_entity));
     }
 
 
-    inline void ECSRegister::AddSystem(System* _system) {
-        mSystems.emplace_back(_system);
+    inline void ECSRegister::AddSystem(ESystemPhase _systemPhase, int _priority, SharedPtr<System> _system) {
+        if (mSystemMap.find(_systemPhase) == mSystemMap.end()) {
+            mSystemMap.emplace(_systemPhase, Vector<SharedPtr<System>>());
+        }
+        mSystemMap[_systemPhase].emplace_back(_system);
         _system->AssignRegistry(this);
     }
 
+    inline void ECSRegister::RemoveSystem(SharedPtr<System>& _system) {
+        // for (auto it = mSystems.begin(); it != mSystems.end(); ++it) {
+        //     if (*it == _system) {
+        //         mSystems.erase(it);
+        //         break; // Stop after removing the first match
+        //     }
+        // }
+    }
+
     inline void ECSRegister::Update() {
+        CleanUp();
+        for (const auto& pair : mSystemMap) {
+            for (const SharedPtr<System>& system : pair.second) {
+                if (system->GetEnabled()) {
+                    system->Update();
+                }
+            }
+        }
+    }
+
+    inline void ECSRegister::Update(ESystemPhase _systemPhase) {
+        for (const SharedPtr<System>& system : mSystemMap[_systemPhase]) {
+            if (system->GetEnabled()) {
+                system->Update();
+            }
+        }
+    }
+
+    inline void ECSRegister::CleanUp() {
         if (bRegisterDirty) {
             RemoveDestroyedEntities();
             AddCreatedEntities();
-
-            for (System* system : mSystems) {
-                for (EntityID entity : mEntityManager.Entities) // has to be sparse set
-                {
-                    if ((system->SystemSignature & mEntityComponentSignatures.at(entity)) == system->SystemSignature) {
-                        system->AddEntity(entity);
-                    } else {
-                        system->RemoveEntity(entity);
+            for (const auto& pair : mSystemMap) {
+                for (const SharedPtr<System>& system : pair.second) {
+                    for (EntityID entity : mEntityManager.Entities) // has to be sparse set
+                    {
+                        if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
+                            == system->SystemSignature) {
+                            system->AddEntity(entity);
+                        } else {
+                            system->RemoveEntity(entity);
+                        }
                     }
                 }
             }
             bRegisterDirty = false;
-        }
-        for (System* system : mSystems) {
-            if (system->GetEnabled()) {
-                system->Update();
-            }
         }
     }
 
@@ -175,10 +206,6 @@ namespace Umbra {
                 }
             }
             mEntityComponentSignatures.at(entity).reset();
-            // remove from systems
-            for (System* system : mSystems) {
-                system->RemoveEntity(entity);
-            }
         }
         mEntityManager.EntitiesDestroyed.clear();
     }

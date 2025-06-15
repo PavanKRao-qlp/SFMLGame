@@ -6,6 +6,14 @@
 #include "ECS/View.h"
 #include "EnginePCH.h"
 namespace Umbra {
+    enum class ESystemPhase {
+        FrameStart, // Input collection, etc.
+        Simulation, // Physics, AI
+        PreRender, // Visibility culling
+        Render, // Actual drawing
+        FrameEnd // Cleanup
+    };
+
     class System {
     private:
         /* data */
@@ -15,13 +23,13 @@ namespace Umbra {
             SystemSignature = view->GetSignature();
         }
         // ~System();
-        inline void AddEntity(EntityID _entity) {
+        inline virtual void AddEntity(EntityID _entity) {
             mView->AddEntity(_entity);
         }
         inline void Flush() {
             mView->Flush();
         }
-        inline void RemoveEntity(EntityID _entity) {
+        inline virtual void RemoveEntity(EntityID _entity) {
             mView->RemoveEntity(_entity);
         }
         inline void AssignRegistry(ECSRegister* _register) {
@@ -37,8 +45,11 @@ namespace Umbra {
         ComponentMask SystemSignature;
 
     protected:
+        // todo memory manage this
         BaseView* mView;
-        bool bEnabled = true;
+        bool bEnabled       = true;
+        ESystemPhase mPhase = ESystemPhase::Simulation;
+        int mPriority       = 0;
     };
 
     class SystemManager {};

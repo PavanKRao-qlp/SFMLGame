@@ -1,38 +1,40 @@
 #pragma once
 #include "Core/AppWindow.h"
-#include "Core/Clock.h"
-#include "ECS/ECSRegister.h"
-#include "Game/World.h"
-#include "Math/Vector.h"
+#include "Game/SceneManager.h"
+#include "UI/ImGuiBackend.h"
 #include "Umbra.h"
 
 #include "SFML/Graphics.hpp"
 namespace Umbra {
     class IGameInstance {
     public:
-        virtual void Initialize()       = 0;
-        virtual void OnUpdate(float dt) = 0;
-        virtual void OnBeginPlay()      = 0;
-        virtual void OnEndPlay()        = 0;
-        void SetECSRegister(ECSRegister* worldRegister);
-        void SetAppWindowRef(AppWindow* appWindow);
-        void SetCurrentWorld(World* _world);
+        IGameInstance()  = default;
+        ~IGameInstance() = default;
+        virtual FGameConfig& LoadGameConfig();
+        virtual void Initialize() = 0;
+        virtual void ShutDown()   = 0;
+        void QuitApplication();
+        SceneManager& GetSceneManger();
+        ImGuiBackend& GetUIManager();
 
-        World* GetWorld();
-
-        Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& screenPosition);
-        Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& worldPosition);
-
+        // virtual void OnUpdate(float dt) = 0;
+        // virtual void OnBeginPlay()      = 0;
+        // virtual void OnEndPlay()        = 0;
+        // void SetECSRegister(ECSRegister* _worldRegister);
+        // void SetSceneManager(SharedPtr<SceneManager>& _sceneManager);
+        // void SetAppWindowRef(AppWindow* _appWindow);
+        // void SetCurrentWorld(World* _world);
+        // World* GetWorld();
+        // Math::Vector2f GetScreenToWorldPosition(Math::Vector2i& _screenPosition);
+        // Math::Vector2i GetWorldToScreenPosition(Math::Vector2f& _worldPosition);
+        // class AppWindow* mAppWindowRef;
     protected:
         class World* mCurrentWorld;
-
-#pragma region moveToPC?
-
-        class AppWindow* mAppWindowRef;
-
+        IGameInstance(const IGameInstance&)            = delete; // NO COPY CONSTRUCTOR
+        IGameInstance& operator=(const IGameInstance&) = delete; // NO COPY CONSTRUCTOR
     private:
-        class ECSRegister* mWorldRegister;
-        void PreInit();
-#pragma endregion
+        friend class App;
+        SceneManager* mSceneManager;
+        ImGuiBackend* mUIBackend;
     };
 } // namespace Umbra

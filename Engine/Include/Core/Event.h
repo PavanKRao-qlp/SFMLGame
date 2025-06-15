@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Singleton.h"
 #include "EnginePCH.h"
 namespace Umbra {
 
@@ -25,11 +26,15 @@ namespace Umbra {
         delegateCallback mCallBack;
     };
 
-    class EventBus {
+    class EventBus : public Singleton<EventBus> {
     public:
-        inline EventBus() {};
+        static inline void Initialize() {}
+        inline EventBus() {}
+        inline ~EventBus() {
+            Flush();
+        }
 
-        inline static void Flush() {
+        inline void Flush() {
             for (auto events : EventBus::CallbackMap) {
                 delete events.second;
             }
@@ -39,14 +44,14 @@ namespace Umbra {
         inline static void Subscribe(FUNC(void, const T&) callback) {
             using EventDelegate = Delegate<void, T>;
             int64 eventType     = typeid(T).hash_code();
-            if (EventBus::CallbackMap.find(eventType) != EventBus::CallbackMap.end()) {
-                EventDelegate* delegate = CAST(EventDelegate*, CallbackMap[eventType]);
+            if (EventBus::GetInstance()->CallbackMap.find(eventType) != EventBus::GetInstance()->CallbackMap.end()) {
+                EventDelegate* delegate = CAST(EventDelegate*, EventBus::GetInstance()->CallbackMap[eventType]);
                 delegate->AddToInvocationList(callback);
             } else {
                 EventDelegate* delegate = new EventDelegate();
                 delegate->AddToInvocationList(callback);
-                void* v                          = CAST(void*, delegate);
-                EventBus::CallbackMap[eventType] = v;
+                void* v                                         = CAST(void*, delegate);
+                EventBus::GetInstance()->CallbackMap[eventType] = v;
             }
         }
 
@@ -54,17 +59,18 @@ namespace Umbra {
         inline static void FireEvent(T* Event) {
             using EventDelegate = Delegate<void, T>;
             int64 eventType     = typeid(T).hash_code();
-            if (EventBus::CallbackMap.find(eventType) != EventBus::CallbackMap.end()) {
-                auto delegate = CAST(EventDelegate*, CallbackMap[eventType]);
+            if (EventBus::GetInstance()->CallbackMap.find(eventType) != EventBus::GetInstance()->CallbackMap.end()) {
+                auto delegate = CAST(EventDelegate*, EventBus::GetInstance()->CallbackMap[eventType]);
                 delegate->Broadcast(*Event);
             } else {
-                EventDelegate* delegate          = new EventDelegate();
-                void* v                          = CAST(void*, delegate);
-                EventBus::CallbackMap[eventType] = v;
+                EventDelegate* delegate                         = new EventDelegate();
+                void* v                                         = CAST(void*, delegate);
+                EventBus::GetInstance()->CallbackMap[eventType] = v;
             }
         }
 
-        static inline std::map<int64, void*> CallbackMap;
+    protected:
+        std::map<int64, void*> CallbackMap;
     };
 
     class Event {};
