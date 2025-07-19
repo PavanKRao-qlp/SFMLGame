@@ -5,7 +5,7 @@
 #include <imgui-SFML.h>
 
 namespace Umbra {
-    bool SfmlImguiImpl::Init(void* _window, unsigned int _windowWidth, unsigned int _windowHeight) {
+    bool SfmlImguiImpl::Initialize(void* _window, unsigned int _windowWidth, unsigned int _windowHeight) {
         mWindow = static_cast<sf::RenderWindow*>(_window);
         if (mWindow) {
             EventBus::Subscribe<SFMLAppWindowEvent>(BIND_1P(this, &SfmlImguiImpl::OnSFMLEvent));

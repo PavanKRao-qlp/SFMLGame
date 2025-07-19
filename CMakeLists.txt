@@ -15,28 +15,36 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/imgui_demo.cpp
 )
+
 add_subdirectory(external/SFML)
 add_subdirectory(external/glm) 
 add_subdirectory(external/imgui-sfml)
+add_subdirectory(external/miniaudio)
 #add_subdirectory(external/hlslpp) 
+
 include_directories(
     Engine/include/
     external/SFML/include
     external/glm
     external/imgui
     external/imgui-sfml
+    external/miniaudio
  )
 
 # Add all source files from Game/src
 file(GLOB_RECURSE SOURCES_ENGINE "Engine/src/*.cpp")
 
 add_library(Engine2D STATIC ${SOURCES_ENGINE} ${IMGUI_SFML_SOURCES})
+
 target_link_libraries(Engine2D 
 sfml-graphics
 sfml-window
 sfml-system
+sfml-audio
 ImGui-SFML
+miniaudio
 )
+
 target_precompile_headers(Engine2D PUBLIC "Engine/include/EnginePCH.h")
 
 # Define a function to register an executable for DLL copying later
@@ -55,9 +63,27 @@ macro(setup_target_dll_copy TARGET_NAME)
             $<TARGET_FILE:sfml-graphics>
             $<TARGET_FILE:sfml-window>
             $<TARGET_FILE:sfml-system>
+            $<TARGET_FILE:sfml-audio>
             $<TARGET_FILE:ImGui-SFML>
             # Add other DLLs as needed
         )
+        #  $<TARGET_FILE finds target that cmake knows about 
+
+        if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_GENERATOR_PLATFORM STREQUAL "Win64")
+           set(ARCH_DIR "x64")
+        else()
+            set(ARCH_DIR "x86")
+        endif()
+         # Set OpenAL DLL path based on architecture
+        set(OPENAL_DLL_PATH "${CMAKE_SOURCE_DIR}/external/SFML/extlibs/bin/${ARCH_DIR}/openal32.dll")
+        
+        # Check if the OpenAL DLL exists
+        if(EXISTS ${OPENAL_DLL_PATH})
+            list(APPEND REQUIRED_DLLS ${OPENAL_DLL_PATH})
+            message(STATUS "Found OpenAL DLL for ${ARCH_DIR}: ${OPENAL_DLL_PATH}")
+        else()
+            message(WARNING "OpenAL DLL not found at: ${OPENAL_DLL_PATH}")
+        endif() 
         
         # Add the post-build command to copy DLLs
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
@@ -75,4 +101,5 @@ endmacro()
 
 add_subdirectory(Sandbox/SimpleSandbox)
 add_subdirectory(Sandbox/PhysicsTestBed)
+add_subdirectory(Sandbox/AudioTestBed)
 

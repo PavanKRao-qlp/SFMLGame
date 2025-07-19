@@ -5,16 +5,24 @@
 #include "Asset/TextureResource.h"
 #include "Umbra.h"
 namespace Umbra {
+
+    /*
+
+    */
     class AssetManager : public Singleton<AssetManager> {
     private:
         /* data */
     public:
+        template <typename T>
+        SharedPtr<T> Load(const String& _filePath);
+
         SharedPtr<Texture> GetTexture(const String& _filePath);
+
+        template <typename T>
+        SharedPtr<T> GetResource(const String& _filePath);
 
     private:
         AssetManager();
-        template <typename T>
-        SharedPtr<T> GetResource(const String& _filePath);
         // AddResourceRef
         // FetchResource
         // GetResource
@@ -26,6 +34,12 @@ namespace Umbra {
         friend class Singleton<AssetManager>;
         UniquePtr<AssetRegister> assetRegister;
     };
+
+    template <typename T>
+    inline SharedPtr<T> AssetManager::Load(const String& _filePath) {
+
+        return SharedPtr<T>();
+    }
 
     template <typename T>
     SharedPtr<T> AssetManager::GetResource(const String& _filePath) {

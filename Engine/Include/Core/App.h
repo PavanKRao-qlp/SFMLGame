@@ -23,10 +23,12 @@ namespace Umbra {
         // class World* mWorld;
         // class ECSRegister mWorldRegister;
         // class RenderSystem* mRenderSystem;
+
         SharedPtr<class AppWindow> mAppWindow;
         SharedPtr<class IGameInstance> mGameInstance;
         UniquePtr<class SceneManager> mSceneManager;
         UniquePtr<class ImGuiBackend> mUIManager;
+        UniquePtr<class AudioManager> mAudioManager;
 
     public:
         App(SharedPtr<IGameInstance>& _gameInstance);

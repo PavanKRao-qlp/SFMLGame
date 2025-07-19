@@ -10,6 +10,8 @@ namespace Umbra {
         SfmlTex = sf::Texture();
         return SfmlTex.loadFromFile(filePath);
     }
+
     void TextureResource::Unload() {}
+
     TextureResource::TextureResource(const String& _filePath) : IResource(_filePath) {}
 } // namespace Umbra

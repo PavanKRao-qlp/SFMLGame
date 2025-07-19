@@ -6,7 +6,7 @@
 
 namespace Umbra {
     class SfmlImguiImpl : public ImGuiBackend {
-        bool Init(void* window, unsigned int windowWidth, unsigned int windowHeight) override;
+        bool Initialize(void* window, unsigned int windowWidth, unsigned int windowHeight) override;
         void ProcessEvent(void* event) override;
         void NewFrame(float deltaTime) override;
         void Render() override;

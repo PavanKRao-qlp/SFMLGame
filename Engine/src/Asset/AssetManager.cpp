@@ -1,9 +1,11 @@
 #include "Asset/AssetManager.h"
 
 namespace Umbra {
+
     AssetManager::AssetManager() {
         assetRegister = std::make_unique<AssetRegister>();
     }
+
     SharedPtr<Texture> AssetManager::GetTexture(const String& _filePath) {
 
         SharedPtr<Texture> refTexture = nullptr;
@@ -14,4 +16,6 @@ namespace Umbra {
         }
         return refTexture;
     }
+
+
 } // namespace Umbra

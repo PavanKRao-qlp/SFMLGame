@@ -61,7 +61,7 @@ namespace Umbra {
 
         Random::SetSeed(EngineTime::GetTimestamp(), EngineTime::GetTimestamp() / 2);
         // Initialize Resource Layer
-
+        mAudioManager = std::make_unique<AudioManager>();
         /*
             @todo ResourceManager
         */
@@ -92,7 +92,8 @@ namespace Umbra {
                 return false;
             }
             EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
-            mUIManager->Init(mAppWindow->GetRenderWindowHandle(), 800, 800);
+            mAudioManager->Initialize();
+            mUIManager->Initialize(mAppWindow->GetRenderWindowHandle(), 800, 800);
             GEngineStatics.ImGuiBackend = mUIManager.get();
             UMBRA_LOG_INFO("App Initalized!");
             return true;
@@ -106,6 +107,8 @@ namespace Umbra {
         mUIManager.reset();
         mSceneManager->ShutDown();
         mSceneManager.reset();
+        mAudioManager->ShutDown();
+        mAudioManager.reset();
         mAppWindow->CloseWindow();
         mAppWindow.reset();
         mGameInstance->ShutDown();

@@ -9,7 +9,7 @@ namespace Umbra {
         /**
          *  Provide initialize imgui context inside provided window
          */
-        virtual bool Init(void* window, unsigned int windowWidth, unsigned int windowHeight) = 0;
+        virtual bool Initialize(void* window, unsigned int windowWidth, unsigned int windowHeight) = 0;
         /**
          *  Pass along events from window to imgui
          */

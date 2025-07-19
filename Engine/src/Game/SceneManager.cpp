@@ -42,8 +42,7 @@ namespace Umbra {
         if (mSceneMap.find(_sceneId) == mSceneMap.end()) {
             UMBRA_LOG_CRITICAL("Trying To Load Unkown Scene!:%s", _sceneId.c_str());
             mGameInstance->QuitApplication();
-        }
-        {
+        } else {
             GoToScene(mSceneMap[_sceneId]);
         }
     }

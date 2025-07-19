@@ -1,4 +1,5 @@
 #pragma once
+#include "Audio/AudioManager.h"
 #include "Core/AppWindow.h"
 #include "Game/SceneManager.h"
 #include "UI/ImGuiBackend.h"
