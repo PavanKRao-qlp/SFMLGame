@@ -53,6 +53,12 @@ namespace Umbra {
         mEntityComponentSignatures.at(_entity).set(id, true);
         ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
         pool->Insert(_entity, _component);
+
+        // Mark entity as modified if it's already active (not newly created)
+        if (mEntityManager.Entities.find(_entity) != mEntityManager.Entities.end()) {
+            mEntityManager.EntitiesModified.emplace(_entity);
+            bRegisterDirty = true;
+        }
     }
 
     inline void ECSRegister::AddTag(EntityID _entity, const String& _tag) {
@@ -101,7 +107,13 @@ namespace Umbra {
         ComponentID id = ComponentIDHelper::GetID<T>();
         mEntityComponentSignatures.at(_entity).set(id, false);
         ComponentArray<T>* pool = mComponentManager->GetComponentArray<T>();
-        pool->Remove(_entity, _component);
+        pool->Remove(_entity);
+
+        // Mark entity as modified if it's active
+        if (mEntityManager.Entities.find(_entity) != mEntityManager.Entities.end()) {
+            mEntityManager.EntitiesModified.emplace(_entity);
+            bRegisterDirty = true;
+        }
     }
 
     inline void ECSRegister::RemoveComponent(EntityID _entity, ComponentID _componentId) {
@@ -113,6 +125,12 @@ namespace Umbra {
         }
         IBaseComponentArray* pool = mComponentManager->GetComponentArray(_componentId);
         pool->Remove(_entity);
+
+        // Mark entity as modified if it's active
+        if (mEntityManager.Entities.find(_entity) != mEntityManager.Entities.end()) {
+            mEntityManager.EntitiesModified.emplace(_entity);
+            bRegisterDirty = true;
+        }
     }
 
     template <typename T>
@@ -184,12 +202,34 @@ namespace Umbra {
 
     inline void ECSRegister::CleanUp() {
         if (bRegisterDirty) {
+            // Remove destroyed entities from all systems first (before clearing the list)
+            for (EntityID entity : mEntityManager.EntitiesDestroyed) {
+                for (const auto& pair : mSystemMap) {
+                    for (const SharedPtr<System>& system : pair.second) {
+                        system->RemoveEntity(entity);
+                    }
+                }
+            }
             RemoveDestroyedEntities();
-            AddCreatedEntities();
-            for (const auto& pair : mSystemMap) {
-                for (const SharedPtr<System>& system : pair.second) {
-                    for (EntityID entity : mEntityManager.Entities) // has to be sparse set
-                    {
+
+            // Process only newly created entities (before clearing the list)
+            for (EntityID entity : mEntityManager.EntitiesAdded) {
+                mEntityManager.Entities.emplace(entity);
+                for (const auto& pair : mSystemMap) {
+                    for (const SharedPtr<System>& system : pair.second) {
+                        if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
+                            == system->SystemSignature) {
+                            system->AddEntity(entity);
+                        }
+                    }
+                }
+            }
+            mEntityManager.EntitiesAdded.clear();
+
+            // Process entities whose component signatures changed
+            for (EntityID entity : mEntityManager.EntitiesModified) {
+                for (const auto& pair : mSystemMap) {
+                    for (const SharedPtr<System>& system : pair.second) {
                         if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
                             == system->SystemSignature) {
                             system->AddEntity(entity);
@@ -199,6 +239,8 @@ namespace Umbra {
                     }
                 }
             }
+            mEntityManager.EntitiesModified.clear();
+
             bRegisterDirty = false;
         }
     }

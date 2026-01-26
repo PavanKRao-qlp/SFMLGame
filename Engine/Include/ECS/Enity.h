@@ -13,6 +13,7 @@ namespace Umbra {
         EntityID GetEntityCount();
         Set<EntityID> EntitiesAdded;
         Set<EntityID> EntitiesDestroyed;
+        Set<EntityID> EntitiesModified;
         Set<EntityID> Entities;
 
     private:
