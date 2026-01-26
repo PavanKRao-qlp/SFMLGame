@@ -14,6 +14,9 @@
 #include "Game/SceneManager.h"
 #include "Game/World.h"
 #include "Input/Input.h"
+#include "Platform/NativeFileSystem.h"
+#include "Platform/PakFileSystem.h"
+#include "Platform/VirtualFileManager.h"
 #include "UI/Backends/SfmlImguiImpl.h"
 #include "Umbra.h"
 
@@ -33,7 +36,14 @@ namespace Umbra {
     }
 
     bool App::PreInit() {
-        // Initialize Platform layer
+
+        Logger::Config loggerConfig;
+        loggerConfig.bEnable = true;
+        Logger::Initialize(loggerConfig);
+
+        mFileManager = std::make_unique<Platform::VirtualFileManager>();
+        mFileManager->Mount("game/", "Asset/", std::make_shared<Platform::NativeFileSystem>());
+        //  Initialize Platform layer
 
         /*
             @todo : HiRes Timer
@@ -53,9 +63,6 @@ namespace Umbra {
 
         */
 
-        Logger::Config loggerConfig;
-        loggerConfig.bEnable = true;
-        Logger::Initialize(loggerConfig);
 
         EventBus::Initialize();
 

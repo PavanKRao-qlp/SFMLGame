@@ -2,6 +2,9 @@
 #include "Game/IGameInstance.h"
 
 namespace Umbra {
+    namespace Platform {
+        class VirtualFileManager;
+    }
     class App {
     private:
         bool PreInit();
@@ -27,6 +30,7 @@ namespace Umbra {
         SharedPtr<class IGameInstance> mGameInstance;
         UniquePtr<class SceneManager> mSceneManager;
         UniquePtr<class ImGuiBackend> mUIManager;
+        UniquePtr<Platform::VirtualFileManager> mFileManager;
 
     public:
         App(SharedPtr<IGameInstance>& _gameInstance);
