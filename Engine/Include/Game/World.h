@@ -33,6 +33,18 @@ namespace Umbra {
 
         bool IsTag(EntityID _entity, String _tag);
 
+        void RemoveTag(EntityID _entity);
+
+        /** Returns all entities with the specified tag. */
+        Vector<EntityID> FindEntitiesByTag(const String& _tag);
+
+        /** Returns a reference to the set of entities with the specified tag.
+         *  Returns an empty set if no entities have the tag. */
+        const Set<EntityID>& GetEntitiesByTag(const String& _tag);
+
+        /** Returns true if any entity has the specified tag. */
+        bool HasEntitiesWithTag(const String& _tag);
+
         template <typename T, typename... Args>
         void AddComponent(EntityID _entity, Args&&... args);
 

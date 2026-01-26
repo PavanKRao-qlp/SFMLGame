@@ -17,6 +17,22 @@ namespace Umbra {
         return mWorldRegister->IsTag(_entity, _tag);
     }
 
+    inline void World::RemoveTag(EntityID _entity) {
+        mWorldRegister->RemoveTag(_entity);
+    }
+
+    inline Vector<EntityID> World::FindEntitiesByTag(const String& _tag) {
+        return mWorldRegister->FindEntitiesByTag(_tag);
+    }
+
+    inline const Set<EntityID>& World::GetEntitiesByTag(const String& _tag) {
+        return mWorldRegister->GetEntitiesByTag(_tag);
+    }
+
+    inline bool World::HasEntitiesWithTag(const String& _tag) {
+        return mWorldRegister->HasEntitiesWithTag(_tag);
+    }
+
     inline void World::AddSystem(ESystemPhase _phase, int _priority, SharedPtr<System> _system) {
         mWorldRegister->AddSystem(_phase, _priority, _system);
     }

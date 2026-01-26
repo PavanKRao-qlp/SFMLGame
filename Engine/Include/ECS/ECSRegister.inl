@@ -67,10 +67,62 @@ namespace Umbra {
         }
         if (HasComponent<TagComponent>(_entity)) {
             TagComponent* tagComponent = GetComponent<TagComponent>(_entity);
-            tagComponent->Tag          = _tag;
+            // Remove from old tag index if tag is changing
+            if (tagComponent->Tag != _tag) {
+                auto it = mTagIndex.find(tagComponent->Tag);
+                if (it != mTagIndex.end()) {
+                    it->second.erase(_entity);
+                    if (it->second.empty()) {
+                        mTagIndex.erase(it);
+                    }
+                }
+            }
+            tagComponent->Tag = _tag;
         } else {
             AddComponent<TagComponent>(_entity, _tag);
         }
+        // Add to new tag index
+        mTagIndex[_tag].insert(_entity);
+    }
+
+    inline void ECSRegister::RemoveTag(EntityID _entity) {
+        if (!mEntityManager.IsValid(_entity)) {
+            return;
+        }
+        if (!HasComponent<TagComponent>(_entity)) {
+            return;
+        }
+        TagComponent* tagComponent = GetComponent<TagComponent>(_entity);
+        // Remove from tag index
+        auto it = mTagIndex.find(tagComponent->Tag);
+        if (it != mTagIndex.end()) {
+            it->second.erase(_entity);
+            if (it->second.empty()) {
+                mTagIndex.erase(it);
+            }
+        }
+        RemoveComponent<TagComponent>(_entity);
+    }
+
+    inline Vector<EntityID> ECSRegister::FindEntitiesByTag(const String& _tag) {
+        auto it = mTagIndex.find(_tag);
+        if (it != mTagIndex.end()) {
+            return Vector<EntityID>(it->second.begin(), it->second.end());
+        }
+        return Vector<EntityID>();
+    }
+
+    inline const Set<EntityID>& ECSRegister::GetEntitiesByTag(const String& _tag) {
+        auto it = mTagIndex.find(_tag);
+        if (it != mTagIndex.end()) {
+            return it->second;
+        }
+        return mEmptyEntitySet;
+    }
+
+    inline bool ECSRegister::HasEntitiesWithTag(const String& _tag) {
+        auto it = mTagIndex.find(_tag);
+        return it != mTagIndex.end() && !it->second.empty();
     }
 
     inline bool ECSRegister::IsTag(EntityID _entity, String _tag) {
@@ -247,6 +299,17 @@ namespace Umbra {
 
     inline void ECSRegister::RemoveDestroyedEntities() {
         for (EntityID entity : mEntityManager.EntitiesDestroyed) {
+            // Clean up tag index if entity has a tag
+            if (HasComponent<TagComponent>(entity)) {
+                TagComponent* tagComponent = GetComponent<TagComponent>(entity);
+                auto it = mTagIndex.find(tagComponent->Tag);
+                if (it != mTagIndex.end()) {
+                    it->second.erase(entity);
+                    if (it->second.empty()) {
+                        mTagIndex.erase(it);
+                    }
+                }
+            }
             // remove entity from mEntities
             mEntityManager.RemoveEntity(entity);
             // remove component pool

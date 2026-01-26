@@ -42,22 +42,29 @@ namespace Umbra {
     template <typename T>
     class ComponentArray : public IBaseComponentArray {
     private:
-        /* data */
+        static constexpr size_t INVALID_INDEX = std::numeric_limits<size_t>::max();
+
     public:
         ComponentArray();
         ~ComponentArray();
         T& Get(EntityID _entity);
         void Insert(EntityID _entity, T _component);
-        void Remove(EntityID _entity, T _component);
-        bool Has(EntityID _entity);
+        bool Has(EntityID _entity) const;
         virtual bool Remove(EntityID _entity) override;
         virtual void Flush() override;
 
+        // Iterator support for cache-friendly iteration
+        typename Vector<T>::iterator begin() { return mDense.begin(); }
+        typename Vector<T>::iterator end() { return mDense.end(); }
+        typename Vector<T>::const_iterator begin() const { return mDense.begin(); }
+        typename Vector<T>::const_iterator end() const { return mDense.end(); }
+        size_t Size() const { return mDense.size(); }
+        EntityID GetEntityAt(size_t _index) const { return mDenseEntities[_index]; }
+
     protected:
-        Vector<T> mPackedComponents;
-        Queue<int> mFreePackedIx;
-        UMap<EntityID, int> mSparseIndexMap;
-        UMap<int, EntityID> mDenseToSparseKey;
+        Vector<T> mDense;              // Packed component data
+        Vector<EntityID> mDenseEntities; // Entity ID at each dense index
+        Vector<size_t> mSparse;        // Indexed by EntityID, stores dense index
     };
 
     class ComponentManager {

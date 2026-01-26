@@ -4,59 +4,70 @@ namespace Umbra {
 
     template <typename T>
     inline ComponentArray<T>::ComponentArray() {
-        mPackedComponents.reserve(MIN_POOL_SIZE);
+        mDense.reserve(MIN_POOL_SIZE);
+        mDenseEntities.reserve(MIN_POOL_SIZE);
+    }
+
+    template <typename T>
+    inline ComponentArray<T>::~ComponentArray() {
     }
 
     template <typename T>
     inline T& ComponentArray<T>::Get(EntityID _entity) {
-        int ix = mSparseIndexMap.at(_entity);
-        return mPackedComponents[ix];
+        size_t denseIndex = mSparse[_entity];
+        return mDense[denseIndex];
     }
 
     template <typename T>
     inline void ComponentArray<T>::Insert(EntityID _entity, T _component) {
-        mPackedComponents.emplace_back(_component);
-        mSparseIndexMap[_entity]                       = (int) mPackedComponents.size() - 1;
-        mDenseToSparseKey[mSparseIndexMap.at(_entity)] = _entity;
+        // Grow sparse array if needed
+        if (_entity >= mSparse.size()) {
+            mSparse.resize(_entity + 1, INVALID_INDEX);
+        }
+
+        size_t denseIndex    = mDense.size();
+        mSparse[_entity]     = denseIndex;
+        mDense.emplace_back(std::move(_component));
+        mDenseEntities.emplace_back(_entity);
     }
 
     template <typename T>
-    inline bool ComponentArray<T>::Has(EntityID _entity) {
-        return mSparseIndexMap.find(_entity) != mSparseIndexMap.end();
+    inline bool ComponentArray<T>::Has(EntityID _entity) const {
+        return _entity < mSparse.size() && mSparse[_entity] != INVALID_INDEX;
     }
 
     template <typename T>
     inline bool ComponentArray<T>::Remove(EntityID _entity) {
-        if (mSparseIndexMap.find(_entity) != mSparseIndexMap.end()) {
-            Remove(_entity, Get(_entity));
-            return true;
+        if (!Has(_entity)) {
+            return false;
         }
-        return false;
+
+        size_t removedIndex = mSparse[_entity];
+        size_t lastIndex    = mDense.size() - 1;
+
+        if (removedIndex != lastIndex) {
+            // Swap with last element
+            mDense[removedIndex]         = std::move(mDense[lastIndex]);
+            mDenseEntities[removedIndex] = mDenseEntities[lastIndex];
+
+            // Update sparse index for swapped entity
+            EntityID swappedEntity   = mDenseEntities[removedIndex];
+            mSparse[swappedEntity]   = removedIndex;
+        }
+
+        // Remove last element
+        mDense.pop_back();
+        mDenseEntities.pop_back();
+        mSparse[_entity] = INVALID_INDEX;
+
+        return true;
     }
 
     template <typename T>
     inline void ComponentArray<T>::Flush() {
-        mPackedComponents.clear();
-        mSparseIndexMap.clear();
-        mDenseToSparseKey.clear();
-        while (mFreePackedIx.size() > 0) {
-            mFreePackedIx.pop();
-        }
+        mDense.clear();
+        mDenseEntities.clear();
+        mSparse.clear();
     }
 
-    template <typename T>
-    inline void ComponentArray<T>::Remove(EntityID _entity, T _component) {
-        int packedIx     = mSparseIndexMap[_entity];
-        int lastPackedIx = (int) mPackedComponents.size() - 1;
-
-        if (packedIx != lastPackedIx) {
-            mPackedComponents[packedIx] = mPackedComponents.at(lastPackedIx);
-            EntityID swapEntity         = mDenseToSparseKey.at(lastPackedIx);
-            mSparseIndexMap[swapEntity] = packedIx;
-            mDenseToSparseKey[packedIx] = swapEntity;
-        }
-        mDenseToSparseKey.erase(lastPackedIx);
-        mPackedComponents.pop_back();
-        mSparseIndexMap.erase(_entity);
-    }
 }; // namespace Umbra
