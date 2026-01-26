@@ -7,7 +7,10 @@ namespace Umbra {
         RegisterComponent<TagComponent>();
     }
 
-    inline ECSRegister::~ECSRegister() {}
+    inline ECSRegister::~ECSRegister() {
+        delete mComponentManager;
+        mComponentManager = nullptr;
+    }
 
     inline EntityID ECSRegister::CreateEntity() {
         EntityID id                    = mEntityManager.CreateEntity();
@@ -139,8 +142,16 @@ namespace Umbra {
         if (mSystemMap.find(_systemPhase) == mSystemMap.end()) {
             mSystemMap.emplace(_systemPhase, Vector<SharedPtr<System>>());
         }
+        _system->SetPriority(_priority);
         mSystemMap[_systemPhase].emplace_back(_system);
         _system->AssignRegistry(this);
+
+        // Sort systems by priority (lower priority values execute first)
+        // Using stable_sort to preserve insertion order for systems with equal priority
+        std::stable_sort(mSystemMap[_systemPhase].begin(), mSystemMap[_systemPhase].end(),
+            [](const SharedPtr<System>& _a, const SharedPtr<System>& _b) {
+                return _a->GetPriority() < _b->GetPriority();
+            });
     }
 
     inline void ECSRegister::RemoveSystem(SharedPtr<System>& _system) {

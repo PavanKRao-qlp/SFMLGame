@@ -6,7 +6,7 @@ class PointObjectSpawnSystem : public Umbra::System {
 private:
     /* data */
 public:
-    inline PointObjectSpawnSystem(/* args */) : Umbra::System(new Umbra::ECView()) {
+    inline PointObjectSpawnSystem(/* args */) : Umbra::System(std::make_unique<Umbra::ECView<>>()) {
         UMBRA_LOG_INFO("PointObjectSpawnSystem Created!");
         mSpawnCoolDown = mTimeToSpawn;
     }

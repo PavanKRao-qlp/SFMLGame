@@ -7,7 +7,7 @@
 namespace Umbra {
     class RotationSystem : public System {
     public:
-        inline RotationSystem() : System(new ECView<TransformComponent>()) {
+        inline RotationSystem() : System(std::make_unique<ECView<TransformComponent>>()) {
             bEnabled = false;
         }
         inline ~RotationSystem() {};

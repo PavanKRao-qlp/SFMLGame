@@ -18,9 +18,9 @@ namespace Umbra {
     private:
         /* data */
     public:
-        System(BaseView* view) {
-            mView           = view;
-            SystemSignature = view->GetSignature();
+        System(UniquePtr<BaseView> view) {
+            mView           = std::move(view);
+            SystemSignature = mView->GetSignature();
         }
         // ~System();
         inline virtual void AddEntity(EntityID _entity) {
@@ -35,18 +35,23 @@ namespace Umbra {
         inline void AssignRegistry(ECSRegister* _register) {
             mView->AssignRegistry(_register);
         }
-        inline void SetEnabled(bool bShouldEnable) {
-            bEnabled = bShouldEnable;
+        inline void SetEnabled(bool _bShouldEnable) {
+            bEnabled = _bShouldEnable;
         }
-        inline bool GetEnabled() {
+        inline bool GetEnabled() const {
             return bEnabled;
+        }
+        inline void SetPriority(int _priority) {
+            mPriority = _priority;
+        }
+        inline int GetPriority() const {
+            return mPriority;
         }
         virtual void Update() = 0;
         ComponentMask SystemSignature;
 
     protected:
-        // todo memory manage this
-        BaseView* mView;
+        UniquePtr<BaseView> mView;
         bool bEnabled       = true;
         ESystemPhase mPhase = ESystemPhase::Simulation;
         int mPriority       = 0;

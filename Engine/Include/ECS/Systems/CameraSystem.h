@@ -11,7 +11,8 @@
 namespace Umbra {
     class CameraSystem : public System {
     public:
-        inline CameraSystem(sf::View* _renderView) : System(new ECView<CameraComponent, TransformComponent>()) {
+        inline CameraSystem(sf::View* _renderView)
+            : System(std::make_unique<ECView<CameraComponent, TransformComponent>>()) {
             mRenderView = _renderView;
         }
         inline ~CameraSystem() {}

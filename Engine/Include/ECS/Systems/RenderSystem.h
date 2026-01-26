@@ -13,7 +13,7 @@ namespace Umbra {
     class RenderSystem : public System {
     public:
         inline RenderSystem(sf::RenderWindow* _windowHandle, ImGuiBackend* _imGuiBackend)
-            : System(new ECView<TransformComponent, SpriteComponent>()) {
+            : System(std::make_unique<ECView<TransformComponent, SpriteComponent>>()) {
             mWindowHandle = _windowHandle;
             mImguiBackend = _imGuiBackend;
         }

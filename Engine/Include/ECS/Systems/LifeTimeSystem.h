@@ -8,7 +8,7 @@
 namespace Umbra {
     class LifeTimeSystem : public System {
     public:
-        inline LifeTimeSystem() : System(new ECView<LifeTimeComponent>()) {};
+        inline LifeTimeSystem() : System(std::make_unique<ECView<LifeTimeComponent>>()) {};
         inline ~LifeTimeSystem() {};
         inline void Update() override {
             for (EntityID entity : mView->mEntities) {

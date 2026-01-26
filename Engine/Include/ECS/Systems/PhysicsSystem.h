@@ -18,7 +18,7 @@ namespace Umbra {
 #if PHYSICS_OLD
     class PhysicsSystem : public System {
     public:
-        inline PhysicsSystem() : System(new ECView<RigidBodyComponent, TransformComponent>()) {}
+        inline PhysicsSystem() : System(std::make_unique<ECView<RigidBodyComponent, TransformComponent>>()) {}
         inline ~PhysicsSystem() {}
         inline void Update() override {
             for (EntityID entity : mView->mEntities) {
@@ -39,11 +39,11 @@ namespace Umbra {
 
     class PhysicsSystem : public System {
     public:
-        inline PhysicsSystem() : System(new ECView<PhysicsBodyComponent, TransformComponent>()) {
+        inline PhysicsSystem() : System(std::make_unique<ECView<PhysicsBodyComponent, TransformComponent>>()) {
             mContactResolver              = std::make_unique<ContactResolver>();
             mCollisionDetector            = std::make_unique<CollisionDetector>();
-            mCollisionDetector->mBaseView = (mView);
-            mContactResolver->mBaseView   = (mView);
+            mCollisionDetector->mBaseView = mView.get();
+            mContactResolver->mBaseView   = mView.get();
         }
         inline ~PhysicsSystem() {}
         inline void Update() override {
@@ -113,7 +113,7 @@ namespace Umbra {
         }
 
         inline void AddForceGenerator(SharedPtr<IForceGenerator> forceGenerator) {
-            forceGenerator->ProvideECSView(mView);
+            forceGenerator->ProvideECSView(mView.get());
             mForceGenerators.emplace_back(forceGenerator);
         }
         inline void RemoveForceGenerator(SharedPtr<IForceGenerator>* forceGenerator) {
