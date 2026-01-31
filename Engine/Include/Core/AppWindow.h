@@ -1,9 +1,7 @@
 #pragma once
-#include "Event.h"
-#include <Math/Vector.h>
-
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
+#include "Core/Event.h"
+#include "Graphics/IRenderDevice.h"
+#include "Math/Vector.h"
 
 namespace Umbra {
     class AppWindow {
@@ -15,25 +13,23 @@ namespace Umbra {
         void RefreshDisplay();
         void ClearDisplay();
         void CloseWindow();
-        sf::RenderWindow* GetRenderWindowHandle();
-        sf::View* GetRenderWindowView();
+        IRenderDevice* GetRenderDevice();
         bool bWindowClosed = true;
 
-
     private:
-        void ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes);
+        void ResizeViewport(Umbra::Math::Vector2i& _resizedDeviceRes);
 
-        sf::RenderWindow* mWindow;
-        sf::View* mView;
+        UniquePtr<IRenderDevice> mRenderDevice;
         Math::Vector2i mScreenSize       = Math::Vector2i(0, 0);
         Math::Vector2i mRenderResolution = Math::Vector2i(0, 0);
         float aspectRatio                = 1;
     };
 
     class AppClosedEvent : public Umbra::Event {};
-    class SFMLAppWindowEvent : Event {
+
+    class NativeWindowEvent : Event {
     public:
-        SFMLAppWindowEvent(sf::Event _event) : mSfEvent(_event) {}
-        sf::Event mSfEvent;
+        NativeWindowEvent(void* _nativeEvent) : mNativeEvent(_nativeEvent) {}
+        void* mNativeEvent;
     };
 } // namespace Umbra

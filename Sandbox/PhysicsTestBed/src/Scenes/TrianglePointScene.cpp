@@ -1,6 +1,7 @@
 #include "TrianglePointScene.h"
 
 #include "Core/Random.h"
+#include "Graphics/Color.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Systems/RenderSystem.h"
@@ -14,26 +15,24 @@
 
 
 void TrianglePointScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void TrianglePointScene::OnFixedUpdated() {
+void TrianglePointScene::OnFixedUpdate() {
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
     auto vertices = mTriangle.GetVertices();
     auto normals  = mTriangle.GetNormals();
     for (int i = 0; i < vertices.size(); i++) {
-        sf::Color color = sf::Color::Red;
+        Umbra::Color color = Umbra::Color::Red;
         if (i == 0) {
-            color = sf::Color::Green;
+            color = Umbra::Color::Green;
         } else if (i == 1) {
-            color = sf::Color::Blue;
+            color = Umbra::Color::Blue;
         } else if (i == 2) {
-            color = sf::Color::Red;
+            color = Umbra::Color::Red;
         }
-        Umbra::RenderSystem::DebugDrawLine(vertices[i], vertices[(i + 1) % vertices.size()], sf::Color::White);
+        Umbra::RenderSystem::DebugDrawLine(vertices[i], vertices[(i + 1) % vertices.size()], Umbra::Color::White);
         Umbra::RenderSystem::DebugDrawLine(normals[i] * -100, normals[i] * 100, color);
         Umbra::RenderSystem::DebugDrawCircle(vertices[i], 1.75f, true, color);
     }
@@ -42,13 +41,13 @@ void TrianglePointScene::OnFixedUpdated() {
             float projection = Umbra::Math::Vector2f::Dot(vertices[j], normals[i]);
             // s = AP.AB/AB.AB since AB is normalized it will be 1
             Umbra::Math::Vector2f projectionOnNormalScaled = normals[i] * projection;
-            sf::Color color                                = sf::Color::Red;
+            Umbra::Color color                                = Umbra::Color::Red;
             if (j == 0) {
-                color = sf::Color::Green;
+                color = Umbra::Color::Green;
             } else if (j == 1) {
-                color = sf::Color::Blue;
+                color = Umbra::Color::Blue;
             } else if (j == 2) {
-                color = sf::Color::Red;
+                color = Umbra::Color::Red;
             }
             Umbra::RenderSystem::DebugDrawCircle(projectionOnNormalScaled, 1.75f, true, color);
             Umbra::RenderSystem::DebugDrawLine(vertices[j], projectionOnNormalScaled, color);
@@ -111,7 +110,7 @@ void TrianglePointScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> TrianglePointScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> TrianglePointScene::InstantiateCopy() {
     return std::make_shared<TrianglePointScene>(*this);
 }
 

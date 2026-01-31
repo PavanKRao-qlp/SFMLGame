@@ -13,7 +13,7 @@ namespace Umbra {
         void Shutdown() override;
 
     private:
-        void OnSFMLEvent(const SFMLAppWindowEvent& _event);
+        void OnNativeWindowEvent(const NativeWindowEvent& _event);
         sf::RenderWindow* mWindow;
     };
 

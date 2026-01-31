@@ -8,16 +8,15 @@
 #include "Input/Input.h"
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
+#include "Graphics/Color.h"
 #include "Umbra.h"
 #include "imgui.h"
 
 void CircleOBBScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void CircleOBBScene::OnFixedUpdated() {
+void CircleOBBScene::OnFixedUpdate() {
 
     Umbra::TransformComponent* transform = GetWorld()->GetComponent<Umbra::TransformComponent>(mBoxEntity);
     Umbra::Math::Vector2f worldMousePos  = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
@@ -43,32 +42,32 @@ void CircleOBBScene::OnFixedUpdated() {
         for (int i = 0; i < corners.size(); i++) {
 
             Umbra::Math::Vector2f edge   = (corners[(i + 1) % corners.size()] - corners[i]);
-            sf::Color color              = sf::Color::Red;
+            Umbra::Color color              = Umbra::Color::Red;
             Umbra::Math::Vector2f normal = Umbra::Math::Vector2f::Perpendicular(edge).GetNormalized();
             normals.emplace_back(normal);
             if (i == 0) {
-                color = sf::Color::Green;
+                color = Umbra::Color::Green;
             } else if (i == 1) {
-                color = sf::Color::Blue;
+                color = Umbra::Color::Blue;
             } else if (i == 2) {
-                color = sf::Color::Yellow;
+                color = Umbra::Color::Yellow;
             } else if (i == 3) {
-                color = sf::Color::Red;
+                color = Umbra::Color::Red;
             }
             Umbra::Math::Vector2f edgeMid = corners[i] + (edge * 0.5f);
             Umbra::RenderSystem::DebugDrawCircle(corners[i], 2.5f, false, color);
             Umbra::RenderSystem::DebugDrawLine(edgeMid, edgeMid + (normal * 10), color);
         }
         for (int n = 0; n < normals.size(); n++) {
-            sf::Color normalColor = sf::Color::Red;
+            Umbra::Color normalColor = Umbra::Color::Red;
             if (n == 0) {
-                normalColor = sf::Color::Green;
+                normalColor = Umbra::Color::Green;
             } else if (n == 1) {
-                normalColor = sf::Color::Blue;
+                normalColor = Umbra::Color::Blue;
             } else if (n == 2) {
-                normalColor = sf::Color::Yellow;
+                normalColor = Umbra::Color::Yellow;
             } else if (n == 3) {
-                normalColor = sf::Color::Red;
+                normalColor = Umbra::Color::Red;
             }
             Umbra::Math::Vector2f normal = normals[n];
             for (int i = 0; i < corners.size(); i++) {
@@ -76,15 +75,15 @@ void CircleOBBScene::OnFixedUpdated() {
                 // s = AP.AB/AB.AB since AB is normalized it will be 1
                 Umbra::Math::Vector2f projectionOnNormalScaled = normal * projection;
 
-                sf::Color color = sf::Color::Red;
+                Umbra::Color color = Umbra::Color::Red;
                 if (i == 0) {
-                    color = sf::Color::Green;
+                    color = Umbra::Color::Green;
                 } else if (i == 1) {
-                    color = sf::Color::Blue;
+                    color = Umbra::Color::Blue;
                 } else if (i == 2) {
-                    color = sf::Color::Yellow;
+                    color = Umbra::Color::Yellow;
                 } else if (i == 3) {
-                    color = sf::Color::Red;
+                    color = Umbra::Color::Red;
                 }
                 Umbra::RenderSystem::DebugDrawCircle(
                     projectionOnNormalScaled, (n == 0 || n == 1) ? 2.5f : 3.5f, n == 0 || n == 1, normalColor);
@@ -98,25 +97,25 @@ void CircleOBBScene::OnFixedUpdated() {
             Umbra::RenderSystem::DebugDrawCircle(
                 mouseProjectionOnNormalScaled, (n == 0 || n == 1) ? 2.5f : 3.5f, n == 0 || n == 1, normalColor);
             Umbra::RenderSystem::DebugDrawLine(
-                worldMousePos, worldMousePos - mouseProjectionOnNormalScaled, sf::Color::Cyan);
+                worldMousePos, worldMousePos - mouseProjectionOnNormalScaled, Umbra::Color::Cyan);
         }
 
-        Umbra::RenderSystem::DebugDrawCircle(transform->Position, 0.75f, true, sf::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(pointInOBB, 3.f, true, sf::Color::Magenta);
-        Umbra::RenderSystem::DebugDrawCircle(pointOnOBB, 2.5f, true, sf::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Cyan);
-        Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, sf::Color::White);
+        Umbra::RenderSystem::DebugDrawCircle(transform->Position, 0.75f, true, Umbra::Color::White);
+        Umbra::RenderSystem::DebugDrawCircle(pointInOBB, 3.f, true, Umbra::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(pointOnOBB, 2.5f, true, Umbra::Color::White);
+        Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
+        Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
         Umbra::RenderSystem::DebugDrawCircle(
-            worldMousePos, mRadius, false, !bColliding ? sf::Color::Red : sf::Color::Green);
+            worldMousePos, mRadius, false, !bColliding ? Umbra::Color::Red : Umbra::Color::Green);
     }
 
-    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Red);
-    // Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, sf::Color::White);
-    // Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, sf::Color::Blue);
-    // Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, sf::Color::Green);
+    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
+    // Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
+    // Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Blue);
+    // Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
     // bool bColliding = (mDistance <= mRadius);
-    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? sf::Color::Green :
-    // sf::Color::Red);
+    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green :
+    // Umbra::Color::Red);
 }
 
 void CircleOBBScene::OnUpdate() {
@@ -184,7 +183,7 @@ void CircleOBBScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> CircleOBBScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> CircleOBBScene::InstantiateCopy() {
     return std::make_shared<CircleOBBScene>(*this);
 }
 
@@ -202,7 +201,7 @@ void CircleOBBScene::OnBeginPlay() {
     mBoxEntity = GetWorld()->CreateEntity();
     GetWorld()->AddComponent<Umbra::TransformComponent>(
         mBoxEntity, Umbra::Math::Vector2f(transformX, transformY), Umbra::Math::Vector2f(sizeRX, sizeRY), angle);
-    // GetWorld()->AddComponent<Umbra::SpriteComponent>(mBoxEntity, sf::Color::Red);
+    // GetWorld()->AddComponent<Umbra::SpriteComponent>(mBoxEntity, Umbra::Color::Red);
 }
 
 void CircleOBBScene::OnEndPlay() {}

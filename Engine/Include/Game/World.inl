@@ -53,7 +53,7 @@ namespace Umbra {
 
     template <typename T>
     inline void World::RemoveComponent(EntityID _entity) {
-        mWorldRegister->RegisterComponent<T>(_entity);
+        mWorldRegister->RemoveComponent<T>(_entity);
     }
 
     template <typename T>

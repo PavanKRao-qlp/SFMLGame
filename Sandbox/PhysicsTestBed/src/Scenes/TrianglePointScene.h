@@ -6,9 +6,9 @@
 class TrianglePointScene : public Umbra::Scene {
 public:
     virtual void Initialize() override;
-    virtual void OnFixedUpdated() override;
+    virtual void OnFixedUpdate() override;
     virtual void OnUpdate() override;
-    virtual Umbra::SharedPtr<Umbra::Scene> InsatiateCopy() override;
+    virtual Umbra::SharedPtr<Umbra::Scene> InstantiateCopy() override;
     void OnBeginPlay() override;
     void OnEndPlay() override;
 

@@ -155,8 +155,8 @@ namespace Umbra {
                 }
                 if (boundingVolume != nullptr) {
                     mCollisionDetector->AddBoundingVolume(*boundingVolume);
-                    RenderSystem::DrawDebugBox(boundingVolume->FatBounds, bRebuilt, sf::Color::Red);
-                    RenderSystem::DrawDebugBox(boundingVolume->SlimBounds, false, sf::Color::Yellow);
+                    RenderSystem::DrawDebugBox(boundingVolume->FatBounds, bRebuilt, Color::Red);
+                    RenderSystem::DrawDebugBox(boundingVolume->SlimBounds, false, Color::Yellow);
                 }
                 /*
                 make a Bounding Volume data

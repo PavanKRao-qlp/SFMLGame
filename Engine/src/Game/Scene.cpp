@@ -1,6 +1,7 @@
 #include "Game/Scene.h"
 
 #include "Game/IGameInstance.h"
+#include "Graphics/Color.h"
 namespace Umbra {
     Scene::Scene() {}
 
@@ -13,30 +14,21 @@ namespace Umbra {
         mWorld = std::make_unique<World>();
         mWorld->InitializeCoreSystems();
 
-        // add Camera Entity
-        mCameraEntity = mWorld->CreateEntity();
-        mWorld->AddComponent<TransformComponent>(
-            mCameraEntity, TransformComponent(Math::Vector2f(0, 0), Math::Vector2f(0, 0)));
-        CameraComponent cameraComponent;
-        cameraComponent.SetOrthographicSize(150 / 2);
-        cameraComponent.SetActive(true);
-        mWorld->AddComponent<CameraComponent>(mCameraEntity, cameraComponent);
+        // Note: Camera is no longer auto-created.
+        // Scenes should call CreateDefaultCamera() in Initialize() or BeginPlay() if needed.
         Initialize();
         bLoaded = true;
     }
 
     void Scene::Render() {
-        GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->clear(sf::Color::Black);
-        mGameInstance->GetUIManager().NewFrame(EngineTime::GetDeltaTime());
+        GEngineStatics.AppWindowPtr->GetRenderDevice()->Clear(Color::Black);
         this->OnUpdate();
         mWorld->Update();
-        mGameInstance->GetUIManager().Render();
         mWorld->Render();
     }
 
     void Scene::Simulate() {
-        RenderSystem::DebugDrawCache.clear();
-        this->OnFixedUpdated();
+        this->OnFixedUpdate();
         mWorld->Simulate();
     }
 
@@ -85,5 +77,21 @@ namespace Umbra {
 
     void Scene::SetSceneId(String _sceneId) {
         mSceneIdentifier = _sceneId;
+    }
+
+    void Scene::SetMainCamera(EntityID _camera) {
+        mCameraEntity = _camera;
+    }
+
+    EntityID Scene::CreateDefaultCamera(float _orthographicSize) {
+        EntityID camera = mWorld->CreateEntity();
+        mWorld->AddComponent<TransformComponent>(
+            camera, TransformComponent(Math::Vector2f(0, 0), Math::Vector2f(0, 0)));
+        CameraComponent cameraComponent;
+        cameraComponent.SetOrthographicSize(_orthographicSize);
+        cameraComponent.SetActive(true);
+        mWorld->AddComponent<CameraComponent>(camera, cameraComponent);
+        mCameraEntity = camera;  // Set as main camera
+        return camera;
     }
 } // namespace Umbra

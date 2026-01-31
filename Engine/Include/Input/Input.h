@@ -124,21 +124,21 @@ namespace Umbra {
         };
     } // namespace Mouse
 
-    class KeyPressedEvent : Event {
+    class KeyPressedEvent : public Event {
     public:
         inline KeyPressedEvent(KeyBoard::Keycode _code) {
             Key = _code;
         }
         KeyBoard::Keycode Key;
     };
-    class KeyReleasedEvent : Event {
+    class KeyReleasedEvent : public Event {
     public:
         inline KeyReleasedEvent(KeyBoard::Keycode _code) {
             Key = _code;
         }
         KeyBoard::Keycode Key;
     };
-    class MouseButtonPressedEvent : Event {
+    class MouseButtonPressedEvent : public Event {
     public:
         inline MouseButtonPressedEvent(Mouse::MouseButton _code, int16 _x, int16 _y) {
             Button = _code;
@@ -149,7 +149,7 @@ namespace Umbra {
         int16 x = 0;
         int16 y = 0;
     };
-    class MouseButtonReleasedEvent : Event {
+    class MouseButtonReleasedEvent : public Event {
     public:
         inline MouseButtonReleasedEvent(Mouse::MouseButton _code, int16 _x, int16 _y) {
             Button = _code;
@@ -160,7 +160,7 @@ namespace Umbra {
         int16 x = 0;
         int16 y = 0;
     };
-    class MouseMovedEvent : Event {
+    class MouseMovedEvent : public Event {
     public:
         inline MouseMovedEvent(int16 _x, int16 _y) {
             x = _x;
@@ -186,7 +186,7 @@ namespace Umbra {
         inline static void Refresh() {
             Input::GetInstance()->RefreshImpl();
         }
-        // static inline void Update() { PrevKeyPressedState = KeyPressedState; };
+
         /** Returns true while the user holds down the key identified by name. */
         static bool GetKey(KeyBoard::Keycode _code);
         /** Returns true during the frame the user starts pressing down the key identified by name. */

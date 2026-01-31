@@ -51,6 +51,10 @@ namespace Umbra {
 
     void SceneManager::ShutDown() {
         if (mCurrentScene) {
+            // Call OnEndPlay if scene was started
+            if (bCurrentSceneStarted) {
+                mCurrentScene->OnEndPlay();
+            }
             mCurrentScene->ShutDown();
             mCurrentScene.reset();
         }
@@ -63,10 +67,17 @@ namespace Umbra {
     void SceneManager::GoToScene(SharedPtr<Scene>& _scene) {
         if (mCurrentScene) {
             UMBRA_LOG_INFO("GoToScene exiting %s", mCurrentScene->GetSceneID().c_str());
-            mDeletedScene = std::move(mCurrentScene);
+            // Call OnEndPlay before transitioning
+            if (bCurrentSceneStarted) {
+                mCurrentScene->OnEndPlay();
+            }
+            // Transfer current scene to deletion queue (will be cleaned up in Render/Simulate)
+            mDeletedScene = mCurrentScene;
+            mCurrentScene.reset();
         }
 
-        mCurrentScene = std::move(_scene->InsatiateCopy());
+        // Create new instance from template
+        mCurrentScene = _scene->InstantiateCopy();
         mCurrentScene->Construct();
         bCurrentSceneStarted = false;
     }

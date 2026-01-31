@@ -1,15 +1,27 @@
 #include "Asset/Texture.h"
+
+#include "Graphics/Backends/SfmlTexture.h"
+
 namespace Umbra {
     Texture::Texture(SharedPtr<TextureResource> _textureResource) : refTextureResource(_textureResource) {}
 
-    const sf::Texture* Texture::GetSfmlTexture() {
-        return &refTextureResource.get()->SfmlTex;
+    void* Texture::GetNativeHandle() {
+        if (refTextureResource && refTextureResource->mTexture) {
+            return refTextureResource->mTexture->GetNativeHandle();
+        }
+        return nullptr;
     }
 
     bool TextureResource::Load() {
-        SfmlTex = sf::Texture();
-        return SfmlTex.loadFromFile(filePath);
+        mTexture = std::make_unique<SfmlTexture>();
+        return mTexture->LoadFromFile(filePath);
     }
-    void TextureResource::Unload() {}
+
+    void TextureResource::Unload() {
+        if (mTexture) {
+            mTexture->Unload();
+        }
+    }
+
     TextureResource::TextureResource(const String& _filePath) : IResource(_filePath) {}
 } // namespace Umbra

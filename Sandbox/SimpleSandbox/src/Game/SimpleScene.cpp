@@ -1,6 +1,7 @@
 #include "SimpleScene.h"
 
 #include "ECS/Components/Collider.h"
+#include "Graphics/Color.h"
 #include "ECS/Components/PhysicsBodyComponent.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
@@ -11,15 +12,13 @@
 
 void SimpleScene::Initialize() {
     UMBRA_LOG_INFO("SimpleScene Initialized !!");
+    CreateDefaultCamera(150.0f);
     ObjectSpawner = std::make_shared<PointObjectSpawnSystem>();
     // GetWorld()->AddSystem(Umbra::ESystemPhase::FrameStart, 1, ObjectSpawner);
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(150);
-    }
     // UMBRA_LOG_CRITICAL("%s", IMGUI_VERSION);
 }
 
-void SimpleScene::OnFixedUpdated() {}
+void SimpleScene::OnFixedUpdate() {}
 
 void SimpleScene::OnUpdate() {
     bool bShow = true;
@@ -91,14 +90,14 @@ void SimpleScene::OnUpdate() {
     }
 }
 
-Umbra::SharedPtr<Umbra::Scene> SimpleScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> SimpleScene::InstantiateCopy() {
     return std::make_shared<SimpleScene>(*this);
 }
 
 void SimpleScene::OnBeginPlay() {
     // {
     //     entity = GetWorld()->CreateEntity();
-    //     // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+    //     // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, Umbra::Color::Red);
     //     GetWorld()->AddComponent<Umbra::TransformComponent>(
     //         entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, -100), Umbra::Math::Vector2f(50, 50)));
     //     Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
@@ -113,7 +112,7 @@ void SimpleScene::OnBeginPlay() {
     // }
     {
         entity = GetWorld()->CreateEntity();
-        GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, sf::Color::Red);
+        GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, Umbra::Color::Red);
         GetWorld()->AddComponent<Umbra::TransformComponent>(
             entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(50, 50)));
         Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();

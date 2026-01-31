@@ -16,7 +16,6 @@
 PhysicsTestBed::PhysicsTestBed(/* args */) {}
 
 PhysicsTestBed::~PhysicsTestBed() {
-    sf::ConvexShape shape;
 }
 
 inline void PhysicsTestBed::Initialize() {
@@ -32,19 +31,19 @@ inline void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> raycastOBB             = std::make_shared<RaycastOBB>();
     Umbra::SharedPtr<Umbra::Scene> satScene               = std::make_shared<SATScene>();
     Umbra::SharedPtr<Umbra::Scene> bvhScene               = std::make_shared<BVHScene>();
-    GetSceneManger().AddScene("Scene0", mainMenu);
-    GetSceneManger().AddScene("Scene1", pointLineSegmentScene);
-    GetSceneManger().AddScene("Scene2", circleLineSegmentScene);
-    GetSceneManger().AddScene("Scene3", circleAABBScene);
-    GetSceneManger().AddScene("Scene4", circleOBBScene);
-    GetSceneManger().AddScene("Scene5", trianglePointScene);
-    GetSceneManger().AddScene("Scene6", raycastCircle);
-    GetSceneManger().AddScene("Scene7", raycastLineSegment);
-    GetSceneManger().AddScene("Scene8", raycastAABB);
-    GetSceneManger().AddScene("Scene9", raycastOBB);
-    GetSceneManger().AddScene("Scene10", satScene);
-    GetSceneManger().AddScene("Scene11", bvhScene);
-    GetSceneManger().GoToScene(mainMenu);
+    GetSceneManager().AddScene("Scene0", mainMenu);
+    GetSceneManager().AddScene("Scene1", pointLineSegmentScene);
+    GetSceneManager().AddScene("Scene2", circleLineSegmentScene);
+    GetSceneManager().AddScene("Scene3", circleAABBScene);
+    GetSceneManager().AddScene("Scene4", circleOBBScene);
+    GetSceneManager().AddScene("Scene5", trianglePointScene);
+    GetSceneManager().AddScene("Scene6", raycastCircle);
+    GetSceneManager().AddScene("Scene7", raycastLineSegment);
+    GetSceneManager().AddScene("Scene8", raycastAABB);
+    GetSceneManager().AddScene("Scene9", raycastOBB);
+    GetSceneManager().AddScene("Scene10", satScene);
+    GetSceneManager().AddScene("Scene11", bvhScene);
+    GetSceneManager().GoToScene(mainMenu);
 }
 
 inline void PhysicsTestBed::ShutDown() {}

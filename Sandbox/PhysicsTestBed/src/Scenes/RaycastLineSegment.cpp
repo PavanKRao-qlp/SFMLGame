@@ -8,27 +8,26 @@
 #include "Input/Input.h"
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
+#include "Graphics/Color.h"
 #include "Umbra.h"
 #include "imgui.h"
 
 void RaycastLineSegment::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void RaycastLineSegment::OnFixedUpdated() {
+void RaycastLineSegment::OnFixedUpdate() {
     mRay.Position  = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     mRay.Direction = Umbra::Math::Vector2f(1, 0).GetRotated(mAngle);
     Umbra::Math::Vector2f pos;
     if (Umbra::Math::TestRayLineSegment(mRay, mPointA, mPointB, pos)) {
-        Umbra::RenderSystem::DebugDrawCircle(pos, 2, true, sf::Color::Green);
+        Umbra::RenderSystem::DebugDrawCircle(pos, 2, true, Umbra::Color::Green);
     }
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(mPointA, 2, true, sf::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(mPointB, 2, true, sf::Color::Red);
-    Umbra::RenderSystem::DebugDrawLine(mPointA, mPointB, sf::Color::Red);
+    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(mPointA, 2, true, Umbra::Color::Red);
+    Umbra::RenderSystem::DebugDrawCircle(mPointB, 2, true, Umbra::Color::Red);
+    Umbra::RenderSystem::DebugDrawLine(mPointA, mPointB, Umbra::Color::Red);
 }
 
 void RaycastLineSegment::OnUpdate() {
@@ -49,7 +48,7 @@ void RaycastLineSegment::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> RaycastLineSegment::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> RaycastLineSegment::InstantiateCopy() {
     return std::make_shared<RaycastLineSegment>(*this);
 }
 

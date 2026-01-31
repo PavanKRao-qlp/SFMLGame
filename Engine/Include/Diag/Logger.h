@@ -1,6 +1,6 @@
 #pragma once
+#include "Assert.h"
 #include "Core/Singleton.h"
-#include "Diag/Assert.h"
 #include "EnginePCH.h"
 
 namespace Umbra {
@@ -28,7 +28,6 @@ namespace Umbra {
             bool bEnable      = true;
         };
         static void Initialize(const Config& _loggerConfig);
-        static void Shutdown();
 
         template <typename... Args>
         void Log(
@@ -36,8 +35,26 @@ namespace Umbra {
 
     private:
         void LogToConsole(ELogLevel _verbosity, const char* _message);
-        String LogLevelString(ELogLevel __verbosity);
-        constexpr const char* LogLevelColor(ELogLevel __verbosity);
+        String LogLevelString(ELogLevel _verbosity);
+
+        constexpr const char* LogLevelColor(ELogLevel _verbosity) {
+            switch (_verbosity) {
+            case ELogLevel::Trace:
+                return "\033[90m"; // Bright Black
+            case ELogLevel::Debug:
+                return "\033[36m"; // Cyan
+            case ELogLevel::Info:
+                return "\033[0m"; // Reset
+            case ELogLevel::Warning:
+                return "\033[33m"; // Yellow
+            case ELogLevel::Error:
+                return "\033[31m"; // Red
+            case ELogLevel::Critical:
+                return "\033[41m\033[37m"; // White on Red
+            default:
+                return "\033[0m";
+            }
+        }
 
         template <typename... Args>
         String FormatString(const char* _message, Args... _args);
@@ -67,7 +84,7 @@ namespace Umbra {
     template <typename... Args>
     String Logger::FormatString(const char* _message, Args... _args) {
         int size = std::snprintf(nullptr, 0, _message, _args...);
-        // UM_S_ASSERT(size > 0);
+        UM_S_ASSERT(size > 0);
         String formattedMessage(size, '\0');
         std::snprintf(&formattedMessage[0], size + 1, _message, _args...);
         return formattedMessage;
@@ -76,14 +93,15 @@ namespace Umbra {
 } // namespace Umbra
 
 #define UMBRA_LOG_TRACE(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Trace, __FILE__, __LINE__, message, __VA_ARGS__)
+    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Trace, __FILE__, __LINE__, message, ##__VA_ARGS__)
 #define UMBRA_LOG_DEBUG(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Debug, __FILE__, __LINE__, #message, __VA_ARGS__);
+    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Debug, __FILE__, __LINE__, message, ##__VA_ARGS__)
 #define UMBRA_LOG_INFO(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Info, __FILE__, __LINE__, message, __VA_ARGS__)
+    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Info, __FILE__, __LINE__, message, ##__VA_ARGS__)
 #define UMBRA_LOG_WARNING(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Warning, __FILE__, __LINE__, message, __VA_ARGS__)
+    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Warning, __FILE__, __LINE__, message, ##__VA_ARGS__)
 #define UMBRA_LOG_ERROR(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Error, __FILE__, __LINE__, message, __VA_ARGS__)
+    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Error, __FILE__, __LINE__, message, ##__VA_ARGS__)
 #define UMBRA_LOG_CRITICAL(message, ...) \
-    Umbra::Logger::GetInstance()->Log(Umbra::ELogLevel::Critical, __FILE__, __LINE__, message, __VA_ARGS__)
+    Umbra::Logger::GetInstance()->Log(   \
+        Umbra::ELogLevel::Critical, __FILE__, __LINE__, message, ##__VA_ARGS__)

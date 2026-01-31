@@ -5,15 +5,15 @@
 #include "ECS/Components/Transfrom.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
+#include "Graphics/IRenderDevice.h"
 #include "Umbra.h"
 
-#include "SFML/Graphics.hpp"
 namespace Umbra {
     class CameraSystem : public System {
     public:
-        inline CameraSystem(sf::View* _renderView)
+        inline CameraSystem(IRenderDevice* _renderDevice)
             : System(std::make_unique<ECView<CameraComponent, TransformComponent>>()) {
-            mRenderView = _renderView;
+            mRenderDevice = _renderDevice;
         }
         inline ~CameraSystem() {}
         inline void SetScreenSize(Math::Vector2f _screenSize) {
@@ -30,26 +30,25 @@ namespace Umbra {
                 if (camera->IsActive()) {
                     Math::Vector2f ViewPortSize = Math::Vector2f(
                         2 * camera->GetOrthographicSize() * mRenderAspectRatio, 2 * camera->GetOrthographicSize());
-                    mRenderView->setSize(ViewPortSize.x, ViewPortSize.y);
-                    sf::FloatRect ViewPortRect(0, 0, 1, 1);
+                    mRenderDevice->SetViewSize(ViewPortSize.x, ViewPortSize.y);
+
+                    FloatRect ViewPortRect(0, 0, 1, 1);
                     if (mScreenAspectRatio > mRenderAspectRatio) {
-                        //  scale render width down by 1/AR to match it to height
-                        ViewPortRect.width = mRenderAspectRatio / mScreenAspectRatio;
-                        ViewPortRect.left  = (1 - ViewPortRect.width) / 2.f;
+                        ViewPortRect.Width = mRenderAspectRatio / mScreenAspectRatio;
+                        ViewPortRect.Left  = (1 - ViewPortRect.Width) / 2.f;
                     } else {
-                        //  scale render height down by AR to match it to height
-                        ViewPortRect.height = mScreenAspectRatio / mRenderAspectRatio;
-                        ViewPortRect.top    = (1 - ViewPortRect.height) / 2.f;
+                        ViewPortRect.Height = mScreenAspectRatio / mRenderAspectRatio;
+                        ViewPortRect.Top    = (1 - ViewPortRect.Height) / 2.f;
                     }
-                    mRenderView->setViewport(ViewPortRect);
-                    mRenderView->setCenter(transform->Position.x, transform->Position.y);
-                    GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->setView(*mRenderView);
+                    mRenderDevice->SetViewport(ViewPortRect);
+                    mRenderDevice->SetViewCenter(transform->Position.x, transform->Position.y);
+                    mRenderDevice->ApplyView();
                 }
             }
         }
 
     protected:
-        sf::View* mRenderView = nullptr;
+        IRenderDevice* mRenderDevice = nullptr;
         float mRenderAspectRatio;
         float mScreenAspectRatio;
     };

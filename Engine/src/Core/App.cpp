@@ -19,6 +19,7 @@
 #include "Platform/VirtualFileManager.h"
 #include "UI/Backends/SfmlImguiImpl.h"
 #include "Umbra.h"
+#include "Graphics/IRenderDevice.h"
 
 namespace Umbra {
 
@@ -99,7 +100,7 @@ namespace Umbra {
                 return false;
             }
             EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
-            mUIManager->Init(mAppWindow->GetRenderWindowHandle(), 800, 800);
+            mUIManager->Init(mAppWindow->GetRenderDevice()->GetNativeWindowHandle(), 800, 800);
             GEngineStatics.ImGuiBackend = mUIManager.get();
             UMBRA_LOG_INFO("App Initalized!");
             return true;
@@ -179,7 +180,15 @@ namespace Umbra {
     void App::OnUpdate(float _dt) {
         Input::Refresh();
         mAppWindow->Update();
+
+        // Begin UI frame
+        mUIManager->NewFrame(EngineTime::GetDeltaTime());
+
+        // Render scene (includes OnUpdate and World rendering)
         mSceneManager->Render();
+
+        // End UI frame
+        mUIManager->Render();
     }
 
     void App::OnFixedUpdate() {

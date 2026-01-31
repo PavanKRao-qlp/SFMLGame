@@ -14,20 +14,39 @@ namespace Umbra {
         using delegateCallback = std::function<retType(args...)>;
 
     public:
-        inline void AddToInvocationList(const delegateCallback& callback) {
-            mCallBack = callback;
+        using CallbackHandle = size_t;
+
+        inline CallbackHandle AddToInvocationList(const delegateCallback& callback) {
+            CallbackHandle handle = mNextHandle++;
+            mCallbacks.push_back({handle, callback});
+            return handle;
         }
 
-        inline retType Broadcast(args... inArgs) {
-            return mCallBack(inArgs...);
+        inline bool RemoveFromInvocationList(CallbackHandle _handle) {
+            auto it = std::find_if(mCallbacks.begin(), mCallbacks.end(),
+                                   [_handle](const auto& pair) { return pair.first == _handle; });
+            if (it != mCallbacks.end()) {
+                mCallbacks.erase(it);
+                return true;
+            }
+            return false;
+        }
+
+        inline void Broadcast(args... inArgs) {
+            for (auto& callbackPair : mCallbacks) {
+                callbackPair.second(inArgs...);
+            }
         }
 
     private:
-        delegateCallback mCallBack;
+        Vector<std::pair<CallbackHandle, delegateCallback>> mCallbacks;
+        CallbackHandle mNextHandle = 0;
     };
 
     class EventBus : public Singleton<EventBus> {
     public:
+        using CallbackHandle = size_t;
+
         static inline void Initialize() {}
         inline EventBus() {}
         inline ~EventBus() {
@@ -35,37 +54,51 @@ namespace Umbra {
         }
 
         inline void Flush() {
-            for (auto events : EventBus::CallbackMap) {
+            for (auto& events : CallbackMap) {
                 delete events.second;
             }
+            CallbackMap.clear();
         }
 
         template <typename T>
-        inline static void Subscribe(FUNC(void, const T&) callback) {
-            using EventDelegate = Delegate<void, T>;
+        inline static CallbackHandle Subscribe(FUNC(void, const T&) callback) {
+            using EventDelegate = Delegate<void, const T&>;
             int64 eventType     = typeid(T).hash_code();
-            if (EventBus::GetInstance()->CallbackMap.find(eventType) != EventBus::GetInstance()->CallbackMap.end()) {
-                EventDelegate* delegate = CAST(EventDelegate*, EventBus::GetInstance()->CallbackMap[eventType]);
-                delegate->AddToInvocationList(callback);
+            EventDelegate* delegate = nullptr;
+
+            auto it = GetInstance()->CallbackMap.find(eventType);
+            if (it != GetInstance()->CallbackMap.end()) {
+                delegate = CAST(EventDelegate*, it->second);
             } else {
-                EventDelegate* delegate = new EventDelegate();
-                delegate->AddToInvocationList(callback);
-                void* v                                         = CAST(void*, delegate);
-                EventBus::GetInstance()->CallbackMap[eventType] = v;
+                delegate = new EventDelegate();
+                GetInstance()->CallbackMap[eventType] = CAST(void*, delegate);
             }
+
+            return delegate->AddToInvocationList(callback);
         }
 
         template <typename T>
-        inline static void FireEvent(T* Event) {
-            using EventDelegate = Delegate<void, T>;
+        inline static bool Unsubscribe(CallbackHandle _handle) {
+            using EventDelegate = Delegate<void, const T&>;
             int64 eventType     = typeid(T).hash_code();
-            if (EventBus::GetInstance()->CallbackMap.find(eventType) != EventBus::GetInstance()->CallbackMap.end()) {
-                auto delegate = CAST(EventDelegate*, EventBus::GetInstance()->CallbackMap[eventType]);
-                delegate->Broadcast(*Event);
-            } else {
-                EventDelegate* delegate                         = new EventDelegate();
-                void* v                                         = CAST(void*, delegate);
-                EventBus::GetInstance()->CallbackMap[eventType] = v;
+
+            auto it = GetInstance()->CallbackMap.find(eventType);
+            if (it != GetInstance()->CallbackMap.end()) {
+                EventDelegate* delegate = CAST(EventDelegate*, it->second);
+                return delegate->RemoveFromInvocationList(_handle);
+            }
+            return false;
+        }
+
+        template <typename T>
+        inline static void FireEvent(const T& _event) {
+            using EventDelegate = Delegate<void, const T&>;
+            int64 eventType     = typeid(T).hash_code();
+
+            auto it = GetInstance()->CallbackMap.find(eventType);
+            if (it != GetInstance()->CallbackMap.end()) {
+                auto delegate = CAST(EventDelegate*, it->second);
+                delegate->Broadcast(_event);
             }
         }
 

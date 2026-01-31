@@ -101,6 +101,10 @@ namespace Umbra {
             return Color(vec);
         }
 
+        static Color FromU8(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a = 255) {
+            return Color(glm::u8vec4(_r, _g, _b, _a));
+        }
+
         // Utility
         Color withAlpha(float alpha) const {
             return Color(r(), g(), b(), alpha);
@@ -119,15 +123,15 @@ namespace Umbra {
             return static_cast<uint32>((value.r << 24) | (value.g << 16) | (value.b << 8) | value.a);
         }
         // Predefined Colors
-        // inline static const Color White       = Color(1.0f, 1.0f, 1.0f, 1.0f);
-        // inline static const Color Black       = Color(0.0f, 0.0f, 0.0f, 1.0f);
-        // inline static const Color Red         = Color(1.0f, 0.0f, 0.0f, 1.0f);
-        // inline static const Color Green       = Color(0.0f, 1.0f, 0.0f, 1.0f);
-        // inline static const Color Blue        = Color(0.0f, 0.0f, 1.0f, 1.0f);
-        // inline static const Color Yellow      = Color(1.0f, 1.0f, 0.0f, 1.0f);
-        // inline static const Color Magenta     = Color(1.0f, 0.0f, 1.0f, 1.0f);
-        // inline static const Color Cyan        = Color(0.0f, 1.0f, 1.0f, 1.0f);
-        // inline static const Color Transparent = Color(0.0f, 0.0f, 0.0f, 0.0f);
+        static const Color White;
+        static const Color Black;
+        static const Color Red;
+        static const Color Green;
+        static const Color Blue;
+        static const Color Yellow;
+        static const Color Magenta;
+        static const Color Cyan;
+        static const Color Transparent;
     };
 
 

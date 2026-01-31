@@ -10,8 +10,8 @@ namespace Umbra {
         std::clog << LogLevelColor(_verbosity) << _message << "\033[0m" << std::endl;
     }
 
-    String Logger::LogLevelString(ELogLevel __verbosity) {
-        switch (__verbosity) {
+    String Logger::LogLevelString(ELogLevel _verbosity) {
+        switch (_verbosity) {
         case ELogLevel::Trace:
             return "[TRACE] : ";
         case ELogLevel::Debug:
@@ -21,38 +21,12 @@ namespace Umbra {
         case ELogLevel::Warning:
             return "[WARNING] : ";
         case ELogLevel::Error:
-            return "[ERROR] :";
+            return "[ERROR] : ";
         case ELogLevel::Critical:
             return "[CRITICAL] : ";
         default:
             return "[UNKNOWN] : ";
         }
-    }
-    //     printf("\n");
-    constexpr const char* Logger::LogLevelColor(ELogLevel __verbosity) {
-        switch (__verbosity) {
-        case ELogLevel::Trace:
-            return "\033[90m";
-            break; // Bright Black
-        case ELogLevel::Debug:
-            return "\033[36m";
-            break; // Cyan
-        case ELogLevel::Info:
-            return "\033[0m";
-            break; // Reset
-        case ELogLevel::Warning:
-            return "\033[33m";
-            break; // Yellow
-        case ELogLevel::Error:
-            return "\033[31m";
-            break; // Red
-        case ELogLevel::Critical:
-            return "\033[41m\033[37m";
-            break; // White on Red
-        default:
-            return "\033[0m";
-        }
-        return nullptr;
     }
 
     Logger::~Logger() {

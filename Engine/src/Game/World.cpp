@@ -4,21 +4,7 @@
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Systems/RenderSystem.h"
 
-#include < SFML/Graphics/View.hpp>
-
 namespace Umbra {
-
-    // void World::SetECSRegister(ECSRegister* _worldRegister) {
-    //     mWorldRegister = _worldRegister;
-    // }
-
-    // ECSRegister* World::GetRegister() {
-    //     return mWorldRegister;
-    // }
-
-    // void World::FlushWorld() {
-    //     mWorldRegister->FlushRegister();
-    // }
 
     void World::InitializeCoreSystems() {
         mWorldRegister->RegisterComponent<SpriteComponent>();
@@ -27,15 +13,17 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<PhysicsBodyComponent>();
         mWorldRegister->RegisterComponent<BoxColliderComponent>();
         mWorldRegister->RegisterComponent<CircleColliderComponent>();
-        mCameraSystem = std::make_shared<CameraSystem>(GEngineStatics.AppWindowPtr->GetRenderWindowView());
+
+        IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
+
+        mCameraSystem = std::make_shared<CameraSystem>(renderDevice);
         mCameraSystem->SetRenderSize(
             Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));
-        mCameraSystem->SetScreenSize(Math::Vector2f(GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().x,
-            GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->getSize().y));
-        mRenderSystem = std::make_shared<RenderSystem>(
-            GEngineStatics.AppWindowPtr->GetRenderWindowHandle(), GEngineStatics.ImGuiBackend);
-        mPhysicsSystem = std::make_shared<PhysicsSystem>();
+        Math::Vector2i windowSize = renderDevice->GetWindowSize();
+        mCameraSystem->SetScreenSize(Math::Vector2f(static_cast<float>(windowSize.x), static_cast<float>(windowSize.y)));
 
+        mRenderSystem  = std::make_shared<RenderSystem>(renderDevice, GEngineStatics.ImGuiBackend);
+        mPhysicsSystem = std::make_shared<PhysicsSystem>();
 
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
         mWorldRegister->AddSystem(ESystemPhase::Render, 0, mRenderSystem);
@@ -71,8 +59,8 @@ namespace Umbra {
     }
 
     Math::Vector2f World::GetScreenToWorldPosition(Math::Vector2i _screenPos) {
-        sf::Vector2f worldPos = GEngineStatics.AppWindowPtr->GetRenderWindowHandle()->mapPixelToCoords(
-            sf::Vector2i(_screenPos.x, _screenPos.y));
+        IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
+        Math::Vector2f worldPos     = renderDevice->MapPixelToCoords(_screenPos);
         return Math::Vector2f(worldPos.x, -worldPos.y);
     }
 

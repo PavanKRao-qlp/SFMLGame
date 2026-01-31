@@ -8,17 +8,16 @@
 #include "Input/Input.h"
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
+#include "Graphics/Color.h"
 #include "Umbra.h"
 #include "imgui.h"
 
 
 void RaycastCircle::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void RaycastCircle::OnFixedUpdated() {
+void RaycastCircle::OnFixedUpdate() {
     mRay.Position                         = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     mRay.Direction                        = Umbra::Math::Vector2f(1, 0).GetRotated(mAngle);
     Umbra::Math::Vector2f rayOrigToCircle = mPoint - mRay.Position;
@@ -31,14 +30,14 @@ void RaycastCircle::OnFixedUpdated() {
     bool bCastHit                    = (proj - distToEdge) > 0;
     Umbra::Math::Vector2f castPointA = projPoint + (mRay.Direction * distToEdge);
     Umbra::Math::Vector2f castPointB = projPoint - (mRay.Direction * distToEdge);
-    Umbra::RenderSystem::DebugDrawCircle(mPoint, mRadius, false, !bCastHit ? sf::Color::Red : sf::Color::Green);
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(projPoint, 2, true, sf::Color::Magenta);
-    Umbra::RenderSystem::DebugDrawCircle(castPointA, 2, true, sf::Color::Yellow);
-    Umbra::RenderSystem::DebugDrawCircle(castPointB, 2, true, sf::Color::Blue);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mPoint, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mPoint, projPoint, sf::Color::Magenta);
+    Umbra::RenderSystem::DebugDrawCircle(mPoint, mRadius, false, !bCastHit ? Umbra::Color::Red : Umbra::Color::Green);
+    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(projPoint, 2, true, Umbra::Color::Magenta);
+    Umbra::RenderSystem::DebugDrawCircle(castPointA, 2, true, Umbra::Color::Yellow);
+    Umbra::RenderSystem::DebugDrawCircle(castPointB, 2, true, Umbra::Color::Blue);
+    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mPoint, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(mPoint, projPoint, Umbra::Color::Magenta);
 }
 
 void RaycastCircle::OnUpdate() {
@@ -53,7 +52,7 @@ void RaycastCircle::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> RaycastCircle::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> RaycastCircle::InstantiateCopy() {
     return std::make_shared<RaycastCircle>(*this);
 }
 

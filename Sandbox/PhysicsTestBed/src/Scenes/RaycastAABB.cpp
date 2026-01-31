@@ -9,15 +9,14 @@
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
 #include "Umbra.h"
+#include "Graphics/Color.h"
 #include "imgui.h"
 
 void RaycastAABB::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void RaycastAABB::OnFixedUpdated() {
+void RaycastAABB::OnFixedUpdate() {
     mRay.Position  = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     mRay.Direction = Umbra::Math::Vector2f(1, 0).GetRotated(mAngle);
     Umbra::Math::Bounds2D RectAABB(mPoint, mSize);
@@ -25,17 +24,17 @@ void RaycastAABB::OnFixedUpdated() {
     bool bHit = Umbra::Math::TestRayAABB(mRay, RectAABB, outPoint);
 
 
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, sf::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Min().x - 500, RectAABB.Min().y),
-        Umbra::Math::Vector2f(RectAABB.Min().x + 500, RectAABB.Min().y), sf::Color::Blue);
+        Umbra::Math::Vector2f(RectAABB.Min().x + 500, RectAABB.Min().y), Umbra::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Max().x - 500, RectAABB.Max().y),
-        Umbra::Math::Vector2f(RectAABB.Max().x + 500, RectAABB.Max().y), sf::Color::Blue);
+        Umbra::Math::Vector2f(RectAABB.Max().x + 500, RectAABB.Max().y), Umbra::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y - 500),
-        Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y + 500), sf::Color::Blue);
+        Umbra::Math::Vector2f(RectAABB.Min().x, RectAABB.Min().y + 500), Umbra::Color::Blue);
     Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y - 500),
-        Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y + 500), sf::Color::Blue);
-    Umbra::RenderSystem::DrawDebugBox(RectAABB, false, bHit ? sf::Color::Green : sf::Color::White);
+        Umbra::Math::Vector2f(RectAABB.Max().x, RectAABB.Max().y + 500), Umbra::Color::Blue);
+    Umbra::RenderSystem::DrawDebugBox(RectAABB, false, bHit ? Umbra::Color::Green : Umbra::Color::White);
 
     // p = r + dt
     // t = (p-r)/d
@@ -48,22 +47,22 @@ void RaycastAABB::OnFixedUpdated() {
     if (mRay.Direction.x != 0) {
         tMinX                     = (RectAABB.Min().x - mRay.Position.x) / mRay.Direction.x;
         Umbra::Math::Vector2f rTx = mRay.Position + mRay.Direction * tMinX;
-        Umbra::RenderSystem::DebugDrawCircle(rTx, 3, false, sf::Color::Cyan);
+        Umbra::RenderSystem::DebugDrawCircle(rTx, 3, false, Umbra::Color::Cyan);
     }
     if (mRay.Direction.y != 0) {
         tMinY                     = (RectAABB.Min().y - mRay.Position.y) / mRay.Direction.y;
         Umbra::Math::Vector2f rTy = mRay.Position + mRay.Direction * tMinY;
-        Umbra::RenderSystem::DebugDrawCircle(rTy, 3, true, sf::Color::Cyan);
+        Umbra::RenderSystem::DebugDrawCircle(rTy, 3, true, Umbra::Color::Cyan);
     }
     if (mRay.Direction.y != 0) {
         tMaxX                     = (RectAABB.Max().x - mRay.Position.x) / mRay.Direction.x;
         Umbra::Math::Vector2f rTx = mRay.Position + mRay.Direction * tMaxX;
-        Umbra::RenderSystem::DebugDrawCircle(rTx, 3, false, sf::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(rTx, 3, false, Umbra::Color::Magenta);
     }
     if (mRay.Direction.y != 0) {
         tMaxY                     = (RectAABB.Max().y - mRay.Position.y) / mRay.Direction.y;
         Umbra::Math::Vector2f rTy = mRay.Position + mRay.Direction * tMaxY;
-        Umbra::RenderSystem::DebugDrawCircle(rTy, 3, true, sf::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(rTy, 3, true, Umbra::Color::Magenta);
     }
     float nearestX  = Umbra::Math::Min(tMinX, tMaxX);
     float nearestY  = Umbra::Math::Min(tMinY, tMaxY);
@@ -74,7 +73,7 @@ void RaycastAABB::OnFixedUpdated() {
     // ray hit exit
     float nearestFarPoint = Umbra::Math::Min(furthestX, furthestY);
     if (bHit) {
-        Umbra::RenderSystem::DebugDrawCircle(outPoint, 2, true, sf::Color::Green);
+        Umbra::RenderSystem::DebugDrawCircle(outPoint, 2, true, Umbra::Color::Green);
         Umbra::RenderSystem::DebugDrawLine(
             mRay.Position + mRay.Direction * furthestNearPoint, mRay.Position + mRay.Direction * nearestFarPoint);
     }
@@ -104,7 +103,7 @@ void RaycastAABB::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> RaycastAABB::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> RaycastAABB::InstantiateCopy() {
     return std::make_shared<RaycastAABB>(*this);
 }
 

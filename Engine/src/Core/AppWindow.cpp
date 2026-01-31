@@ -1,18 +1,17 @@
 #pragma once
 #include "Core/AppWindow.h"
 
+#include "Graphics/Backends/SfmlRenderDevice.h"
 #include "Input/Input.h"
 #include "Umbra.h"
-#include "sfmlHelper.h"
+
 namespace Umbra {
     AppWindow::AppWindow() {
         GEngineStatics.AppWindowPtr = this;
     }
 
     AppWindow::~AppWindow() {
-        if (mWindow) {
-            delete mWindow;
-        }
+        mRenderDevice.reset();
     }
 
     bool AppWindow::CreateWindow() {
@@ -20,97 +19,80 @@ namespace Umbra {
         mScreenSize       = Math::Vector2i(800, 800);
         mRenderResolution = Math::Vector2i(400, 400);
         aspectRatio       = ((float) mRenderResolution.x) / mRenderResolution.y;
-        mWindow           = new sf::RenderWindow(sf::VideoMode(mScreenSize.x, mScreenSize.y), "My window");
-        mView             = new sf::View(sf::Vector2f(0, 0), sf::Vector2f(mRenderResolution.x, mRenderResolution.y));
-        ResizeViewport(mScreenSize);
+
+        mRenderDevice = std::make_unique<SfmlRenderDevice>();
+        bool success  = mRenderDevice->Create(mScreenSize.x, mScreenSize.y, "My window");
+
         bWindowClosed = false;
-        return (mWindow != nullptr);
+        return success;
     }
 
-    void AppWindow::Update() { // run the program as long as the window is open
-        if (mWindow->isOpen()) {
-            sf::Event sfEvent;
-            while (mWindow->pollEvent(sfEvent)) {
-                if (sfEvent.type == sf::Event::Closed) {
-                    bWindowClosed = true;
-                    Umbra::EventBus::FireEvent<AppClosedEvent>(new AppClosedEvent());
-                }
-                if (sfEvent.type == sf::Event::KeyPressed) {
-                    Umbra::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(sfEvent.key.code);
-                    Umbra::KeyPressedEvent* event       = new Umbra::KeyPressedEvent(keyPressed);
-                    Umbra::EventBus::FireEvent<Umbra::KeyPressedEvent>(event);
-                }
-                if (sfEvent.type == sf::Event::KeyReleased) {
-                    Umbra::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(sfEvent.key.code);
-                    Umbra::KeyReleasedEvent* event      = new Umbra::KeyReleasedEvent(keyPressed);
-                    Umbra::EventBus::FireEvent<Umbra::KeyReleasedEvent>(event);
-                }
-                if (sfEvent.type == sf::Event::MouseButtonPressed) {
-                    Umbra::Mouse::MouseButton buttonPressed = ConvertSFMLMouseCode(sfEvent.mouseButton.button);
-                    Umbra::MouseButtonPressedEvent* event =
-                        new Umbra::MouseButtonPressedEvent(buttonPressed, sfEvent.mouseButton.x, sfEvent.mouseButton.y);
-                    Umbra::EventBus::FireEvent<Umbra::MouseButtonPressedEvent>(event);
-                }
-                if (sfEvent.type == sf::Event::MouseButtonReleased) {
-                    Umbra::Mouse::MouseButton buttonPressed = ConvertSFMLMouseCode(sfEvent.mouseButton.button);
-                    Umbra::MouseButtonReleasedEvent* event  = new Umbra::MouseButtonReleasedEvent(
-                        buttonPressed, sfEvent.mouseButton.x, sfEvent.mouseButton.y);
-                    Umbra::EventBus::FireEvent<Umbra::MouseButtonReleasedEvent>(event);
-                }
-                if (sfEvent.type == sf::Event::MouseMoved) {
-                    Umbra::MouseMovedEvent* event =
-                        new Umbra::MouseMovedEvent(sfEvent.mouseMove.x, sfEvent.mouseMove.y);
-                    Umbra::EventBus::FireEvent<Umbra::MouseMovedEvent>(event);
-                }
-                if (sfEvent.type == sf::Event::JoystickButtonPressed) {
-                    // Umbra::KeyBoard::Keycode keyPressed = ConvertSFMLKeyCode(event.joystickButton.button);
-                }
-                if (sfEvent.type == sf::Event::Resized) {
-                    Math::Vector2i resizedDeviceRes = Math::Vector2i(sfEvent.size.width, sfEvent.size.height);
-                    ResizeViewport(resizedDeviceRes);
-                }
-                Umbra::SFMLAppWindowEvent* event = new Umbra::SFMLAppWindowEvent(sfEvent);
-                Umbra::EventBus::FireEvent<Umbra::SFMLAppWindowEvent>(event);
+    void AppWindow::Update() {
+        if (!mRenderDevice || !mRenderDevice->IsOpen()) return;
+
+        while (mRenderDevice->PollEvent()) {
+            EWindowEvent eventType = mRenderDevice->GetEventType();
+
+            if (eventType == EWindowEvent::Closed) {
+                bWindowClosed = true;
+                Umbra::EventBus::FireEvent<AppClosedEvent>(AppClosedEvent());
             }
+            if (eventType == EWindowEvent::KeyPressed) {
+                Umbra::KeyBoard::Keycode keyPressed = static_cast<Umbra::KeyBoard::Keycode>(mRenderDevice->GetEventKeyCode());
+                Umbra::EventBus::FireEvent<Umbra::KeyPressedEvent>(Umbra::KeyPressedEvent(keyPressed));
+            }
+            if (eventType == EWindowEvent::KeyReleased) {
+                Umbra::KeyBoard::Keycode keyPressed = static_cast<Umbra::KeyBoard::Keycode>(mRenderDevice->GetEventKeyCode());
+                Umbra::EventBus::FireEvent<Umbra::KeyReleasedEvent>(Umbra::KeyReleasedEvent(keyPressed));
+            }
+            if (eventType == EWindowEvent::MouseButtonPressed) {
+                Umbra::Mouse::MouseButton buttonPressed =
+                    static_cast<Umbra::Mouse::MouseButton>(mRenderDevice->GetEventMouseButton());
+                Math::Vector2i mousePos = mRenderDevice->GetEventMousePosition();
+                Umbra::EventBus::FireEvent<Umbra::MouseButtonPressedEvent>(
+                    Umbra::MouseButtonPressedEvent(buttonPressed, mousePos.x, mousePos.y));
+            }
+            if (eventType == EWindowEvent::MouseButtonReleased) {
+                Umbra::Mouse::MouseButton buttonPressed =
+                    static_cast<Umbra::Mouse::MouseButton>(mRenderDevice->GetEventMouseButton());
+                Math::Vector2i mousePos = mRenderDevice->GetEventMousePosition();
+                Umbra::EventBus::FireEvent<Umbra::MouseButtonReleasedEvent>(
+                    Umbra::MouseButtonReleasedEvent(buttonPressed, mousePos.x, mousePos.y));
+            }
+            if (eventType == EWindowEvent::MouseMoved) {
+                Math::Vector2i mousePos = mRenderDevice->GetEventMousePosition();
+                Umbra::EventBus::FireEvent<Umbra::MouseMovedEvent>(Umbra::MouseMovedEvent(mousePos.x, mousePos.y));
+            }
+            if (eventType == EWindowEvent::Resized) {
+                Math::Vector2i resizedDeviceRes = mRenderDevice->GetEventResizeSize();
+                ResizeViewport(resizedDeviceRes);
+            }
+
+            // Fire native event for backends that need it (e.g., ImGui-SFML)
+            Umbra::EventBus::FireEvent<Umbra::NativeWindowEvent>(
+                Umbra::NativeWindowEvent(mRenderDevice->GetNativeEvent()));
         }
     }
 
-
-    void AppWindow::ResizeViewport(Umbra::Math::Vector2i& resizedDeviceRes) {
-        // float newAspectRatio = (float) resizedDeviceRes.x / resizedDeviceRes.y;
-        // sf::FloatRect ResizeViewport(0, 0, 1, 1);
-        // if (newAspectRatio > aspectRatio) {
-        //     ResizeViewport.width = aspectRatio / newAspectRatio;
-        //     ResizeViewport.left  = (1 - ResizeViewport.width) / 2.f;
-        // } else {
-        //     ResizeViewport.height = newAspectRatio / aspectRatio;
-        //     ResizeViewport.top    = (1 - ResizeViewport.height) / 2.f;
-        // }
-
-        // mView->setViewport(ResizeViewport);
-        // mWindow->setView(*mView);
+    void AppWindow::ResizeViewport(Umbra::Math::Vector2i& _resizedDeviceRes) {
     }
+
     void AppWindow::RefreshDisplay() {
-        mWindow->display();
+        mRenderDevice->Display();
     }
 
     void AppWindow::ClearDisplay() {
-        mWindow->clear(sf::Color::Red);
+        mRenderDevice->Clear(Color::Red);
     }
 
     void AppWindow::CloseWindow() {
         UMBRA_LOG_INFO("Window Closed");
-        // Logger::Log(LogType::Verbose, "Closing Window");
-        if (mWindow->isOpen()) {
-            mWindow->close();
+        if (mRenderDevice && mRenderDevice->IsOpen()) {
+            mRenderDevice->Close();
         }
     }
 
-    sf::RenderWindow* AppWindow::GetRenderWindowHandle() {
-        return mWindow;
-    }
-
-    sf::View* AppWindow::GetRenderWindowView() {
-        return mView;
+    IRenderDevice* AppWindow::GetRenderDevice() {
+        return mRenderDevice.get();
     }
 } // namespace Umbra

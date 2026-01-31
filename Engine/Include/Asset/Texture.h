@@ -1,23 +1,24 @@
 
 #pragma once
 #include "Asset/TextureResource.h"
+#include "Graphics/ITexture.h"
 #include "Umbra.h"
 
-#include "SFML/Graphics.hpp"
 namespace Umbra {
     class TextureResource : public IResource {
     public:
         TextureResource(const String& _filePath);
-        //~TextureResource();
 
         bool Load() override;
         void Unload() override;
-        sf::Texture SfmlTex;
+
+        UniquePtr<ITexture> mTexture;
     };
+
     class Texture {
     public:
         Texture(SharedPtr<TextureResource> _textureResource);
-        const sf::Texture* GetSfmlTexture();
+        void* GetNativeHandle();
 
     private:
         SharedPtr<TextureResource> refTextureResource;

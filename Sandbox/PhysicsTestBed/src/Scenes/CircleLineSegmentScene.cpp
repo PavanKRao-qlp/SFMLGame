@@ -1,6 +1,7 @@
 #include "CircleLineSegmentScene.h"
 
 #include "Core/Random.h"
+#include "Graphics/Color.h"
 #include "ECS/Systems/RenderSystem.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
@@ -12,12 +13,10 @@
 #include "imgui.h"
 
 void CircleLineSegmentScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(100);
-    }
+    CreateDefaultCamera(100.0f);
 }
 
-void CircleLineSegmentScene::OnFixedUpdated() {
+void CircleLineSegmentScene::OnFixedUpdate() {
     Umbra::RenderSystem::DebugDrawLine(mPointA, mPointB);
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     Umbra::Math::Vector2f onLinePos     = Umbra::Math::GetClosestPointInLineSegment(mPointA, mPointB, worldMousePos);
@@ -27,12 +26,12 @@ void CircleLineSegmentScene::OnFixedUpdated() {
     mOrthoDistance =
         Umbra::Math::GetOrthogonalDistanceFromPointToLineSegment(mPointA, mPointB, worldMousePos) - mRadius;
     bool bColliding = (mDistance <= 0);
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? sf::Color::Green : sf::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(onLinePos, 1.f, true, sf::Color::Green);
-    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos - (worldMousePos - onLinePos), sf::Color::Red);
+    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green : Umbra::Color::Red);
+    Umbra::RenderSystem::DebugDrawCircle(onLinePos, 1.f, true, Umbra::Color::Green);
+    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos - (worldMousePos - onLinePos), Umbra::Color::Red);
     Umbra::Math::Vector2f midPoint = mPointA + (mPointB - mPointA) * 0.5f;
-    Umbra::RenderSystem::DebugDrawCircle(midPoint, 1.f, true, sf::Color::Blue);
-    Umbra::RenderSystem::DebugDrawLine(midPoint, midPoint + (normal * 20), sf::Color::Blue);
+    Umbra::RenderSystem::DebugDrawCircle(midPoint, 1.f, true, Umbra::Color::Blue);
+    Umbra::RenderSystem::DebugDrawLine(midPoint, midPoint + (normal * 20), Umbra::Color::Blue);
 }
 
 void CircleLineSegmentScene::OnUpdate() {
@@ -52,7 +51,7 @@ void CircleLineSegmentScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> CircleLineSegmentScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> CircleLineSegmentScene::InstantiateCopy() {
     return std::make_shared<CircleLineSegmentScene>(*this);
 }
 

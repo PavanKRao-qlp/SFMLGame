@@ -2,16 +2,15 @@
 
 namespace Umbra {
 
-    FGameConfig& IGameInstance::LoadGameConfig() {
+    FGameConfig IGameInstance::LoadGameConfig() {
         return FGameConfig();
     }
 
     void IGameInstance::QuitApplication() {
-        AppClosedEvent* event = new AppClosedEvent();
-        EventBus::FireEvent<AppClosedEvent>(event);
+        EventBus::FireEvent<AppClosedEvent>(AppClosedEvent());
     }
 
-    SceneManager& IGameInstance::GetSceneManger() {
+    SceneManager& IGameInstance::GetSceneManager() {
         return *mSceneManager;
     }
     ImGuiBackend& Umbra::IGameInstance::GetUIManager() {

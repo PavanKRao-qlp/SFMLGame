@@ -323,7 +323,7 @@ namespace Umbra {
             //_positionA + ((_radiusA - contact.mPenetration) * contact.mContactNormal);
             _collision.AddContact(contact);
 
-            RenderSystem::DebugDrawCircle(contact.mContactPosition, 1, true, sf::Color::Red);
+            RenderSystem::DebugDrawCircle(contact.mContactPosition, 1, true, Color::Red);
             RenderSystem::DebugDrawLine(contact.mContactPosition,
                 contact.mContactPosition + (-1 * contact.mContactNormal * contact.mPenetration));
 

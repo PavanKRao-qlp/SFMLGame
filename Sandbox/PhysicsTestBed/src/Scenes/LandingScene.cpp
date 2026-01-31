@@ -8,12 +8,10 @@
 #include "imgui.h"
 
 void LandingScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(100);
-    }
+    CreateDefaultCamera(100.0f);
 }
 
-void LandingScene::OnFixedUpdated() {}
+void LandingScene::OnFixedUpdate() {}
 
 void LandingScene::OnUpdate() {
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Escape)) {
@@ -60,7 +58,7 @@ void LandingScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> LandingScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> LandingScene::InstantiateCopy() {
     return std::make_shared<LandingScene>(*this);
 }
 

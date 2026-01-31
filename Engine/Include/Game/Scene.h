@@ -15,8 +15,8 @@ namespace Umbra {
         virtual void Initialize()                = 0;
         virtual void OnBeginPlay()               = 0;
         virtual void OnEndPlay()                 = 0;
-        virtual void OnFixedUpdated()            = 0;
-        virtual SharedPtr<Scene> InsatiateCopy() = 0;
+        virtual void OnFixedUpdate()            = 0;
+        virtual SharedPtr<Scene> InstantiateCopy() = 0;
         virtual void OnUpdate()                  = 0;
         virtual void ShutDown();
         bool IsLoaded();
@@ -29,6 +29,10 @@ namespace Umbra {
         class IGameInstance& GetGameInstance();
         class SceneManager& GetSceneManager();
         EntityID GetCameraEntity();
+        void SetMainCamera(EntityID _camera);
+
+        // Helper method to create a default orthographic camera
+        EntityID CreateDefaultCamera(float _orthographicSize = 75.0f);
 
     private:
         friend class SceneManager;

@@ -26,7 +26,7 @@ namespace Umbra {
                 for (ContactPoint& contact : collision.GetContacts()) {
 
                     RenderSystem::DebugDrawLine(contact.mContactPosition,
-                        contact.mContactPosition + (contact.mContactNormal * contact.mPenetration), sf::Color::Red);
+                        contact.mContactPosition + (contact.mContactNormal * contact.mPenetration), Color::Red);
                     ResolveContact(&contact, collision.mBodyA, collision.mBodyB, _deltaTime);
                 }
             }

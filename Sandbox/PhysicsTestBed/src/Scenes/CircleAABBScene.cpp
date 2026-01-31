@@ -7,28 +7,27 @@
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
 #include "Umbra.h"
+#include "Graphics/Color.h"
 #include "imgui.h"
 
 void CircleAABBScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(100);
-    }
+    CreateDefaultCamera(100.0f);
 }
 
-void CircleAABBScene::OnFixedUpdated() {
+void CircleAABBScene::OnFixedUpdate() {
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     Umbra::Math::Bounds2D RectAABB(mPoint, mSize);
     Umbra::Math::Vector2f pointWithinBox = Umbra::Math::GetClosestPointInsideBound(RectAABB, worldMousePos);
     Umbra::Math::Vector2f pointOnBox     = Umbra::Math::GetClosestPointOnBoundEdge(RectAABB, worldMousePos);
     mDistance                            = (worldMousePos - pointWithinBox).Magnitude();
     mDistanceToProj                      = (worldMousePos - pointOnBox).Magnitude();
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, sf::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, sf::Color::White);
-    Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, sf::Color::Yellow);
-    Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, sf::Color::Green);
+    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
+    Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
+    Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Yellow);
+    Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
     Umbra::RenderSystem::DrawDebugBox(RectAABB);
     bool bColliding = (mDistance <= mRadius);
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? sf::Color::Green : sf::Color::Red);
+    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green : Umbra::Color::Red);
 }
 
 void CircleAABBScene::OnUpdate() {
@@ -48,7 +47,7 @@ void CircleAABBScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> CircleAABBScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> CircleAABBScene::InstantiateCopy() {
     return std::make_shared<CircleAABBScene>(*this);
 }
 

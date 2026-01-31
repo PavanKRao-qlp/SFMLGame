@@ -8,15 +8,14 @@
 #include "Math/GeometryUtils.h"
 #include "PointLineSegmentScene.h"
 #include "Umbra.h"
+#include "Graphics/Color.h"
 #include "imgui.h"
 
 void BVHScene::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(mAreaSize);
-    }
+    CreateDefaultCamera(mAreaSize);
 }
 
-void BVHScene::OnFixedUpdated() {
+void BVHScene::OnFixedUpdate() {
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     Umbra::Math::Bounds2D mouseBound    = Umbra::Math::Bounds2D(worldMousePos, mBoxSize);
     Umbra::Math::Ray2D mouseRay =
@@ -37,8 +36,8 @@ void BVHScene::OnFixedUpdated() {
         mRayCastColliding = false;
     }
 
-    Umbra::RenderSystem::DrawDebugBox(mouseBound, false, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos + mouseRay.Direction * 10000, sf::Color::Cyan);
+    Umbra::RenderSystem::DrawDebugBox(mouseBound, false, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos + mouseRay.Direction * 10000, Umbra::Color::Cyan);
 }
 
 void BVHScene::OnUpdate() {
@@ -109,7 +108,7 @@ void BVHScene::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> BVHScene::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> BVHScene::InstantiateCopy() {
     return std::make_shared<BVHScene>(*this);
 }
 
@@ -131,7 +130,7 @@ void BVHScene::OnBeginPlay() {
         Umbra::PhysicsBodyComponent physicsBodyComponent;
         physicsBodyComponent.mAngularVelocity = Umbra::Random::RandomRange(-5, 5);
         GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(mBoxEntity, physicsBodyComponent);
-        GetWorld()->AddComponent<Umbra::SpriteComponent>(mBoxEntity, sf::Color::Red);
+        GetWorld()->AddComponent<Umbra::SpriteComponent>(mBoxEntity, Umbra::Color::Red);
     }
     int sizeRX = Umbra::Random::RandomRange(10, 20);
     int sizeRY = Umbra::Random::RandomRange(10, 20);

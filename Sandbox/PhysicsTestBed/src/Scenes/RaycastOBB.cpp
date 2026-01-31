@@ -8,16 +8,15 @@
 #include "Input/Input.h"
 #include "LandingScene.h"
 #include "Math/GeometryUtils.h"
+#include "Graphics/Color.h"
 #include "Umbra.h"
 #include "imgui.h"
 
 void RaycastOBB::Initialize() {
-    if (GetCameraEntity() != Umbra::MAX_ENTITY) {
-        GetWorld()->GetComponent<Umbra::CameraComponent>(GetCameraEntity())->SetOrthographicSize(200);
-    }
+    CreateDefaultCamera(200.0f);
 }
 
-void RaycastOBB::OnFixedUpdated() {
+void RaycastOBB::OnFixedUpdate() {
     mRay.Position                        = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     mRay.Direction                       = Umbra::Math::Vector2f(1, 0).GetRotated(mAngle);
     Umbra::TransformComponent* transform = GetWorld()->GetComponent<Umbra::TransformComponent>(mBoxEntity);
@@ -48,23 +47,23 @@ void RaycastOBB::OnFixedUpdated() {
         float tMaxY                    = (rayToMax.y) / (rayDirInLocal.y);
 
         Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMin.y),
-            bounds.Center + (boxXBasis * 500) + (boxYBasis * localMin.y), sf::Color::Blue);
+            bounds.Center + (boxXBasis * 500) + (boxYBasis * localMin.y), Umbra::Color::Blue);
         Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMax.y),
-            bounds.Center + (boxXBasis * 500) + (boxYBasis * localMax.y), sf::Color::Blue);
+            bounds.Center + (boxXBasis * 500) + (boxYBasis * localMax.y), Umbra::Color::Blue);
         Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * -500),
-            bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * 500), sf::Color::Blue);
+            bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * 500), Umbra::Color::Blue);
         Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * -500),
-            bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * 500), sf::Color::Blue);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinX, 3.5f, false, sf::Color::Cyan);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinY, 3.5f, true, sf::Color::Cyan);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxX, 3.5f, false, sf::Color::Magenta);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxY, 3.5f, true, sf::Color::Magenta);
+            bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * 500), Umbra::Color::Blue);
+        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinX, 3.5f, false, Umbra::Color::Cyan);
+        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinY, 3.5f, true, Umbra::Color::Cyan);
+        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxX, 3.5f, false, Umbra::Color::Magenta);
+        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxY, 3.5f, true, Umbra::Color::Magenta);
     }
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 0.75f, true, sf::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, sf::Color::Cyan);
-    Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, sf::Color::White);
+    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 0.75f, true, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
     if (bHit) {
-        Umbra::RenderSystem::DebugDrawCircle(hitPoint, 2.f, true, sf::Color::Green);
+        Umbra::RenderSystem::DebugDrawCircle(hitPoint, 2.f, true, Umbra::Color::Green);
     }
 }
 
@@ -95,7 +94,7 @@ void RaycastOBB::OnUpdate() {
     ImGui::End();
 }
 
-Umbra::SharedPtr<Umbra::Scene> RaycastOBB::InsatiateCopy() {
+Umbra::SharedPtr<Umbra::Scene> RaycastOBB::InstantiateCopy() {
     return std::make_shared<RaycastOBB>(*this);
 }
 
