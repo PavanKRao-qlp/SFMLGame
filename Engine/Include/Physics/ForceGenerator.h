@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "Umbra.h"
 
 namespace Umbra {

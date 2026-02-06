@@ -1,7 +1,7 @@
 // #include "GameStates.h"
 // #include "Input/Input.h"
 // #include "ECS/ECSRegister.h"
-// #include "ECS/Components/Transfrom.h"
+// #include "ECS/Components/Transform.h"
 // #include "ECS/Components/SpriteQuad.h"
 // #include "ECS/Components/LifeTime.h"
 // #include "ECS/Components/Rigidbody.h"

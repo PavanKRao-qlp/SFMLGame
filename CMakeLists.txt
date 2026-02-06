@@ -73,6 +73,7 @@ macro(setup_target_dll_copy TARGET_NAME)
     endif()
 endmacro()
 
-add_subdirectory(Sandbox/SimpleSandbox)
-add_subdirectory(Sandbox/PhysicsTestBed)
+add_subdirectory(Project/SimpleSandbox)
+add_subdirectory(Project/PhysicsTestBed)
+add_subdirectory(Project/PhysicsEngineDemo)
 

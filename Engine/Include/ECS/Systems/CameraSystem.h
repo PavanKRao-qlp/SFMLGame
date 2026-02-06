@@ -2,7 +2,7 @@
 #include "Core/AppWindow.h"
 #include "ECS/Component.h"
 #include "ECS/Components/CameraComponent.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
 #include "Graphics/IRenderDevice.h"
@@ -23,7 +23,6 @@ namespace Umbra {
             mRenderAspectRatio = _renderSize.x / _renderSize.y;
         }
         inline void Update() override {
-            EntityID activeCam = MAX_ENTITY;
             for (EntityID entity : mView->mEntities) {
                 CameraComponent* camera       = mView->ecsRegister->GetComponent<CameraComponent>(entity);
                 TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
@@ -43,13 +42,14 @@ namespace Umbra {
                     mRenderDevice->SetViewport(ViewPortRect);
                     mRenderDevice->SetViewCenter(transform->Position.x, transform->Position.y);
                     mRenderDevice->ApplyView();
+                    break; // Only use the first active camera
                 }
             }
         }
 
     protected:
         IRenderDevice* mRenderDevice = nullptr;
-        float mRenderAspectRatio;
-        float mScreenAspectRatio;
+        float mRenderAspectRatio = 1.0f;
+        float mScreenAspectRatio = 1.0f;
     };
 } // namespace Umbra

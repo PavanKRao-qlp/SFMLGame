@@ -2,45 +2,84 @@
 #include "Core/Clock.h"
 #include "ECS/Component.h"
 #include "ECS/Components/SpriteQuad.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
 #include "Graphics/Color.h"
 #include "Graphics/IRenderDevice.h"
 #include "Math/Bounds.h"
 #include "UI/ImGuiBackend.h"
+#include <algorithm>
 
 namespace Umbra {
+
+    // Utility function to convert world coordinates to render coordinates
+    inline Math::Vector2f WorldToRenderCoords(const Math::Vector2f& _worldPos) {
+        return Math::Vector2f(_worldPos.x, -_worldPos.y);
+    }
+
+    inline float WorldToRenderAngle(float _worldAngle) {
+        return -_worldAngle;
+    }
+
     class RenderSystem : public System {
     public:
         inline RenderSystem(IRenderDevice* _renderDevice, ImGuiBackend* _imGuiBackend)
             : System(std::make_unique<ECView<TransformComponent, SpriteComponent>>()) {
             mRenderDevice = _renderDevice;
             mImguiBackend = _imGuiBackend;
+            mSortedEntities.reserve(256);
         }
         inline ~RenderSystem() {}
+
         inline void Update() override {
+            // Get view bounds for frustum culling
+            FloatRect viewBounds = mRenderDevice->GetViewBounds();
+            float cullMargin = 50.0f; // Extra margin to prevent pop-in
+
+            // Build sorted render list
+            mSortedEntities.clear();
             for (EntityID entity : mView->mEntities) {
-                const SpriteComponent* sprite       = mView->ecsRegister->GetComponent<SpriteComponent>(entity);
+                const SpriteComponent* sprite = mView->ecsRegister->GetComponent<SpriteComponent>(entity);
                 const TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
 
-                if (sprite->refTexture != nullptr) {
-                    mRenderDevice->DrawTexturedRect(
-                        Math::Vector2f((float) transform->Position.x, (float) -transform->Position.y),
-                        Math::Vector2f(transform->Size.x, transform->Size.y),
-                        Math::Vector2f(transform->Pivot.x, transform->Pivot.y),
-                        -transform->Angle,
-                        sprite->color,
-                        sprite->refTexture->GetNativeHandle());
-                } else {
-                    mRenderDevice->DrawFilledRect(
-                        Math::Vector2f((float) transform->Position.x, (float) -transform->Position.y),
-                        Math::Vector2f(transform->Size.x, transform->Size.y),
-                        Math::Vector2f(transform->Pivot.x, transform->Pivot.y),
-                        -transform->Angle,
-                        sprite->color);
+                // Frustum culling - skip entities outside view
+                Math::Vector2f renderPos = WorldToRenderCoords(transform->Position);
+                if (!IsInViewBounds(renderPos, transform->Size, viewBounds, cullMargin)) {
+                    continue;
                 }
+
+                mSortedEntities.push_back({entity, sprite->zOrder});
             }
+
+            // Sort by zOrder (lower values render first, appearing behind)
+            std::stable_sort(mSortedEntities.begin(), mSortedEntities.end(),
+                [](const SortedEntity& _a, const SortedEntity& _b) {
+                    return _a.zOrder < _b.zOrder;
+                });
+
+            // Render using batching for better performance
+            mRenderDevice->BeginBatch();
+
+            for (const auto& sortedEntity : mSortedEntities) {
+                const SpriteComponent* sprite = mView->ecsRegister->GetComponent<SpriteComponent>(sortedEntity.entityId);
+                const TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(sortedEntity.entityId);
+
+                Math::Vector2f renderPos = WorldToRenderCoords(transform->Position);
+                float renderAngle = WorldToRenderAngle(transform->Angle);
+
+                void* textureHandle = sprite->refTexture ? sprite->refTexture->GetNativeHandle() : nullptr;
+                mRenderDevice->BatchQuad(
+                    renderPos,
+                    transform->Size,
+                    transform->Pivot,
+                    renderAngle,
+                    sprite->color,
+                    textureHandle,
+                    sprite->uvRect);
+            }
+
+            mRenderDevice->EndBatch();
 
             FlushDebugDraw();
 
@@ -74,6 +113,31 @@ namespace Umbra {
         ImGuiBackend* mImguiBackend  = nullptr;
 
     private:
+        struct SortedEntity {
+            EntityID entityId;
+            int32 zOrder;
+        };
+
+        Vector<SortedEntity> mSortedEntities;
+
+        inline bool IsInViewBounds(const Math::Vector2f& _renderPos, const Math::Vector2f& _size,
+            const FloatRect& _viewBounds, float _margin) const {
+            float halfWidth = _size.x * 0.5f + _margin;
+            float halfHeight = _size.y * 0.5f + _margin;
+
+            float left = _renderPos.x - halfWidth;
+            float right = _renderPos.x + halfWidth;
+            float top = _renderPos.y - halfHeight;
+            float bottom = _renderPos.y + halfHeight;
+
+            float viewLeft = _viewBounds.Left;
+            float viewRight = _viewBounds.Left + _viewBounds.Width;
+            float viewTop = _viewBounds.Top;
+            float viewBottom = _viewBounds.Top + _viewBounds.Height;
+
+            return !(right < viewLeft || left > viewRight || bottom < viewTop || top > viewBottom);
+        }
+
         struct DebugLine {
             Math::Vector2f From;
             Math::Vector2f To;
@@ -99,21 +163,21 @@ namespace Umbra {
         inline void FlushDebugDraw() {
             for (const auto& line : DebugLineCache) {
                 mRenderDevice->DrawLine(
-                    Math::Vector2f(line.From.x, -line.From.y),
-                    Math::Vector2f(line.To.x, -line.To.y),
+                    WorldToRenderCoords(line.From),
+                    WorldToRenderCoords(line.To),
                     line.LineColor);
             }
             for (const auto& circle : DebugCircleCache) {
                 mRenderDevice->DrawCircle(
-                    Math::Vector2f(circle.Position.x, -circle.Position.y),
+                    WorldToRenderCoords(circle.Position),
                     circle.Radius, circle.bFilled, circle.CircleColor);
             }
             for (const auto& box : DebugBoxCache) {
                 mRenderDevice->DrawRect(
-                    Math::Vector2f(box.Center.x, -1.f * box.Center.y),
+                    WorldToRenderCoords(box.Center),
                     box.Size,
                     Math::Vector2f(box.Origin.x * box.Size.x, box.Origin.y * box.Size.y),
-                    -box.Angle,
+                    WorldToRenderAngle(box.Angle),
                     box.bFilled, box.BoxColor);
             }
             DebugLineCache.clear();

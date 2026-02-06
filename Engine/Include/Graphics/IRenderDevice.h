@@ -44,7 +44,11 @@ namespace Umbra {
             Math::Vector2f _origin, float _angle, const Color& _color) = 0;
 
         virtual void DrawTexturedRect(Math::Vector2f _position, Math::Vector2f _size,
-            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle) = 0;
+            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) = 0;
+
+        // View bounds for frustum culling
+        virtual FloatRect GetViewBounds() const = 0;
 
         virtual void DrawLine(Math::Vector2f _from, Math::Vector2f _to, const Color& _color) = 0;
 
@@ -53,6 +57,13 @@ namespace Umbra {
 
         virtual void DrawRect(Math::Vector2f _position, Math::Vector2f _size,
             Math::Vector2f _origin, float _angle, bool _filled, const Color& _color) = 0;
+
+        // Batched rendering
+        virtual void BeginBatch() = 0;
+        virtual void BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
+            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) = 0;
+        virtual void EndBatch() = 0;
     };
 
 } // namespace Umbra

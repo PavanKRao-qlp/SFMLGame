@@ -15,9 +15,10 @@
 
 PhysicsTestBed::PhysicsTestBed(/* args */) {}
 
-PhysicsTestBed::~PhysicsTestBed() {}
+PhysicsTestBed::~PhysicsTestBed() {
+}
 
-void PhysicsTestBed::Initialize() {
+inline void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> mainMenu               = std::make_shared<LandingScene>();
     Umbra::SharedPtr<Umbra::Scene> pointLineSegmentScene  = std::make_shared<PointLineSegmentScene>();
     Umbra::SharedPtr<Umbra::Scene> circleLineSegmentScene = std::make_shared<CircleLineSegmentScene>();
@@ -30,7 +31,7 @@ void PhysicsTestBed::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> raycastOBB             = std::make_shared<RaycastOBB>();
     Umbra::SharedPtr<Umbra::Scene> satScene               = std::make_shared<SATScene>();
     Umbra::SharedPtr<Umbra::Scene> bvhScene               = std::make_shared<BVHScene>();
-    GetSceneManager().AddScene("Scene0", pointLineSegmentScene);
+    GetSceneManager().AddScene("Scene0", mainMenu);
     GetSceneManager().AddScene("Scene1", pointLineSegmentScene);
     GetSceneManager().AddScene("Scene2", circleLineSegmentScene);
     GetSceneManager().AddScene("Scene3", circleAABBScene);
@@ -45,4 +46,4 @@ void PhysicsTestBed::Initialize() {
     GetSceneManager().GoToScene(mainMenu);
 }
 
-void PhysicsTestBed::ShutDown() {}
+inline void PhysicsTestBed::ShutDown() {}

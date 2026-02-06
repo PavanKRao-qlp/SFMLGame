@@ -141,6 +141,7 @@ namespace Umbra {
 
     void SfmlRenderDevice::DrawFilledRect(Math::Vector2f _position, Math::Vector2f _size,
         Math::Vector2f _origin, float _angle, const Color& _color) {
+        if (!mWindow) return;
         sf::RectangleShape shape;
         shape.setSize(sf::Vector2f(_size.x, _size.y));
         shape.setOrigin(_origin.x * _size.x, _origin.y * _size.y);
@@ -151,7 +152,9 @@ namespace Umbra {
     }
 
     void SfmlRenderDevice::DrawTexturedRect(Math::Vector2f _position, Math::Vector2f _size,
-        Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle) {
+        Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+        const FloatRect& _uvRect) {
+        if (!mWindow) return;
         sf::RectangleShape shape;
         shape.setSize(sf::Vector2f(_size.x, _size.y));
         shape.setOrigin(_origin.x * _size.x, _origin.y * _size.y);
@@ -159,12 +162,21 @@ namespace Umbra {
         shape.setRotation(_angle);
         shape.setFillColor(ToSfColor(_color));
         if (_textureHandle) {
-            shape.setTexture(static_cast<const sf::Texture*>(_textureHandle));
+            const sf::Texture* texture = static_cast<const sf::Texture*>(_textureHandle);
+            shape.setTexture(texture);
+            sf::Vector2u texSize = texture->getSize();
+            sf::IntRect texRect(
+                static_cast<int>(_uvRect.Left * texSize.x),
+                static_cast<int>(_uvRect.Top * texSize.y),
+                static_cast<int>(_uvRect.Width * texSize.x),
+                static_cast<int>(_uvRect.Height * texSize.y));
+            shape.setTextureRect(texRect);
         }
         mWindow->draw(shape);
     }
 
     void SfmlRenderDevice::DrawLine(Math::Vector2f _from, Math::Vector2f _to, const Color& _color) {
+        if (!mWindow) return;
         sf::VertexArray lines(sf::LinesStrip, 2);
         lines[0].position = sf::Vector2f(_from.x, _from.y);
         lines[0].color    = ToSfColor(_color);
@@ -175,6 +187,7 @@ namespace Umbra {
 
     void SfmlRenderDevice::DrawCircle(Math::Vector2f _center, float _radius,
         bool _filled, const Color& _color) {
+        if (!mWindow) return;
         sf::CircleShape shape(_radius);
         shape.setPosition(sf::Vector2f(_center.x - _radius, _center.y - _radius));
         if (_filled) {
@@ -189,6 +202,7 @@ namespace Umbra {
 
     void SfmlRenderDevice::DrawRect(Math::Vector2f _position, Math::Vector2f _size,
         Math::Vector2f _origin, float _angle, bool _filled, const Color& _color) {
+        if (!mWindow) return;
         sf::RectangleShape shape;
         shape.setSize(sf::Vector2f(_size.x, _size.y));
         shape.setOrigin(sf::Vector2f(_origin.x, _origin.y));
@@ -202,6 +216,120 @@ namespace Umbra {
             shape.setFillColor(sf::Color::Transparent);
         }
         mWindow->draw(shape);
+    }
+
+    FloatRect SfmlRenderDevice::GetViewBounds() const {
+        if (!mView) return FloatRect(0.f, 0.f, 0.f, 0.f);
+        sf::Vector2f center = mView->getCenter();
+        sf::Vector2f size = mView->getSize();
+        return FloatRect(
+            center.x - size.x * 0.5f,
+            center.y - size.y * 0.5f,
+            size.x,
+            size.y);
+    }
+
+    // Batched rendering
+
+    void SfmlRenderDevice::BeginBatch() {
+        mBatching = true;
+        mBatchMap.clear();
+        mUntexturedBatch.clear();
+        mUntexturedBatch.setPrimitiveType(sf::Quads);
+    }
+
+    void SfmlRenderDevice::BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
+        Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+        const FloatRect& _uvRect) {
+        if (!mBatching) return;
+
+        const sf::Texture* texture = static_cast<const sf::Texture*>(_textureHandle);
+
+        if (texture) {
+            auto it = mBatchMap.find(_textureHandle);
+            if (it == mBatchMap.end()) {
+                BatchData data;
+                data.vertices.setPrimitiveType(sf::Quads);
+                data.texture = texture;
+                mBatchMap[_textureHandle] = data;
+                it = mBatchMap.find(_textureHandle);
+            }
+            AddQuadVertices(it->second.vertices, _position, _size, _origin, _angle, _color, texture, _uvRect);
+        } else {
+            AddQuadVertices(mUntexturedBatch, _position, _size, _origin, _angle, _color, nullptr, _uvRect);
+        }
+    }
+
+    void SfmlRenderDevice::EndBatch() {
+        if (!mWindow || !mBatching) return;
+        mBatching = false;
+
+        // Draw untextured quads first
+        if (mUntexturedBatch.getVertexCount() > 0) {
+            mWindow->draw(mUntexturedBatch);
+        }
+
+        // Draw textured batches
+        for (auto& [handle, batch] : mBatchMap) {
+            if (batch.vertices.getVertexCount() > 0) {
+                mWindow->draw(batch.vertices, batch.texture);
+            }
+        }
+    }
+
+    void SfmlRenderDevice::AddQuadVertices(sf::VertexArray& _vertices, Math::Vector2f _position, Math::Vector2f _size,
+        Math::Vector2f _origin, float _angle, const Color& _color, const sf::Texture* _texture,
+        const FloatRect& _uvRect) {
+
+        sf::Color sfColor = ToSfColor(_color);
+
+        // Calculate corner positions relative to origin
+        float ox = _origin.x * _size.x;
+        float oy = _origin.y * _size.y;
+
+        // Corners before rotation (relative to origin)
+        sf::Vector2f corners[4] = {
+            sf::Vector2f(-ox, -oy),                           // Top-left
+            sf::Vector2f(_size.x - ox, -oy),                  // Top-right
+            sf::Vector2f(_size.x - ox, _size.y - oy),         // Bottom-right
+            sf::Vector2f(-ox, _size.y - oy)                   // Bottom-left
+        };
+
+        // Apply rotation
+        float rad = _angle * 3.14159265f / 180.f;
+        float cosA = std::cos(rad);
+        float sinA = std::sin(rad);
+
+        for (int i = 0; i < 4; ++i) {
+            float rx = corners[i].x * cosA - corners[i].y * sinA;
+            float ry = corners[i].x * sinA + corners[i].y * cosA;
+            corners[i] = sf::Vector2f(_position.x + rx, _position.y + ry);
+        }
+
+        // Calculate texture coordinates
+        sf::Vector2f texCoords[4];
+        if (_texture) {
+            sf::Vector2u texSize = _texture->getSize();
+            float left = _uvRect.Left * texSize.x;
+            float top = _uvRect.Top * texSize.y;
+            float right = (_uvRect.Left + _uvRect.Width) * texSize.x;
+            float bottom = (_uvRect.Top + _uvRect.Height) * texSize.y;
+            texCoords[0] = sf::Vector2f(left, top);
+            texCoords[1] = sf::Vector2f(right, top);
+            texCoords[2] = sf::Vector2f(right, bottom);
+            texCoords[3] = sf::Vector2f(left, bottom);
+        }
+
+        // Add vertices
+        for (int i = 0; i < 4; ++i) {
+            sf::Vertex vertex;
+            vertex.position = corners[i];
+            vertex.color = sfColor;
+            if (_texture) {
+                vertex.texCoords = texCoords[i];
+            }
+            _vertices.append(vertex);
+        }
     }
 
     // Utility

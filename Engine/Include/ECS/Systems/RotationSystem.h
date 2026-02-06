@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Component.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
 

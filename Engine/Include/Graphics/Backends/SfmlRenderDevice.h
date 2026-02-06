@@ -45,7 +45,10 @@ namespace Umbra {
             Math::Vector2f _origin, float _angle, const Color& _color) override;
 
         void DrawTexturedRect(Math::Vector2f _position, Math::Vector2f _size,
-            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle) override;
+            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) override;
+
+        FloatRect GetViewBounds() const override;
 
         void DrawLine(Math::Vector2f _from, Math::Vector2f _to, const Color& _color) override;
 
@@ -55,12 +58,32 @@ namespace Umbra {
         void DrawRect(Math::Vector2f _position, Math::Vector2f _size,
             Math::Vector2f _origin, float _angle, bool _filled, const Color& _color) override;
 
+        // Batched rendering
+        void BeginBatch() override;
+        void BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
+            Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) override;
+        void EndBatch() override;
+
     private:
         static sf::Color ToSfColor(const Color& _color);
+
+        void AddQuadVertices(sf::VertexArray& _vertices, Math::Vector2f _position, Math::Vector2f _size,
+            Math::Vector2f _origin, float _angle, const Color& _color, const sf::Texture* _texture,
+            const FloatRect& _uvRect);
 
         sf::RenderWindow* mWindow = nullptr;
         sf::View* mView           = nullptr;
         sf::Event mCurrentEvent;
+
+        // Batching state
+        bool mBatching = false;
+        struct BatchData {
+            sf::VertexArray vertices;
+            const sf::Texture* texture;
+        };
+        UMap<void*, BatchData> mBatchMap;
+        sf::VertexArray mUntexturedBatch;
     };
 
 } // namespace Umbra

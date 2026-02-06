@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/PhysicsBodyComponent.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
 #include "Math/Polygon.h"
 #include "Physics/Collision.h"

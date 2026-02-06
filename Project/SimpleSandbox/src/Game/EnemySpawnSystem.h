@@ -5,7 +5,7 @@
 #include "ECS/Components/LifeTime.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Components/Rigidbody.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/CollisionBox.h"
