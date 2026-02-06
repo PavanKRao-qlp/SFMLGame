@@ -189,6 +189,9 @@ namespace Umbra {
 
         // End UI frame
         mUIManager->Render();
+
+        // Present the frame
+        mAppWindow->RefreshDisplay();
     }
 
     void App::OnFixedUpdate() {

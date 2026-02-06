@@ -3,12 +3,17 @@
 
 namespace Umbra {
     inline ECSRegister::ECSRegister(/* args */) {
-        mComponentManager = new ComponentManager();
+        mComponentManager = std::make_unique<ComponentManager>();
         RegisterComponent<TagComponent>();
     }
 
     inline ECSRegister::~ECSRegister() {
-        delete mComponentManager;
+        for (auto& pair : mSystemMap) {
+            for (auto& system : pair.second) {
+                system.reset();
+            }
+        }
+        mComponentManager.reset();
         mComponentManager = nullptr;
     }
 
@@ -302,7 +307,7 @@ namespace Umbra {
             // Clean up tag index if entity has a tag
             if (HasComponent<TagComponent>(entity)) {
                 TagComponent* tagComponent = GetComponent<TagComponent>(entity);
-                auto it = mTagIndex.find(tagComponent->Tag);
+                auto it                    = mTagIndex.find(tagComponent->Tag);
                 if (it != mTagIndex.end()) {
                     it->second.erase(entity);
                     if (it->second.empty()) {

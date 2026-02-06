@@ -1,8 +1,10 @@
 #pragma once
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/CameraSystem.h"
+#include "ECS/Systems/PhysicsSyncSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/RenderSystem.h"
+#include "Service/Physics/PhysicsService.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -64,11 +66,41 @@ namespace Umbra {
 
         Math::Vector2f GetScreenToWorldPosition(Math::Vector2i _screenPos);
 
+        // ============== Physics Service Layer ==============
+
+        /// @brief Get the physics service for this world
+        PhysicsService* GetPhysicsService();
+
+        /// @brief Apply force to an entity through the physics service
+        void ApplyForce(EntityID _entity, Math::Vector2f _force);
+
+        /// @brief Applies force at a world point (generates torque) through the physics service
+        void ApplyForceAtPoint(EntityID _entity, Math::Vector2f _force, Math::Vector2f _worldPoint);
+
+        /// @brief Apply impulse to an entity through the physics service
+        void ApplyImpulse(EntityID _entity, Math::Vector2f _impulse);
+
+        /// @brief Apply torque to an entity through the physics service
+        void ApplyTorque(EntityID _entity, float _torque);
+
+        /// @brief Applies angular impulse to an entity through the physics service
+        void ApplyAngularImpulse(EntityID _entity, float _impulse);
+
+        /// @brief Set velocity of an entity through the physics service
+        void SetVelocity(EntityID _entity, Math::Vector2f _velocity);
+
+        /// @brief Get velocity of an entity (uses cached value for efficiency)
+        Math::Vector2f GetVelocity(EntityID _entity);
+
     private:
         SharedPtr<ECSRegister> mWorldRegister;
         SharedPtr<RenderSystem> mRenderSystem;
         SharedPtr<CameraSystem> mCameraSystem;
         SharedPtr<PhysicsSystem> mPhysicsSystem;
+        SharedPtr<PhysicsSyncSystem> mPhysicsSyncSystem;
+
+        // Physics Service Layer
+        UniquePtr<PhysicsService> mPhysicsService;
     };
 
 } // namespace Umbra

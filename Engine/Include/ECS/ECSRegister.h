@@ -66,7 +66,7 @@ namespace Umbra {
         void RemoveDestroyedEntities();
         void AddCreatedEntities();
         EntityManager mEntityManager;
-        ComponentManager* mComponentManager;
+        UniquePtr<ComponentManager> mComponentManager;
 
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
         UMap<ESystemPhase, Vector<SharedPtr<System>>> mSystemMap;

@@ -5,6 +5,7 @@
 #include "Graphics/Color.h"
 #include "Input/Input.h"
 #include "Umbra.h"
+#include "imgui.h"
 
 void MainScene::Initialize() {
     CreateDefaultCamera(100.0f);
@@ -16,6 +17,18 @@ void MainScene::OnUpdate() {
     if (Umbra::Input::GetKey(Umbra::KeyBoard::Escape)) {
         GetGameInstance().QuitApplication();
     }
+
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(250, 100), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Physics Engine Demo");
+    if (ImGui::Button("Particle Object : Integration")) {
+        GetSceneManager().GoToScene("ParticleIntegration");
+    }
+    if (ImGui::Button("Particle Object : Force")) {
+        GetSceneManager().GoToScene("ForceAndTorqueScene");
+    }
+    ImGui::End();
+
     Umbra::RenderSystem::DebugDrawCircle(Umbra::Math::Vector2f(0.0f, 0.0f), mCircleRadius, true, Umbra::Color::White);
 }
 

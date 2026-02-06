@@ -83,7 +83,7 @@ namespace Umbra {
 
             FlushDebugDraw();
 
-            mRenderDevice->Display();
+            // Note: Display() is called by App after ImGui renders
         }
 
         static inline void DebugDrawLine(
