@@ -279,9 +279,9 @@ Platform-specific abstractions.
 #### Filesystem
 | Class            | Status      | Description                            |
 |------------------|-------------|----------------------------------------|
-| FileSystem       | Planned     | File I/O abstraction                   |
-| FileReader       | Planned     | File reading utilities                 |
-| FileWriter       | Planned     | File writing utilities                 |
+| FileSystem       | Implemented     | File I/O abstraction                   |
+| FileReader       | Implemented     | File reading utilities                 |
+| FileWriter       | Implemented     | File writing utilities                 |
 | PathUtils        | Planned     | Path manipulation                      |
 
 #### Threading

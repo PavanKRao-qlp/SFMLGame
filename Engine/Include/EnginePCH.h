@@ -18,6 +18,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace Umbra {
@@ -75,4 +76,8 @@ namespace Umbra {
 
     template <typename Val>
     using Set = std::set<Val>;
+
+    template <typename Val, typename... Args>
+    using Variant = std::variant<Val, Args...>;
+
 } // namespace Umbra

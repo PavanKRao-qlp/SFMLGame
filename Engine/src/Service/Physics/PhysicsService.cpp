@@ -1,6 +1,7 @@
 #include "Service/Physics/PhysicsService.h"
 
 #include "Math/MathUtils.h"
+#include "Service/Physics/CollisionQuery.h"
 
 namespace Umbra {
 
@@ -59,6 +60,12 @@ namespace Umbra {
 
         // 4. Clear force accumulators for next frame
         ClearForceAccumulators();
+
+        // 5. Check broad phase collisions
+        BroadphaseDetection();
+
+        // 6. Check Narrow phase collision
+        NarrowPhaseDetection();
     }
 
     void PhysicsService::IntegrateForces(float _deltaTime) {
@@ -134,6 +141,41 @@ namespace Umbra {
         }
     }
 
+
+    void PhysicsService::BroadphaseDetection() {
+        // clear last frame overlap
+        mOverlappingBoundsIndexPair.clear();
+        // Early out if less than 2 bodies
+        if (mBodies.size() < 2) {
+            return;
+        }
+        for (int i = 0; i < mBodies.size(); i++) {
+            mBodies[i].UpdateBoundingAABB();
+            for (int j = i + 1; j < mBodies.size(); j++) {
+                mBodies[j].UpdateBoundingAABB();
+                if (mBodies[i].BoundingAABB.Intersects(mBodies[j].BoundingAABB)) {
+                    mOverlappingBoundsIndexPair.emplace_back(i, j);
+                }
+            }
+        }
+    }
+
+
+    void PhysicsService::NarrowPhaseDetection() {
+        // clear last frame Collision
+        mCollisions.clear();
+        for (auto indexPair : mOverlappingBoundsIndexPair) {
+            CollisionDef collisionDef;
+            collisionDef.indexA   = std::get<0>(indexPair);
+            collisionDef.indexB   = std::get<1>(indexPair);
+            PhysicsBodyData bodyA = mBodies[collisionDef.indexA];
+            PhysicsBodyData bodyB = mBodies[collisionDef.indexB];
+            if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
+                mCollisions.emplace_back(collisionDef);
+            }
+        }
+    }
+
     // ============== Body Management ==============
 
     BodyHandle PhysicsService::CreateBody(const BodyDef& _def) {
@@ -163,6 +205,7 @@ namespace Umbra {
         body.TorqueAccumulated   = 0;
         body.LinearDamping       = _def.LinearDamping;
         body.AngularDamping      = _def.AngularDamping;
+        body.BodyShape           = _def.ShapeData;
         body.bAffectedByGravity  = _def.bAffectedByGravity;
         body.bIsKinematic        = _def.bIsKinematic;
         body.bIsActive           = true;
@@ -385,6 +428,22 @@ namespace Umbra {
         if (body && !body->IsStatic() && !body->bIsKinematic) {
             body->AngularVelocity += _impulse * body->InverseInertia;
         }
+    }
+
+    // ============== Collision Queries ==============
+
+    bool PhysicsService::TestOverlap(BodyHandle _a, BodyHandle _b) const {
+        const PhysicsBodyData* bodyA = GetBodyDataInternal(_a);
+        const PhysicsBodyData* bodyB = GetBodyDataInternal(_b);
+        if (bodyA == nullptr || bodyB == nullptr) {
+            return false;
+        }
+        return false; // CollisionQuery::TestOverlap(bodyA->BodyShape, bodyA->Position, bodyB->BodyShape,
+                      // bodyB->Position);
+    }
+
+    const Vector<CollisionDef>& PhysicsService::GetCollisions() const {
+        return mCollisions;
     }
 
     // ============== Internal Access ==============

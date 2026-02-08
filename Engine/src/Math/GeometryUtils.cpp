@@ -148,6 +148,7 @@ namespace Umbra::Math {
         closestPoint += rotatedV * projOnV;
         return closestPoint;
     }
+
     Vector2f GetClosestPointOnOrientedBoundEdge(Bounds2D _bounds, float _angle, Vector2f _point) {
         Vector2f closestPoint  = _bounds.Center;
         Vector2f centerToPoint = _point - _bounds.Center;
@@ -163,16 +164,22 @@ namespace Umbra::Math {
         bool bInsideU = Abs(projOnU) <= halfSize.x;
         bool bInsideV = Abs(projOnV) <= halfSize.y;
         if (bInsideU && bInsideV) {
+            // point is inside the box , find closest edge
             float distToEdgeU = halfSize.x - Abs(projOnU);
             float distToEdgeV = halfSize.y - Abs(projOnV);
             if (distToEdgeV > distToEdgeU) {
                 // MTV on x axis
+                // keep y value same , make x on edge
                 projOnU = (projOnU >= 0 ? halfSize.x : -halfSize.x);
             } else {
                 // MTV on y axis
+                // keep x value same , make y on edge
                 projOnV = (projOnV >= 0 ? halfSize.y : -halfSize.y);
             }
         } else {
+            // point is outside x axis
+            // clamp x value to stay withing width range
+            // clamp y value to stay withing height range
             projOnU = Clamp(projOnU, -halfSize.x, halfSize.x);
             projOnV = Clamp(projOnV, -halfSize.y, halfSize.y);
         }

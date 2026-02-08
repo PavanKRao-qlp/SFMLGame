@@ -1,6 +1,8 @@
 #pragma once
 #include "EnginePCH.h"
+#include "Math/Bounds.h"
 #include "Math/Vector.h"
+#include "Service/Physics/Shape.h"
 
 namespace Umbra {
 
@@ -14,9 +16,11 @@ namespace Umbra {
         float Inertia           = 0.0f; // 0 = auto-calculate or infinite
         float LinearDamping     = 0.0f;
         float AngularDamping    = 0.0f;
+        ShapeData ShapeData;
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic bodies are moved by game code
-        void* UserData          = nullptr; // Opaque pointer (can store EntityID)
+
+        void* UserData = nullptr; // Opaque pointer (can store EntityID)
     };
 
     /// @brief Internal physics body data stored in SOA layout within PhysicsService
@@ -51,6 +55,10 @@ namespace Umbra {
         bool bIsKinematic       = false;
         bool bIsActive          = true;
 
+        // Shape
+        ShapeData BodyShape;
+        Math::Bounds2D BoundingAABB;
+
         // User data for ECS bridge
         void* UserData = nullptr;
 
@@ -74,6 +82,17 @@ namespace Umbra {
                 InverseInertia = 1.0f / _inertia;
             } else {
                 InverseInertia = 0.0f;
+            }
+        }
+
+        inline void UpdateBoundingAABB() {
+            if (BodyShape.IsCircle()) {
+                float size   = BodyShape.GetCircle().GetRadius() * 2;
+                BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), Math::Vector2f(size, size));
+            }
+            if (BodyShape.IsBox()) {
+                float size   = BodyShape.GetBox().GetSize().Magnitude();
+                BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), Math::Vector2f(size, size));
             }
         }
     };

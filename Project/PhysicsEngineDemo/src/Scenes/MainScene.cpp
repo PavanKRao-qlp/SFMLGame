@@ -25,7 +25,16 @@ void MainScene::OnUpdate() {
         GetSceneManager().GoToScene("ParticleIntegration");
     }
     if (ImGui::Button("Particle Object : Force")) {
-        GetSceneManager().GoToScene("ForceAndTorqueScene");
+        GetSceneManager().GoToScene("ForceAndTorque");
+    }
+    if (ImGui::Button("Shape Representation")) {
+        GetSceneManager().GoToScene("ShapeRepresentation");
+    }
+    if (ImGui::Button("Bounding Volume and Overlap")) {
+        GetSceneManager().GoToScene("BoundingVolume");
+    }
+    if (ImGui::Button("Narrow Phase Collisions")) {
+        GetSceneManager().GoToScene("NarrowPhase");
     }
     ImGui::End();
 

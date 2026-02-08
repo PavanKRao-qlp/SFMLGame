@@ -12,3 +12,7 @@
 .vsix
 
 [bB]uild/
+CLAUDE.md
+nul
+.claude/settings.local.json
+devblog/ecs-deep-dive.md

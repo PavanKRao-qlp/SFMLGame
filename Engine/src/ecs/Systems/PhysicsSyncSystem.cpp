@@ -1,5 +1,6 @@
 #include "ECS/Systems/PhysicsSyncSystem.h"
 
+#include "ECS/Components/Collider.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -63,6 +64,7 @@ namespace Umbra {
         RigidbodyHandleComponent* rb  = mView->ecsRegister->GetComponent<RigidbodyHandleComponent>(_entity);
         TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(_entity);
 
+
         if (rb == nullptr || transform == nullptr) {
             return;
         }
@@ -85,7 +87,18 @@ namespace Umbra {
         def.AngularDamping     = rb->AngularDamping;
         def.bAffectedByGravity = rb->bAffectedByGravity;
         def.bIsKinematic       = rb->bIsKinematic;
+        def.ShapeData          = ShapeData();
 
+        if (mView->ecsRegister->HasComponent<BoxColliderComponent>(_entity)) {
+
+            BoxColliderComponent* BoxCollider = mView->ecsRegister->GetComponent<BoxColliderComponent>(_entity);
+            def.ShapeData                     = ShapeData::MakeBox(BoxCollider->Size);
+        }
+        if (mView->ecsRegister->HasComponent<CircleColliderComponent>(_entity)) {
+            CircleColliderComponent* CircleCollider =
+                mView->ecsRegister->GetComponent<CircleColliderComponent>(_entity);
+            def.ShapeData = ShapeData::MakeCircle(CircleCollider->Radius);
+        }
         // Store EntityID in UserData for reverse lookup
         def.UserData = reinterpret_cast<void*>(static_cast<uintptr_t>(_entity));
 

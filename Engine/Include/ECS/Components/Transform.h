@@ -11,7 +11,6 @@ namespace Umbra {
         Math::Vector2f Size;
         Math::Vector2f Pivot;
         float Angle = 0;
-        /* data */
 
         inline Math::Vector2f GetForward() {
             return Math::Vector2f(Math::Cos(Math::DegreeToRadian(Angle)), Math::Sin(Math::DegreeToRadian(Angle)));

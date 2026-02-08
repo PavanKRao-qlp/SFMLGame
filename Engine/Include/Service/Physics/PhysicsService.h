@@ -1,6 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include "Math/Vector.h"
+#include "Service/Physics/Collision.h"
 #include "Service/Physics/PhysicsBody.h"
 #include "Service/Physics/PhysicsHandle.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
@@ -102,6 +103,14 @@ namespace Umbra {
         /// @brief Applies angular impulse
         void ApplyAngularImpulse(BodyHandle _handle, float _impulse);
 
+        // ============== Collision Queries ==============
+
+        /// @brief Tests overlap between two bodies using their shapes and positions
+        bool TestOverlap(BodyHandle _a, BodyHandle _b) const;
+
+        /// @brief Returns the list of collisions detected during the last Step()
+        const Vector<CollisionDef>& GetCollisions() const;
+
         // ============== Internal Access (for sync system) ==============
 
         /// @brief Gets direct access to body data (use with caution)
@@ -122,6 +131,8 @@ namespace Umbra {
         void IntegrateVelocities(float _deltaTime);
         void ApplyDamping(float _deltaTime);
         void ClearForceAccumulators();
+        void BroadphaseDetection();
+        void NarrowPhaseDetection();
 
         PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle);
         const PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle) const;
@@ -133,6 +144,9 @@ namespace Umbra {
         Vector<PhysicsBodyData> mBodies;
         Vector<uint32> mFreeIndices; // Recycled slots
         uint32 mActiveBodyCount = 0;
+        // collsion types
+        Vector<Tuple<int, int>> mOverlappingBoundsIndexPair;
+        Vector<CollisionDef> mCollisions;
     };
 
     // ============== Template Implementations ==============
