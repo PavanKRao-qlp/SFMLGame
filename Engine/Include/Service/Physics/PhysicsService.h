@@ -144,6 +144,7 @@ namespace Umbra {
         void ClearForceAccumulators();
         void BroadphaseDetection();
         void NarrowPhaseDetection();
+        void PrecomputeContactConstraints();
         void ResolveContacts();
         void PositionContraction();
 
@@ -158,7 +159,7 @@ namespace Umbra {
         Vector<uint32> mFreeIndices; // Recycled slots
         uint32 mActiveBodyCount = 0;
         // collsion types
-        Vector<Tuple<int, int>> mOverlappingBoundsIndexPair;
+        Vector<Tuple<BodyHandle, BodyHandle>> mOverlappingBoundsIndexPair;
         Vector<CollisionDef> mCollisions;
     };
 

@@ -67,10 +67,16 @@ namespace Umbra {
         // 6. Check Narrow phase collision for contacts
         NarrowPhaseDetection();
 
-        // 7. Resolve Contacts
-        // Multiple iterations improve stability for stacking
+        // 7. Precompute constraint data (effective masses, bias) once per frame
+        PrecomputeContactConstraints();
+
+        // 8. Velocity solver - sequential impulse with accumulated clamping
         for (int i = 0; i < mConfig.VelocityIterations; i++) {
             ResolveContacts();
+        }
+
+        // 9. Position correction iterations (separate from velocity)
+        for (int i = 0; i < mConfig.PositionIterations; i++) {
             PositionContraction();
         }
     }
@@ -156,12 +162,20 @@ namespace Umbra {
         if (mBodies.size() < 2) {
             return;
         }
-        for (int i = 0; i < mBodies.size(); i++) {
+        for (uint32 i = 0; i < mBodies.size(); i++) {
+            if (!mBodies[i].bIsActive) continue;
             mBodies[i].UpdateBoundingAABB();
-            for (int j = i + 1; j < mBodies.size(); j++) {
+            for (uint32 j = i + 1; j < mBodies.size(); j++) {
+                if (!mBodies[j].bIsActive) continue;
                 mBodies[j].UpdateBoundingAABB();
                 if (mBodies[i].BoundingAABB.Intersects(mBodies[j].BoundingAABB)) {
-                    mOverlappingBoundsIndexPair.emplace_back(i, j);
+                    BodyHandle handleA;
+                    handleA.Index      = i;
+                    handleA.Generation = mBodies[i].Generation;
+                    BodyHandle handleB;
+                    handleB.Index      = j;
+                    handleB.Generation = mBodies[j].Generation;
+                    mOverlappingBoundsIndexPair.emplace_back(handleA, handleB);
                 }
             }
         }
@@ -171,132 +185,141 @@ namespace Umbra {
     void PhysicsService::NarrowPhaseDetection() {
         // clear last frame Collision
         mCollisions.clear();
-        for (auto indexPair : mOverlappingBoundsIndexPair) {
+        for (const auto& handlePair : mOverlappingBoundsIndexPair) {
             CollisionDef collisionDef;
-            collisionDef.indexA   = std::get<0>(indexPair);
-            collisionDef.indexB   = std::get<1>(indexPair);
-            PhysicsBodyData bodyA = mBodies[collisionDef.indexA];
-            PhysicsBodyData bodyB = mBodies[collisionDef.indexB];
+            collisionDef.handleA  = std::get<0>(handlePair);
+            collisionDef.handleB  = std::get<1>(handlePair);
+            PhysicsBodyData bodyA = mBodies[collisionDef.handleA.Index];
+            PhysicsBodyData bodyB = mBodies[collisionDef.handleB.Index];
             if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
                 mCollisions.emplace_back(collisionDef);
             }
         }
     }
 
-    void PhysicsService::ResolveContacts() {
-        for (const CollisionDef& collisionDef : mCollisions) {
-            PhysicsBodyData& bodyA = mBodies[collisionDef.indexA];
-            PhysicsBodyData& bodyB = mBodies[collisionDef.indexB];
-
-            if (bodyA.IsStatic() && bodyB.IsStatic()) {
-                // static object , objects are unmovable
-                continue;
-            }
-            // After collision due to Conservation of Momentum we know
-            // massA * velA +  massB * velB = massA * newVelA + massB * newVelB;
-            //
-
-            // Calculate relative velocity at contact point
-            // v_rel = v_B - v_A (including angular velocity contribution)
-            Math::Vector2f rA = collisionDef.contacts[0].contactPoint - bodyA.Position;
-            Math::Vector2f rB = collisionDef.contacts[0].contactPoint - bodyB.Position;
-
-            // Velocity at contact point = linear velocity + angular velocity x r (since rotation contributes to
-            // velocity change of point)
-            // In 2D : v_contact = v + omega * perp(r) where perp(r) = (-r.y, r.x)
-            Math::Vector2f velA = bodyA.Velocity + Math::Vector2f(-rA.y, rA.x) * bodyA.AngularVelocity;
-            Math::Vector2f velB = bodyB.Velocity + Math::Vector2f(-rB.y, rB.x) * bodyB.AngularVelocity;
-
-            Math::Vector2f relativeVel = velB - velA;
-
-            // Relative velocity along the contact normal
-            float velAlongNormal = Math::Vector2f::Dot(relativeVel, collisionDef.contactNormal);
-
-            // Don't resolve if velocities are separating
-            if (velAlongNormal > 0.0f) {
-                continue;
-            }
-
-            // Calculate restitution (use minimum of the two bodies)
-            float e = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
-
-            // Calculate impulse scalar using the formula:
-            // j = -(1 + e) * v_rel . n
-            //     -------------------------
-            //     1/m_A + 1/m_B + (r_A x n)^2/I_A + (r_B x n)^2/I_B
-            float rACrossN = Math::Vector2f::Cross2D(rA, collisionDef.contactNormal);
-            float rBCrossN = Math::Vector2f::Cross2D(rB, collisionDef.contactNormal);
+    void PhysicsService::PrecomputeContactConstraints() {
+        for (CollisionDef& collision : mCollisions) {
+            PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
+            PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
 
             float invMassSum = bodyA.InverseMass + bodyB.InverseMass;
-            float invInertiaSum =
-                rACrossN * rACrossN * bodyA.InverseInertia + rBCrossN * rBCrossN * bodyB.InverseInertia;
+            float e = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
 
-            float j = -(1.0f + e) * velAlongNormal;
-            j /= invMassSum + invInertiaSum;
+            // Fixed tangent direction perpendicular to contact normal
+            Math::Vector2f tangent(-collision.contactNormal.y, collision.contactNormal.x);
 
-            // Apply impulse
-            Math::Vector2f impulse = collisionDef.contactNormal * j;
-            BodyHandle handleA     = GetBodyHandle(bodyA);
-            BodyHandle handleB     = GetBodyHandle(bodyB);
-            ApplyImpulseAtPoint(handleA, impulse * -1, collisionDef.contacts[0].contactPoint);
-            ApplyImpulseAtPoint(handleB, impulse * 1, collisionDef.contacts[0].contactPoint);
+            for (ContactDef& contact : collision.contacts) {
+                // Lever arms from body centers to contact point
+                contact.rA = contact.contactPoint - bodyA.Position;
+                contact.rB = contact.contactPoint - bodyB.Position;
 
-            // === FRICTION IMPULSE (Coulomb friction model) ===
+                // Effective mass along the normal:
+                //   1 / (1/mA + 1/mB + (rA x n)^2/IA + (rB x n)^2/IB)
+                float rACrossN = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
+                float rBCrossN = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
+                float normalDenom = invMassSum
+                    + rACrossN * rACrossN * bodyA.InverseInertia
+                    + rBCrossN * rBCrossN * bodyB.InverseInertia;
+                contact.normalMass = normalDenom > 0.0f ? 1.0f / normalDenom : 0.0f;
 
-            // Recalculate relative velocity after normal impulse
-            velA        = bodyA.Velocity + Math::Vector2f(-rA.y, rA.x) * bodyA.AngularVelocity;
-            velB        = bodyB.Velocity + Math::Vector2f(-rB.y, rB.x) * bodyB.AngularVelocity;
-            relativeVel = velB - velA;
+                // Effective mass along the tangent (same formula, tangent direction)
+                float rACrossT = Math::Vector2f::Cross2D(contact.rA, tangent);
+                float rBCrossT = Math::Vector2f::Cross2D(contact.rB, tangent);
+                float tangentDenom = invMassSum
+                    + rACrossT * rACrossT * bodyA.InverseInertia
+                    + rBCrossT * rBCrossT * bodyB.InverseInertia;
+                contact.tangentMass = tangentDenom > 0.0f ? 1.0f / tangentDenom : 0.0f;
 
-            // Calculate tangent vector (perpendicular to normal)
-            // Remove the normal component from relative velocity to get tangent direction
-            Math::Vector2f tangent =
-                relativeVel - collisionDef.contactNormal * Math::Vector2f::Dot(relativeVel, collisionDef.contactNormal);
-            float tangentLength = tangent.Magnitude();
+                // Restitution velocity bias:
+                // Only apply bounce if the closing speed is above a threshold (avoids jitter at rest)
+                Math::Vector2f velA = bodyA.Velocity
+                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                Math::Vector2f velB = bodyB.Velocity
+                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                float closingSpeed = Math::Vector2f::Dot(velB - velA, collision.contactNormal);
+                contact.velocityBias = closingSpeed < -1.0f ? -e * closingSpeed : 0.0f;
 
-            // Skip friction if no tangential velocity
-            if (tangentLength < 0.0001f) {
+                // Reset accumulators for this frame
+                contact.normalImpulseAccum  = 0.0f;
+                contact.tangentImpulseAccum = 0.0f;
+            }
+        }
+    }
+
+    void PhysicsService::ResolveContacts() {
+        for (CollisionDef& collision : mCollisions) {
+            PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
+            PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
+
+            if (bodyA.IsStatic() && bodyB.IsStatic()) {
                 continue;
             }
 
-            // Normalize tangent
-            tangent = tangent / tangentLength;
+            // Fixed tangent perpendicular to contact normal
+            Math::Vector2f tangent(-collision.contactNormal.y, collision.contactNormal.x);
 
-            // Calculate friction impulse magnitude
-            // Same formula as normal impulse but along tangent direction
-            float rACrossT = Math::Vector2f::Cross2D(rA, tangent);
-            float rBCrossT = Math::Vector2f::Cross2D(rB, tangent);
+            // Friction coefficient (geometric mean of both bodies)
+            float friction = Math::Sqrt(bodyA.DynamicFriction * bodyB.DynamicFriction);
 
-            float invInertiaSumT =
-                rACrossT * rACrossT * bodyA.InverseInertia + rBCrossT * rBCrossT * bodyB.InverseInertia;
+            for (ContactDef& contact : collision.contacts) {
+                // === NORMAL IMPULSE with accumulated clamping ===
 
-            float jt = -Math::Vector2f::Dot(relativeVel, tangent);
-            jt /= invMassSum + invInertiaSumT;
+                // Current relative velocity at contact point
+                Math::Vector2f velA = bodyA.Velocity
+                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                Math::Vector2f velB = bodyB.Velocity
+                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                Math::Vector2f relVel = velB - velA;
 
-            // Coulomb friction: clamp friction impulse by normal impulse * friction coefficient
-            // Use geometric mean of friction coefficients
-            float staticFriction  = Math::Sqrt(bodyA.StaticFriction * bodyB.StaticFriction);
-            float dynamicFriction = Math::Sqrt(bodyA.DynamicFriction * bodyB.DynamicFriction);
+                // Compute delta impulse: dj = (-v_rel.n + bias) * effectiveMass
+                float velAlongNormal = Math::Vector2f::Dot(relVel, collision.contactNormal);
+                float dj = (-velAlongNormal + contact.velocityBias) * contact.normalMass;
 
-            Math::Vector2f frictionImpulse;
-            if (Math::Abs(jt) < j * staticFriction) {
-                // Static friction - object not sliding yet
-                frictionImpulse = tangent * jt;
-            } else {
-                // Dynamic friction - object is sliding
-                frictionImpulse = tangent * (-j * dynamicFriction);
+                // Accumulate and clamp: total normal impulse must be >= 0 (can only push, never pull)
+                float oldNormalAccum = contact.normalImpulseAccum;
+                contact.normalImpulseAccum = Math::Max(oldNormalAccum + dj, 0.0f);
+                dj = contact.normalImpulseAccum - oldNormalAccum;
+
+                // Apply the delta impulse directly to bodies
+                Math::Vector2f normalImpulse = collision.contactNormal * dj;
+                bodyA.Velocity -= normalImpulse * bodyA.InverseMass;
+                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, normalImpulse) * bodyA.InverseInertia;
+                bodyB.Velocity += normalImpulse * bodyB.InverseMass;
+                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, normalImpulse) * bodyB.InverseInertia;
+
+                // === FRICTION IMPULSE with accumulated Coulomb clamping ===
+
+                // Recompute relative velocity after normal impulse changed velocities
+                velA = bodyA.Velocity
+                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                velB = bodyB.Velocity
+                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                relVel = velB - velA;
+
+                // Delta friction impulse along fixed tangent
+                float velAlongTangent = Math::Vector2f::Dot(relVel, tangent);
+                float djt = -velAlongTangent * contact.tangentMass;
+
+                // Coulomb clamp: |friction impulse| <= mu * normal impulse
+                float maxFriction = friction * contact.normalImpulseAccum;
+                float oldTangentAccum = contact.tangentImpulseAccum;
+                contact.tangentImpulseAccum = Math::Clamp(oldTangentAccum + djt, -maxFriction, maxFriction);
+                djt = contact.tangentImpulseAccum - oldTangentAccum;
+
+                // Apply the delta friction impulse
+                Math::Vector2f frictionImpulse = tangent * djt;
+                bodyA.Velocity -= frictionImpulse * bodyA.InverseMass;
+                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, frictionImpulse) * bodyA.InverseInertia;
+                bodyB.Velocity += frictionImpulse * bodyB.InverseMass;
+                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, frictionImpulse) * bodyB.InverseInertia;
             }
-
-            // Apply friction impulse
-            ApplyImpulseAtPoint(handleA, frictionImpulse * -1.0f, collisionDef.contacts[0].contactPoint);
-            ApplyImpulseAtPoint(handleB, frictionImpulse, collisionDef.contacts[0].contactPoint);
         }
     }
 
     void PhysicsService::PositionContraction() {
         for (const CollisionDef& collisionDef : mCollisions) {
-            PhysicsBodyData& bodyA = mBodies[collisionDef.indexA];
-            PhysicsBodyData& bodyB = mBodies[collisionDef.indexB];
+            PhysicsBodyData& bodyA = mBodies[collisionDef.handleA.Index];
+            PhysicsBodyData& bodyB = mBodies[collisionDef.handleB.Index];
             // Skip if both bodies are static
             if (bodyA.IsStatic() && bodyB.IsStatic()) {
                 continue;
@@ -318,8 +341,8 @@ namespace Umbra {
                 return; // Both have infinite mass
             }
 
-            // Correction vector along the normal
-            Math::Vector2f correction = collisionDef.penetration * (correctionMag / invMassSum) * percent;
+            // Correction vector along the contact normal
+            Math::Vector2f correction = collisionDef.contactNormal * (correctionMag / invMassSum) * percent;
 
             // Move bodies apart proportional to their inverse mass
             // Heavier objects move less, lighter objects move more

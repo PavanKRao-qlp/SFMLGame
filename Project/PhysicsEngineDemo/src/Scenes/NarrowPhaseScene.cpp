@@ -15,7 +15,7 @@
 #include "imgui.h"
 
 void NarrowPhaseScene::Initialize() {
-    CreateDefaultCamera(300.0f);
+    CreateDefaultCamera(200.0f);
 }
 
 void NarrowPhaseScene::OnFixedUpdate() {}
@@ -120,7 +120,7 @@ void NarrowPhaseScene::OnBeginPlay() {
     }
 
     // --- Dynamic circles ---
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
         Umbra::EntityID entity = world->CreateEntity();
         mEntities.push_back(entity);
 
@@ -134,7 +134,7 @@ void NarrowPhaseScene::OnBeginPlay() {
         Umbra::RigidbodyHandleComponent rb;
         rb.Mass               = 1.0f;
         rb.bAffectedByGravity = true;
-        rb.CoefOfRestitution  = Umbra::Random::RandomRange(0.0f, 1.0f);
+        rb.CoefOfRestitution  = Umbra::Random::RandomRange(0.6f, 1.0f);
         rb.CachedVelocity =
             Umbra::Math::Vector2f(Umbra::Random::RandomRange(-20.0f, 20.0f), Umbra::Random::RandomRange(-10.0f, 10.0f));
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
@@ -145,7 +145,7 @@ void NarrowPhaseScene::OnBeginPlay() {
     }
 
     // --- Dynamic boxes ---
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
         Umbra::EntityID entity = world->CreateEntity();
         mEntities.push_back(entity);
 
@@ -161,7 +161,7 @@ void NarrowPhaseScene::OnBeginPlay() {
         Umbra::RigidbodyHandleComponent rb;
         rb.Mass               = 1.0f;
         rb.bAffectedByGravity = true;
-        rb.CoefOfRestitution  = Umbra::Random::RandomRange(0.0f, 1.0f);
+        rb.CoefOfRestitution  = Umbra::Random::RandomRange(0.6f, 1.0f);
         rb.CachedVelocity =
             Umbra::Math::Vector2f(Umbra::Random::RandomRange(-15.0f, 15.0f), Umbra::Random::RandomRange(-5.0f, 5.0f));
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
