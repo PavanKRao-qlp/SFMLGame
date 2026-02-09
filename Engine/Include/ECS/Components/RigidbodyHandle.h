@@ -20,8 +20,11 @@ namespace Umbra {
         // Configuration (used when creating body in PhysicsService)
         float Mass              = 1.0f;
         float Inertia           = 0.0f;
-        float LinearDamping     = 0.0f;
-        float AngularDamping    = 0.0f;
+        float LinearDamping      = 0.0f;
+        float AngularDamping     = 0.0f;
+        float CoefOfRestitution  = 1.0f;
+        float StaticFriction     = 0.6f;
+        float DynamicFriction    = 0.4f;
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic = moved by game code, not physics
 

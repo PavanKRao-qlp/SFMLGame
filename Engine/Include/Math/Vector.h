@@ -74,7 +74,7 @@ namespace Umbra::Math {
          *
          * Useful for determining relative orientation (left/right).
          */
-        static float Cross2D(TVector& _vectorA, TVector& _vectorB);
+        static float Cross2D(const TVector& _vectorA, const TVector& _vectorB);
 
         /**
          * @brief Returns a vector that is perpendicular (rotated 90° counterclockwise).
@@ -239,7 +239,7 @@ namespace Umbra::Math {
     }
 
     template <typename T>
-    inline float TVector<T>::Cross2D(TVector& _vectorA, TVector& _vectorB) {
+    inline float TVector<T>::Cross2D(const TVector& _vectorA, const TVector& _vectorB) {
         return (_vectorA.x * _vectorB.y - _vectorA.y * _vectorB.x);
     }
 

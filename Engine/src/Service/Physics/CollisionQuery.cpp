@@ -55,6 +55,9 @@ namespace Umbra::CollisionQuery {
 
         float dist = std::sqrt(distSq);
 
+        // Penetration is the overlap of the two radii along the contact normal
+        _collisionDef.penetration = radiiSum - dist;
+
         // Contact normal points from A toward B along the line connecting centers.
         // If centers coincide (dist ~ 0), pick an arbitrary axis to avoid division by zero.
         if (dist > Math::EPSILON) {
@@ -63,13 +66,13 @@ namespace Umbra::CollisionQuery {
             _collisionDef.contactNormal = Math::Vector2f(1.0f, 0.0f);
         }
 
-        // Penetration is the overlap of the two radii along the contact normal
-        _collisionDef.penetration = radiiSum - dist;
-
         // Contact point lies on the surface of A toward B (midpoint of overlap region)
         ContactDef contact;
-        contact.contactPoint = _posA + _collisionDef.contactNormal * (_radiusA - _collisionDef.penetration * 0.5f);
-        contact.penetration  = _collisionDef.penetration;
+
+
+        contact.contactPoint = _posA + (_collisionDef.contactNormal * _radiusA);
+        //_posA + _collisionDef.contactNormal * (_radiusA - _collisionDef.penetration * 0.5f);
+        contact.penetration = _collisionDef.penetration;
         _collisionDef.contacts.emplace_back(contact);
 
         return true;

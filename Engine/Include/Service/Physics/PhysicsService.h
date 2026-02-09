@@ -67,6 +67,9 @@ namespace Umbra {
         void* GetUserData(BodyHandle _handle) const;
         bool IsKinematic(BodyHandle _handle) const;
         bool IsStatic(BodyHandle _handle) const;
+        float GetCoefOfRestitution(BodyHandle _handle) const;
+        float GetStaticFriction(BodyHandle _handle) const;
+        float GetDynamicFriction(BodyHandle _handle) const;
 
         // ============== Body State (Write) ==============
 
@@ -75,6 +78,9 @@ namespace Umbra {
         void SetVelocity(BodyHandle _handle, Math::Vector2f _velocity);
         void SetAngularVelocity(BodyHandle _handle, float _angularVelocity);
         void SetMass(BodyHandle _handle, float _mass);
+        void SetCoefOfRestitution(BodyHandle _handle, float _coefOfRestitution);
+        void SetStaticFriction(BodyHandle _handle, float _staticFriction);
+        void SetDynamicFriction(BodyHandle _handle, float _dynamicFriction);
         void SetInertia(BodyHandle _handle, float _inertia);
         void SetUserData(BodyHandle _handle, void* _userData);
         void SetKinematic(BodyHandle _handle, bool _bIsKinematic);
@@ -119,6 +125,11 @@ namespace Umbra {
         PhysicsBodyData* GetBodyData(BodyHandle _handle);
         const PhysicsBodyData* GetBodyData(BodyHandle _handle) const;
 
+        /// @brief Gets the handle for a body data reference
+        /// @param _bodyData Reference to a body data owned by this service
+        /// @return Valid handle if the body is active, invalid handle otherwise
+        BodyHandle GetBodyHandle(const PhysicsBodyData& _bodyData) const;
+
         /// @brief Iterates all active bodies (for sync system)
         template <typename Func>
         void ForEachBody(Func&& _func);
@@ -133,6 +144,8 @@ namespace Umbra {
         void ClearForceAccumulators();
         void BroadphaseDetection();
         void NarrowPhaseDetection();
+        void ResolveContacts();
+        void PositionContraction();
 
         PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle);
         const PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle) const;

@@ -16,6 +16,9 @@ namespace Umbra {
         float Inertia           = 0.0f; // 0 = auto-calculate or infinite
         float LinearDamping     = 0.0f;
         float AngularDamping    = 0.0f;
+        float CoefOfRestitution = 1.0f; // 0 = perfectly inelastic, 1 = perfectly elastic
+        float StaticFriction   = 0.6f;
+        float DynamicFriction  = 0.4f;
         ShapeData ShapeData;
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic bodies are moved by game code
@@ -49,6 +52,13 @@ namespace Umbra {
         // Damping
         float LinearDamping  = 0.0f;
         float AngularDamping = 0.0f;
+
+        // Restitution (bounciness)
+        float CoefOfRestitution = 1.0f;
+
+        // Friction
+        float StaticFriction  = 0.6f;
+        float DynamicFriction = 0.4f;
 
         // Flags
         bool bAffectedByGravity = true;

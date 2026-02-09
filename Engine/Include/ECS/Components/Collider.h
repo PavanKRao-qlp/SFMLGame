@@ -27,6 +27,8 @@ namespace Umbra {
         // inline virtual Math::Bounds2D GetBoundingBox() override {
         //     return Math::Bounds2D();
         // }
+        CircleColliderComponent() {}
+        CircleColliderComponent(float _radius) : Radius(_radius) {}
         float Radius;
     };
 

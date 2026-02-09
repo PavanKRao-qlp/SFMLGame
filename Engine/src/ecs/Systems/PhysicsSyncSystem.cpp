@@ -85,6 +85,9 @@ namespace Umbra {
         def.Inertia            = rb->Inertia;
         def.LinearDamping      = rb->LinearDamping;
         def.AngularDamping     = rb->AngularDamping;
+        def.CoefOfRestitution  = rb->CoefOfRestitution;
+        def.StaticFriction     = rb->StaticFriction;
+        def.DynamicFriction    = rb->DynamicFriction;
         def.bAffectedByGravity = rb->bAffectedByGravity;
         def.bIsKinematic       = rb->bIsKinematic;
         def.ShapeData          = ShapeData();
@@ -148,6 +151,9 @@ namespace Umbra {
                 continue;
             }
             mPhysicsService->SetMass(rb->Handle, rb->Mass);
+            mPhysicsService->SetCoefOfRestitution(rb->Handle, rb->CoefOfRestitution);
+            mPhysicsService->SetStaticFriction(rb->Handle, rb->StaticFriction);
+            mPhysicsService->SetDynamicFriction(rb->Handle, rb->DynamicFriction);
         }
     }
 

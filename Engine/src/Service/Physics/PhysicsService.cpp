@@ -64,8 +64,15 @@ namespace Umbra {
         // 5. Check broad phase collisions
         BroadphaseDetection();
 
-        // 6. Check Narrow phase collision
+        // 6. Check Narrow phase collision for contacts
         NarrowPhaseDetection();
+
+        // 7. Resolve Contacts
+        // Multiple iterations improve stability for stacking
+        for (int i = 0; i < mConfig.VelocityIterations; i++) {
+            ResolveContacts();
+            PositionContraction();
+        }
     }
 
     void PhysicsService::IntegrateForces(float _deltaTime) {
@@ -176,6 +183,151 @@ namespace Umbra {
         }
     }
 
+    void PhysicsService::ResolveContacts() {
+        for (const CollisionDef& collisionDef : mCollisions) {
+            PhysicsBodyData& bodyA = mBodies[collisionDef.indexA];
+            PhysicsBodyData& bodyB = mBodies[collisionDef.indexB];
+
+            if (bodyA.IsStatic() && bodyB.IsStatic()) {
+                // static object , objects are unmovable
+                continue;
+            }
+            // After collision due to Conservation of Momentum we know
+            // massA * velA +  massB * velB = massA * newVelA + massB * newVelB;
+            //
+
+            // Calculate relative velocity at contact point
+            // v_rel = v_B - v_A (including angular velocity contribution)
+            Math::Vector2f rA = collisionDef.contacts[0].contactPoint - bodyA.Position;
+            Math::Vector2f rB = collisionDef.contacts[0].contactPoint - bodyB.Position;
+
+            // Velocity at contact point = linear velocity + angular velocity x r (since rotation contributes to
+            // velocity change of point)
+            // In 2D : v_contact = v + omega * perp(r) where perp(r) = (-r.y, r.x)
+            Math::Vector2f velA = bodyA.Velocity + Math::Vector2f(-rA.y, rA.x) * bodyA.AngularVelocity;
+            Math::Vector2f velB = bodyB.Velocity + Math::Vector2f(-rB.y, rB.x) * bodyB.AngularVelocity;
+
+            Math::Vector2f relativeVel = velB - velA;
+
+            // Relative velocity along the contact normal
+            float velAlongNormal = Math::Vector2f::Dot(relativeVel, collisionDef.contactNormal);
+
+            // Don't resolve if velocities are separating
+            if (velAlongNormal > 0.0f) {
+                continue;
+            }
+
+            // Calculate restitution (use minimum of the two bodies)
+            float e = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
+
+            // Calculate impulse scalar using the formula:
+            // j = -(1 + e) * v_rel . n
+            //     -------------------------
+            //     1/m_A + 1/m_B + (r_A x n)^2/I_A + (r_B x n)^2/I_B
+            float rACrossN = Math::Vector2f::Cross2D(rA, collisionDef.contactNormal);
+            float rBCrossN = Math::Vector2f::Cross2D(rB, collisionDef.contactNormal);
+
+            float invMassSum = bodyA.InverseMass + bodyB.InverseMass;
+            float invInertiaSum =
+                rACrossN * rACrossN * bodyA.InverseInertia + rBCrossN * rBCrossN * bodyB.InverseInertia;
+
+            float j = -(1.0f + e) * velAlongNormal;
+            j /= invMassSum + invInertiaSum;
+
+            // Apply impulse
+            Math::Vector2f impulse = collisionDef.contactNormal * j;
+            BodyHandle handleA     = GetBodyHandle(bodyA);
+            BodyHandle handleB     = GetBodyHandle(bodyB);
+            ApplyImpulseAtPoint(handleA, impulse * -1, collisionDef.contacts[0].contactPoint);
+            ApplyImpulseAtPoint(handleB, impulse * 1, collisionDef.contacts[0].contactPoint);
+
+            // === FRICTION IMPULSE (Coulomb friction model) ===
+
+            // Recalculate relative velocity after normal impulse
+            velA        = bodyA.Velocity + Math::Vector2f(-rA.y, rA.x) * bodyA.AngularVelocity;
+            velB        = bodyB.Velocity + Math::Vector2f(-rB.y, rB.x) * bodyB.AngularVelocity;
+            relativeVel = velB - velA;
+
+            // Calculate tangent vector (perpendicular to normal)
+            // Remove the normal component from relative velocity to get tangent direction
+            Math::Vector2f tangent =
+                relativeVel - collisionDef.contactNormal * Math::Vector2f::Dot(relativeVel, collisionDef.contactNormal);
+            float tangentLength = tangent.Magnitude();
+
+            // Skip friction if no tangential velocity
+            if (tangentLength < 0.0001f) {
+                continue;
+            }
+
+            // Normalize tangent
+            tangent = tangent / tangentLength;
+
+            // Calculate friction impulse magnitude
+            // Same formula as normal impulse but along tangent direction
+            float rACrossT = Math::Vector2f::Cross2D(rA, tangent);
+            float rBCrossT = Math::Vector2f::Cross2D(rB, tangent);
+
+            float invInertiaSumT =
+                rACrossT * rACrossT * bodyA.InverseInertia + rBCrossT * rBCrossT * bodyB.InverseInertia;
+
+            float jt = -Math::Vector2f::Dot(relativeVel, tangent);
+            jt /= invMassSum + invInertiaSumT;
+
+            // Coulomb friction: clamp friction impulse by normal impulse * friction coefficient
+            // Use geometric mean of friction coefficients
+            float staticFriction  = Math::Sqrt(bodyA.StaticFriction * bodyB.StaticFriction);
+            float dynamicFriction = Math::Sqrt(bodyA.DynamicFriction * bodyB.DynamicFriction);
+
+            Math::Vector2f frictionImpulse;
+            if (Math::Abs(jt) < j * staticFriction) {
+                // Static friction - object not sliding yet
+                frictionImpulse = tangent * jt;
+            } else {
+                // Dynamic friction - object is sliding
+                frictionImpulse = tangent * (-j * dynamicFriction);
+            }
+
+            // Apply friction impulse
+            ApplyImpulseAtPoint(handleA, frictionImpulse * -1.0f, collisionDef.contacts[0].contactPoint);
+            ApplyImpulseAtPoint(handleB, frictionImpulse, collisionDef.contacts[0].contactPoint);
+        }
+    }
+
+    void PhysicsService::PositionContraction() {
+        for (const CollisionDef& collisionDef : mCollisions) {
+            PhysicsBodyData& bodyA = mBodies[collisionDef.indexA];
+            PhysicsBodyData& bodyB = mBodies[collisionDef.indexB];
+            // Skip if both bodies are static
+            if (bodyA.IsStatic() && bodyB.IsStatic()) {
+                continue;
+            }
+
+            // Correction parameters
+            const float percent = 0.4f; // Correction percentage (0.2 to 0.8)
+            const float slop    = 0.01f; // Penetration allowance to avoid jitter
+
+            // Only correct if penetration exceeds slop
+            float correctionMag = Math::Max(collisionDef.penetration - slop, 0.0f);
+            if (correctionMag <= 0.0f) {
+                continue;
+            }
+
+            // Calculate total inverse mass
+            float invMassSum = bodyA.InverseMass + bodyB.InverseMass;
+            if (invMassSum <= 0.0f) {
+                return; // Both have infinite mass
+            }
+
+            // Correction vector along the normal
+            Math::Vector2f correction = collisionDef.penetration * (correctionMag / invMassSum) * percent;
+
+            // Move bodies apart proportional to their inverse mass
+            // Heavier objects move less, lighter objects move more
+            bodyA.Position -= correction * bodyA.InverseMass;
+            bodyB.Position += correction * bodyB.InverseMass;
+        }
+    }
+
     // ============== Body Management ==============
 
     BodyHandle PhysicsService::CreateBody(const BodyDef& _def) {
@@ -206,6 +358,9 @@ namespace Umbra {
         body.LinearDamping       = _def.LinearDamping;
         body.AngularDamping      = _def.AngularDamping;
         body.BodyShape           = _def.ShapeData;
+        body.CoefOfRestitution   = _def.CoefOfRestitution;
+        body.StaticFriction      = _def.StaticFriction;
+        body.DynamicFriction     = _def.DynamicFriction;
         body.bAffectedByGravity  = _def.bAffectedByGravity;
         body.bIsKinematic        = _def.bIsKinematic;
         body.bIsActive           = true;
@@ -214,7 +369,22 @@ namespace Umbra {
 
         // Set mass
         body.SetMass(_def.Mass);
-        body.SetInertia(_def.Inertia);
+
+        // Calculate inertia from shape if not explicitly provided
+        float inertia = _def.Inertia;
+        if (inertia <= 0.0f && _def.Mass > 0.0f) {
+            if (_def.ShapeData.IsCircle()) {
+                // Solid disk: I = (1/2) * m * r^2
+                float r = _def.ShapeData.GetCircle().GetRadius();
+                inertia = 0.5f * _def.Mass * r * r;
+            } else if (_def.ShapeData.IsBox()) {
+                // Solid rectangle: I = (1/12) * m * (w^2 + h^2)
+                float w = _def.ShapeData.GetBox().GetWidth();
+                float h = _def.ShapeData.GetBox().GetHeight();
+                inertia = (1.0f / 12.0f) * _def.Mass * (w * w + h * h);
+            }
+        }
+        body.SetInertia(inertia);
 
         ++mActiveBodyCount;
 
@@ -370,6 +540,42 @@ namespace Umbra {
         }
     }
 
+    void PhysicsService::SetCoefOfRestitution(BodyHandle _handle, float _coefOfRestitution) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->CoefOfRestitution = _coefOfRestitution;
+        }
+    }
+
+    float PhysicsService::GetCoefOfRestitution(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->CoefOfRestitution : 1.0f;
+    }
+
+    void PhysicsService::SetStaticFriction(BodyHandle _handle, float _staticFriction) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->StaticFriction = _staticFriction;
+        }
+    }
+
+    float PhysicsService::GetStaticFriction(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->StaticFriction : 0.6f;
+    }
+
+    void PhysicsService::SetDynamicFriction(BodyHandle _handle, float _dynamicFriction) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->DynamicFriction = _dynamicFriction;
+        }
+    }
+
+    float PhysicsService::GetDynamicFriction(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->DynamicFriction : 0.4f;
+    }
+
     // ============== Force Application ==============
 
     void PhysicsService::ApplyForce(BodyHandle _handle, Math::Vector2f _force) {
@@ -454,6 +660,25 @@ namespace Umbra {
 
     const PhysicsBodyData* PhysicsService::GetBodyData(BodyHandle _handle) const {
         return GetBodyDataInternal(_handle);
+    }
+
+    BodyHandle PhysicsService::GetBodyHandle(const PhysicsBodyData& _bodyData) const {
+        const PhysicsBodyData* begin = mBodies.data();
+        const PhysicsBodyData* end   = begin + mBodies.size();
+
+        if (&_bodyData < begin || &_bodyData >= end) {
+            return BodyHandle::Invalid();
+        }
+
+        uint32 index = static_cast<uint32>(&_bodyData - begin);
+        if (!mBodies[index].bIsActive) {
+            return BodyHandle::Invalid();
+        }
+
+        BodyHandle handle;
+        handle.Index      = index;
+        handle.Generation = mBodies[index].Generation;
+        return handle;
     }
 
     PhysicsBodyData* PhysicsService::GetBodyDataInternal(BodyHandle _handle) {
