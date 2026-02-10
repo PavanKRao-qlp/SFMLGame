@@ -36,6 +36,9 @@ void MainScene::OnUpdate() {
     if (ImGui::Button("Narrow Phase Collisions")) {
         GetSceneManager().GoToScene("NarrowPhase");
     }
+    if (ImGui::Button("Broadphase AABB Tree")) {
+        GetSceneManager().GoToScene("BroadphaseTree");
+    }
     ImGui::End();
 
     Umbra::RenderSystem::DebugDrawCircle(Umbra::Math::Vector2f(0.0f, 0.0f), mCircleRadius, true, Umbra::Color::White);

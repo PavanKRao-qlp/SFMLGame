@@ -4,6 +4,7 @@
 #include "Service/Physics/Collision.h"
 #include "Service/Physics/PhysicsBody.h"
 #include "Service/Physics/PhysicsHandle.h"
+#include "Service/Physics/DynamicAABBTree.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
 
 namespace Umbra {
@@ -109,6 +110,12 @@ namespace Umbra {
         /// @brief Applies angular impulse
         void ApplyAngularImpulse(BodyHandle _handle, float _impulse);
 
+        // ============== Broadphase Access ==============
+
+        const DynamicAABBTree& GetBroadphaseTree() const;
+        uint32 GetBroadphaseChecks() const;
+        uint32 GetBroadphasePairCount() const;
+
         // ============== Collision Queries ==============
 
         /// @brief Tests overlap between two bodies using their shapes and positions
@@ -142,6 +149,7 @@ namespace Umbra {
         void IntegrateVelocities(float _deltaTime);
         void ApplyDamping(float _deltaTime);
         void ClearForceAccumulators();
+        void UpdateBroadphaseProxies(float _deltaTime);
         void BroadphaseDetection();
         void NarrowPhaseDetection();
         void PrecomputeContactConstraints();
@@ -161,6 +169,11 @@ namespace Umbra {
         // collsion types
         Vector<Tuple<BodyHandle, BodyHandle>> mOverlappingBoundsIndexPair;
         Vector<CollisionDef> mCollisions;
+
+        // Broadphase acceleration structure
+        DynamicAABBTree mBroadphaseTree;
+        uint32 mBroadphaseChecks   = 0;
+        uint32 mBroadphasePairCount = 0;
     };
 
     // ============== Template Implementations ==============

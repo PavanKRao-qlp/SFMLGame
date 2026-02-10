@@ -13,6 +13,8 @@ namespace Umbra {
         int PositionIterations        = 3;       // Solver iterations for position
         float BaumgarteScale          = 0.2f;    // Position correction factor
         uint32 InitialBodyCapacity    = 256;     // Pre-allocated body slots
+        float AABBFattenMargin        = 0.1f;    // Fat AABB uniform expansion margin
+        float AABBDisplacementMultiplier = 2.0f;  // Velocity-based AABB extension scale
     };
 
 } // namespace Umbra

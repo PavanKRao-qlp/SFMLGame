@@ -6,6 +6,7 @@
 #include "Scenes/ParticleIntegrationScene.h"
 #include "Scenes/NarrowPhaseScene.h"
 #include "Scenes/ShapeRepresentationScene.h"
+#include "Scenes/BroadphaseTreeScene.h"
 
 PhysicsEngineDemo::PhysicsEngineDemo() {}
 
@@ -18,6 +19,7 @@ void PhysicsEngineDemo::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> shapeRepresentationScene = std::make_shared<ShapeRepresentationScene>();
     Umbra::SharedPtr<Umbra::Scene> boundingVolumeScene      = std::make_shared<BoundingVolumeScene>();
     Umbra::SharedPtr<Umbra::Scene> narrowPhaseScene         = std::make_shared<NarrowPhaseScene>();
+    Umbra::SharedPtr<Umbra::Scene> broadphaseTreeScene     = std::make_shared<BroadphaseTreeScene>();
 
     GetSceneManager().AddScene("MainScene", mainScene);
     GetSceneManager().AddScene("ParticleIntegration", particleIntegrationScene);
@@ -25,6 +27,7 @@ void PhysicsEngineDemo::Initialize() {
     GetSceneManager().AddScene("ShapeRepresentation", shapeRepresentationScene);
     GetSceneManager().AddScene("BoundingVolume", boundingVolumeScene);
     GetSceneManager().AddScene("NarrowPhase", narrowPhaseScene);
+    GetSceneManager().AddScene("BroadphaseTree", broadphaseTreeScene);
 
     GetSceneManager().GoToScene(mainScene);
 }

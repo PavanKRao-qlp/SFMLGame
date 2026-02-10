@@ -9,6 +9,8 @@ namespace Umbra {
 
     PhysicsService::PhysicsService(const PhysicsServiceConfig& _config) : mConfig(_config) {
         mBodies.reserve(_config.InitialBodyCapacity);
+        mBroadphaseTree.SetFattenMargin(_config.AABBFattenMargin);
+        mBroadphaseTree.SetDisplacementMultiplier(_config.AABBDisplacementMultiplier);
     }
 
     PhysicsService::~PhysicsService() {
@@ -61,21 +63,24 @@ namespace Umbra {
         // 4. Clear force accumulators for next frame
         ClearForceAccumulators();
 
-        // 5. Check broad phase collisions
+        // 5. Update broadphase tree proxies
+        UpdateBroadphaseProxies(_deltaTime);
+
+        // 6. Check broad phase collisions
         BroadphaseDetection();
 
-        // 6. Check Narrow phase collision for contacts
+        // 7. Check Narrow phase collision for contacts
         NarrowPhaseDetection();
 
-        // 7. Precompute constraint data (effective masses, bias) once per frame
+        // 8. Precompute constraint data (effective masses, bias) once per frame
         PrecomputeContactConstraints();
 
-        // 8. Velocity solver - sequential impulse with accumulated clamping
+        // 9. Velocity solver - sequential impulse with accumulated clamping
         for (int i = 0; i < mConfig.VelocityIterations; i++) {
             ResolveContacts();
         }
 
-        // 9. Position correction iterations (separate from velocity)
+        // 10. Position correction iterations (separate from velocity)
         for (int i = 0; i < mConfig.PositionIterations; i++) {
             PositionContraction();
         }
@@ -155,29 +160,60 @@ namespace Umbra {
     }
 
 
+    void PhysicsService::UpdateBroadphaseProxies(float _deltaTime) {
+        for (uint32 i = 0; i < mBodies.size(); ++i) {
+            auto& body = mBodies[i];
+            if (!body.bIsActive || body.TreeProxyId == NullNode) {
+                continue;
+            }
+
+            body.UpdateBoundingAABB();
+            Math::Bounds2D worldAABB(body.Position, body.BoundingAABB.Size);
+
+            // Displacement prediction based on velocity
+            Math::Vector2f displacement = body.Velocity * _deltaTime;
+            mBroadphaseTree.MoveProxy(body.TreeProxyId, worldAABB, displacement);
+        }
+    }
+
     void PhysicsService::BroadphaseDetection() {
-        // clear last frame overlap
         mOverlappingBoundsIndexPair.clear();
-        // Early out if less than 2 bodies
+        mBroadphaseChecks   = 0;
+        mBroadphasePairCount = 0;
+
         if (mBodies.size() < 2) {
             return;
         }
-        for (uint32 i = 0; i < mBodies.size(); i++) {
-            if (!mBodies[i].bIsActive) continue;
-            mBodies[i].UpdateBoundingAABB();
-            for (uint32 j = i + 1; j < mBodies.size(); j++) {
-                if (!mBodies[j].bIsActive) continue;
-                mBodies[j].UpdateBoundingAABB();
-                if (mBodies[i].BoundingAABB.Intersects(mBodies[j].BoundingAABB)) {
-                    BodyHandle handleA;
-                    handleA.Index      = i;
-                    handleA.Generation = mBodies[i].Generation;
-                    BodyHandle handleB;
-                    handleB.Index      = j;
-                    handleB.Generation = mBodies[j].Generation;
-                    mOverlappingBoundsIndexPair.emplace_back(handleA, handleB);
-                }
+
+        for (uint32 i = 0; i < mBodies.size(); ++i) {
+            if (!mBodies[i].bIsActive || mBodies[i].TreeProxyId == NullNode) {
+                continue;
             }
+
+            const Math::Bounds2D& fatAABB = mBroadphaseTree.GetFatAABB(mBodies[i].TreeProxyId);
+
+            mBroadphaseTree.Query(fatAABB, [&](int32 _proxyId) {
+                ++mBroadphaseChecks;
+                uint32 otherIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+
+                // Skip self and deduplicate (only keep pairs where i < otherIndex)
+                if (otherIndex <= i) {
+                    return;
+                }
+
+                if (!mBodies[otherIndex].bIsActive) {
+                    return;
+                }
+
+                BodyHandle handleA;
+                handleA.Index      = i;
+                handleA.Generation = mBodies[i].Generation;
+                BodyHandle handleB;
+                handleB.Index      = otherIndex;
+                handleB.Generation = mBodies[otherIndex].Generation;
+                mOverlappingBoundsIndexPair.emplace_back(handleA, handleB);
+                ++mBroadphasePairCount;
+            });
         }
     }
 
@@ -351,6 +387,20 @@ namespace Umbra {
         }
     }
 
+    // ============== Broadphase Access ==============
+
+    const DynamicAABBTree& PhysicsService::GetBroadphaseTree() const {
+        return mBroadphaseTree;
+    }
+
+    uint32 PhysicsService::GetBroadphaseChecks() const {
+        return mBroadphaseChecks;
+    }
+
+    uint32 PhysicsService::GetBroadphasePairCount() const {
+        return mBroadphasePairCount;
+    }
+
     // ============== Body Management ==============
 
     BodyHandle PhysicsService::CreateBody(const BodyDef& _def) {
@@ -409,6 +459,11 @@ namespace Umbra {
         }
         body.SetInertia(inertia);
 
+        // Compute bounding AABB and insert into broadphase tree
+        body.UpdateBoundingAABB();
+        Math::Bounds2D worldAABB(body.Position, body.BoundingAABB.Size);
+        body.TreeProxyId = mBroadphaseTree.InsertProxy(worldAABB, index);
+
         ++mActiveBodyCount;
 
         BodyHandle handle;
@@ -421,6 +476,12 @@ namespace Umbra {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body == nullptr) {
             return;
+        }
+
+        // Remove from broadphase tree before deactivating
+        if (body->TreeProxyId != NullNode) {
+            mBroadphaseTree.RemoveProxy(body->TreeProxyId);
+            body->TreeProxyId = NullNode;
         }
 
         body->bIsActive = false;

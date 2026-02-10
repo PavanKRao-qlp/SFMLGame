@@ -75,6 +75,9 @@ namespace Umbra {
         // Handle validation
         uint32 Generation = 0;
 
+        // Broadphase tree proxy
+        int32 TreeProxyId = -1;
+
         inline bool IsStatic() const {
             return InverseMass <= 0.0f;
         }
