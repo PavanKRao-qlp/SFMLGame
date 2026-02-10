@@ -48,6 +48,10 @@ namespace Umbra {
         return mConfig;
     }
 
+    PhysicsServiceConfig& PhysicsService::GetConfig() {
+        return mConfig;
+    }
+
     // ============== Simulation ==============
 
     void PhysicsService::Step(float _deltaTime) {
@@ -84,11 +88,14 @@ namespace Umbra {
         for (int i = 0; i < mConfig.PositionIterations; i++) {
             PositionContraction();
         }
+
+        // 11. Sleep or Wake bodies
+        UpdateSleepingBodies(_deltaTime);
     }
 
     void PhysicsService::IntegrateForces(float _deltaTime) {
         for (auto& body : mBodies) {
-            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic) {
+            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
                 continue;
             }
 
@@ -114,7 +121,7 @@ namespace Umbra {
 
     void PhysicsService::IntegrateVelocities(float _deltaTime) {
         for (auto& body : mBodies) {
-            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic) {
+            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
                 continue;
             }
 
@@ -136,7 +143,7 @@ namespace Umbra {
 
     void PhysicsService::ApplyDamping(float _deltaTime) {
         for (auto& body : mBodies) {
-            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic) {
+            if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
                 continue;
             }
 
@@ -178,7 +185,7 @@ namespace Umbra {
 
     void PhysicsService::BroadphaseDetection() {
         mOverlappingBoundsIndexPair.clear();
-        mBroadphaseChecks   = 0;
+        mBroadphaseChecks    = 0;
         mBroadphasePairCount = 0;
 
         if (mBodies.size() < 2) {
@@ -202,6 +209,11 @@ namespace Umbra {
                 }
 
                 if (!mBodies[otherIndex].bIsActive) {
+                    return;
+                }
+
+                // Skip pairs where both bodies are sleeping
+                if (mBodies[i].bIsSleeping && mBodies[otherIndex].bIsSleeping) {
                     return;
                 }
 
@@ -238,8 +250,14 @@ namespace Umbra {
             PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
             PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
 
-            float invMassSum = bodyA.InverseMass + bodyB.InverseMass;
-            float e = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
+            // Sleeping bodies are treated as immovable in the solver
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
+            float invMassSum = invMassA + invMassB;
+            float e          = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
 
             // Fixed tangent direction perpendicular to contact normal
             Math::Vector2f tangent(-collision.contactNormal.y, collision.contactNormal.x);
@@ -251,28 +269,26 @@ namespace Umbra {
 
                 // Effective mass along the normal:
                 //   1 / (1/mA + 1/mB + (rA x n)^2/IA + (rB x n)^2/IB)
-                float rACrossN = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
-                float rBCrossN = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
-                float normalDenom = invMassSum
-                    + rACrossN * rACrossN * bodyA.InverseInertia
-                    + rBCrossN * rBCrossN * bodyB.InverseInertia;
+                float rACrossN    = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
+                float rBCrossN    = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
+                float normalDenom = invMassSum + rACrossN * rACrossN * invInertiaA
+                                  + rBCrossN * rBCrossN * invInertiaB;
                 contact.normalMass = normalDenom > 0.0f ? 1.0f / normalDenom : 0.0f;
 
                 // Effective mass along the tangent (same formula, tangent direction)
-                float rACrossT = Math::Vector2f::Cross2D(contact.rA, tangent);
-                float rBCrossT = Math::Vector2f::Cross2D(contact.rB, tangent);
-                float tangentDenom = invMassSum
-                    + rACrossT * rACrossT * bodyA.InverseInertia
-                    + rBCrossT * rBCrossT * bodyB.InverseInertia;
+                float rACrossT     = Math::Vector2f::Cross2D(contact.rA, tangent);
+                float rBCrossT     = Math::Vector2f::Cross2D(contact.rB, tangent);
+                float tangentDenom = invMassSum + rACrossT * rACrossT * invInertiaA
+                                   + rBCrossT * rBCrossT * invInertiaB;
                 contact.tangentMass = tangentDenom > 0.0f ? 1.0f / tangentDenom : 0.0f;
 
                 // Restitution velocity bias:
                 // Only apply bounce if the closing speed is above a threshold (avoids jitter at rest)
-                Math::Vector2f velA = bodyA.Velocity
-                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
-                Math::Vector2f velB = bodyB.Velocity
-                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
-                float closingSpeed = Math::Vector2f::Dot(velB - velA, collision.contactNormal);
+                Math::Vector2f velA =
+                    bodyA.Velocity + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                Math::Vector2f velB =
+                    bodyB.Velocity + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                float closingSpeed   = Math::Vector2f::Dot(velB - velA, collision.contactNormal);
                 contact.velocityBias = closingSpeed < -1.0f ? -e * closingSpeed : 0.0f;
 
                 // Reset accumulators for this frame
@@ -291,6 +307,17 @@ namespace Umbra {
                 continue;
             }
 
+            // Skip pairs where both bodies are sleeping
+            if (bodyA.bIsSleeping && bodyB.bIsSleeping) {
+                continue;
+            }
+
+            // Sleeping bodies are treated as immovable in the solver
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
             // Fixed tangent perpendicular to contact normal
             Math::Vector2f tangent(-collision.contactNormal.y, collision.contactNormal.x);
 
@@ -301,63 +328,67 @@ namespace Umbra {
                 // === NORMAL IMPULSE with accumulated clamping ===
 
                 // Current relative velocity at contact point
-                Math::Vector2f velA = bodyA.Velocity
-                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
-                Math::Vector2f velB = bodyB.Velocity
-                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                Math::Vector2f velA =
+                    bodyA.Velocity + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                Math::Vector2f velB =
+                    bodyB.Velocity + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
                 Math::Vector2f relVel = velB - velA;
 
                 // Compute delta impulse: dj = (-v_rel.n + bias) * effectiveMass
                 float velAlongNormal = Math::Vector2f::Dot(relVel, collision.contactNormal);
-                float dj = (-velAlongNormal + contact.velocityBias) * contact.normalMass;
+                float dj             = (-velAlongNormal + contact.velocityBias) * contact.normalMass;
 
                 // Accumulate and clamp: total normal impulse must be >= 0 (can only push, never pull)
-                float oldNormalAccum = contact.normalImpulseAccum;
+                float oldNormalAccum       = contact.normalImpulseAccum;
                 contact.normalImpulseAccum = Math::Max(oldNormalAccum + dj, 0.0f);
-                dj = contact.normalImpulseAccum - oldNormalAccum;
+                dj                         = contact.normalImpulseAccum - oldNormalAccum;
 
                 // Apply the delta impulse directly to bodies
                 Math::Vector2f normalImpulse = collision.contactNormal * dj;
-                bodyA.Velocity -= normalImpulse * bodyA.InverseMass;
-                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, normalImpulse) * bodyA.InverseInertia;
-                bodyB.Velocity += normalImpulse * bodyB.InverseMass;
-                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, normalImpulse) * bodyB.InverseInertia;
+                bodyA.Velocity -= normalImpulse * invMassA;
+                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, normalImpulse) * invInertiaA;
+                bodyB.Velocity += normalImpulse * invMassB;
+                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, normalImpulse) * invInertiaB;
 
                 // === FRICTION IMPULSE with accumulated Coulomb clamping ===
 
                 // Recompute relative velocity after normal impulse changed velocities
-                velA = bodyA.Velocity
-                    + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
-                velB = bodyB.Velocity
-                    + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
+                velA   = bodyA.Velocity + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
+                velB   = bodyB.Velocity + Math::Vector2f(-contact.rB.y, contact.rB.x) * bodyB.AngularVelocity;
                 relVel = velB - velA;
 
                 // Delta friction impulse along fixed tangent
                 float velAlongTangent = Math::Vector2f::Dot(relVel, tangent);
-                float djt = -velAlongTangent * contact.tangentMass;
+                float djt             = -velAlongTangent * contact.tangentMass;
 
                 // Coulomb clamp: |friction impulse| <= mu * normal impulse
-                float maxFriction = friction * contact.normalImpulseAccum;
-                float oldTangentAccum = contact.tangentImpulseAccum;
+                float maxFriction           = friction * contact.normalImpulseAccum;
+                float oldTangentAccum       = contact.tangentImpulseAccum;
                 contact.tangentImpulseAccum = Math::Clamp(oldTangentAccum + djt, -maxFriction, maxFriction);
-                djt = contact.tangentImpulseAccum - oldTangentAccum;
+                djt                         = contact.tangentImpulseAccum - oldTangentAccum;
 
                 // Apply the delta friction impulse
                 Math::Vector2f frictionImpulse = tangent * djt;
-                bodyA.Velocity -= frictionImpulse * bodyA.InverseMass;
-                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, frictionImpulse) * bodyA.InverseInertia;
-                bodyB.Velocity += frictionImpulse * bodyB.InverseMass;
-                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, frictionImpulse) * bodyB.InverseInertia;
+                bodyA.Velocity -= frictionImpulse * invMassA;
+                bodyA.AngularVelocity -= Math::Vector2f::Cross2D(contact.rA, frictionImpulse) * invInertiaA;
+                bodyB.Velocity += frictionImpulse * invMassB;
+                bodyB.AngularVelocity += Math::Vector2f::Cross2D(contact.rB, frictionImpulse) * invInertiaB;
             }
         }
     }
 
     void PhysicsService::PositionContraction() {
         for (const CollisionDef& collisionDef : mCollisions) {
-            PhysicsBodyData& bodyA = mBodies[collisionDef.handleA.Index];
-            PhysicsBodyData& bodyB = mBodies[collisionDef.handleB.Index];
+            PhysicsBodyData& bodyA = *GetBodyData(collisionDef.handleA);
+            PhysicsBodyData& bodyB = *GetBodyData(collisionDef.handleB);
+
             // Skip if both bodies are static
             if (bodyA.IsStatic() && bodyB.IsStatic()) {
+                continue;
+            }
+
+            // Skip pairs where both bodies are sleeping
+            if (bodyA.bIsSleeping && bodyB.bIsSleeping) {
                 continue;
             }
 
@@ -371,8 +402,12 @@ namespace Umbra {
                 continue;
             }
 
+            // Sleeping bodies are treated as immovable
+            float invMassA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invMassB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+
             // Calculate total inverse mass
-            float invMassSum = bodyA.InverseMass + bodyB.InverseMass;
+            float invMassSum = invMassA + invMassB;
             if (invMassSum <= 0.0f) {
                 return; // Both have infinite mass
             }
@@ -382,8 +417,56 @@ namespace Umbra {
 
             // Move bodies apart proportional to their inverse mass
             // Heavier objects move less, lighter objects move more
-            bodyA.Position -= correction * bodyA.InverseMass;
-            bodyB.Position += correction * bodyB.InverseMass;
+            bodyA.Position -= correction * invMassA;
+            bodyB.Position += correction * invMassB;
+        }
+    }
+
+
+    void PhysicsService::UpdateSleepingBodies(float _deltaTime) {
+        // A sleeping body should wake if it's colliding with an awake body
+        for (const CollisionDef& collisionDef : mCollisions) {
+            PhysicsBodyData& bodyA = *GetBodyData(collisionDef.handleA);
+            PhysicsBodyData& bodyB = *GetBodyData(collisionDef.handleB);
+
+            // Skip if both bodies are static
+            if (bodyA.IsStatic() && bodyB.IsStatic()) {
+                continue;
+            }
+            // If one is sleeping and the other is awake and moving, wake the sleeper
+            bool bAIsAsleep = bodyA.bIsSleeping;
+            bool bBIsAsleep = bodyB.bIsSleeping;
+            if (bodyA.bIsSleeping && !bodyB.bIsSleeping && !bodyB.IsStatic()) {
+                // B is awake and dynamic, wake A
+                bodyA.Wake();
+            }
+            if (bodyB.bIsSleeping && !bodyA.bIsSleeping && !bodyA.IsStatic()) {
+                // A is awake and dynamic, wake B
+                bodyB.Wake();
+            }
+        }
+        // Update sleep timers and put bodies to sleep
+        for (auto& body : mBodies) {
+            if (body.IsStatic() || !body.bCanSleep) {
+                continue;
+            }
+            // Already sleeping, skip
+            if (body.bIsSleeping) {
+                continue;
+            }
+            // Check if below sleep threshold
+            bool bShouldSleep = body.Velocity.SquareMagnitude() < Math::Pow(mConfig.LinearVelocitySleepThreshold, 2)
+                             && Math::Abs(body.AngularVelocity) < mConfig.AngularVelocitySleepThreshold;
+
+            if (bShouldSleep) {
+                body.SleepTimer += _deltaTime;
+                if (body.SleepTimer >= mConfig.SleepTimeThreshold) {
+                    body.Sleep();
+                }
+            } else {
+                // Reset timer if moving
+                body.SleepTimer = 0.0f;
+            }
         }
     }
 
@@ -436,6 +519,7 @@ namespace Umbra {
         body.DynamicFriction     = _def.DynamicFriction;
         body.bAffectedByGravity  = _def.bAffectedByGravity;
         body.bIsKinematic        = _def.bIsKinematic;
+        body.bCanSleep           = _def.bCanSleep;
         body.bIsActive           = true;
         body.UserData            = _def.UserData;
         body.Generation          = generation;
@@ -665,6 +749,9 @@ namespace Umbra {
     void PhysicsService::ApplyForce(BodyHandle _handle, Math::Vector2f _force) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (_force.SquareMagnitude() > 0.0f) {
+                body->Wake();
+            }
             body->ForceAccumulated += _force;
         }
     }
@@ -672,6 +759,9 @@ namespace Umbra {
     void PhysicsService::ApplyForceAtPoint(BodyHandle _handle, Math::Vector2f _force, Math::Vector2f _worldPoint) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (_force.SquareMagnitude() > 0.0f) {
+                body->Wake();
+            }
             body->ForceAccumulated += _force;
             Math::Vector2f r = _worldPoint - body->Position;
             float torque     = Math::Vector2f::Cross2D(r, _force);
@@ -682,6 +772,9 @@ namespace Umbra {
     void PhysicsService::ApplyForceAtLocalPoint(BodyHandle _handle, Math::Vector2f _force, Math::Vector2f _localPoint) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (_force.SquareMagnitude() > 0.0f) {
+                body->Wake();
+            }
             body->ForceAccumulated += _force;
             Math::Vector2f rotatedPoint = _localPoint.GetRotated(body->Angle);
             float torque                = Math::Vector2f::Cross2D(rotatedPoint, _force);
@@ -692,13 +785,20 @@ namespace Umbra {
     void PhysicsService::ApplyImpulse(BodyHandle _handle, Math::Vector2f _impulse) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (_impulse.SquareMagnitude() > 0.0f) {
+                body->Wake();
+            }
             body->Velocity += _impulse * body->InverseMass;
         }
     }
 
-    void PhysicsService::ApplyImpulseAtPoint(BodyHandle _handle, Math::Vector2f _impulse, Math::Vector2f _worldPoint) {
+    void PhysicsService::ApplyImpulseAtPoint(
+        BodyHandle _handle, Math::Vector2f _impulse, Math::Vector2f _worldPoint, bool _bShouldAwake) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (_bShouldAwake && _impulse.SquareMagnitude() > 0.0f) {
+                body->Wake();
+            }
             body->Velocity += _impulse * body->InverseMass;
             Math::Vector2f r     = _worldPoint - body->Position;
             float angularImpulse = Math::Vector2f::Cross2D(r, _impulse);
@@ -709,6 +809,9 @@ namespace Umbra {
     void PhysicsService::ApplyTorque(BodyHandle _handle, float _torque) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (Math::Abs(_torque) > 0.0f) {
+                body->Wake();
+            }
             body->TorqueAccumulated += _torque;
         }
     }
@@ -716,6 +819,9 @@ namespace Umbra {
     void PhysicsService::ApplyAngularImpulse(BodyHandle _handle, float _impulse) {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body && !body->IsStatic() && !body->bIsKinematic) {
+            if (Math::Abs(_impulse) > 0.0f) {
+                body->Wake();
+            }
             body->AngularVelocity += _impulse * body->InverseInertia;
         }
     }

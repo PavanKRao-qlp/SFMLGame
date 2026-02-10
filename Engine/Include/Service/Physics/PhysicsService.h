@@ -2,9 +2,9 @@
 #include "EnginePCH.h"
 #include "Math/Vector.h"
 #include "Service/Physics/Collision.h"
+#include "Service/Physics/DynamicAABBTree.h"
 #include "Service/Physics/PhysicsBody.h"
 #include "Service/Physics/PhysicsHandle.h"
-#include "Service/Physics/DynamicAABBTree.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
 
 namespace Umbra {
@@ -29,6 +29,7 @@ namespace Umbra {
         float GetAngularDamping() const;
 
         const PhysicsServiceConfig& GetConfig() const;
+        PhysicsServiceConfig& GetConfig();
 
         // ============== Simulation ==============
 
@@ -102,7 +103,8 @@ namespace Umbra {
         void ApplyImpulse(BodyHandle _handle, Math::Vector2f _impulse);
 
         /// @brief Applies instantaneous impulse at a world point
-        void ApplyImpulseAtPoint(BodyHandle _handle, Math::Vector2f _impulse, Math::Vector2f _worldPoint);
+        void ApplyImpulseAtPoint(
+            BodyHandle _handle, Math::Vector2f _impulse, Math::Vector2f _worldPoint, bool _bShouldAwake = true);
 
         /// @brief Applies torque around center of mass
         void ApplyTorque(BodyHandle _handle, float _torque);
@@ -155,6 +157,7 @@ namespace Umbra {
         void PrecomputeContactConstraints();
         void ResolveContacts();
         void PositionContraction();
+        void UpdateSleepingBodies(float _deltaTime);
 
         PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle);
         const PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle) const;
@@ -172,7 +175,7 @@ namespace Umbra {
 
         // Broadphase acceleration structure
         DynamicAABBTree mBroadphaseTree;
-        uint32 mBroadphaseChecks   = 0;
+        uint32 mBroadphaseChecks    = 0;
         uint32 mBroadphasePairCount = 0;
     };
 

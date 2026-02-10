@@ -17,13 +17,13 @@ namespace Umbra {
         float LinearDamping     = 0.0f;
         float AngularDamping    = 0.0f;
         float CoefOfRestitution = 1.0f; // 0 = perfectly inelastic, 1 = perfectly elastic
-        float StaticFriction   = 0.6f;
-        float DynamicFriction  = 0.4f;
+        float StaticFriction    = 0.6f;
+        float DynamicFriction   = 0.4f;
         ShapeData ShapeData;
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic bodies are moved by game code
-
-        void* UserData = nullptr; // Opaque pointer (can store EntityID)
+        bool bCanSleep          = true;
+        void* UserData          = nullptr; // Opaque pointer (can store EntityID)
     };
 
     /// @brief Internal physics body data stored in SOA layout within PhysicsService
@@ -60,10 +60,22 @@ namespace Umbra {
         float StaticFriction  = 0.6f;
         float DynamicFriction = 0.4f;
 
+        // Sleep
+        // If true, this body is sleeping (skipped in simulation for performance)
+        // Sleeping bodies don't integrate motion or respond to collisions
+        bool bIsSleeping = false;
+        // Time the body has been below the sleep velocity threshold
+        // Once this exceeds sleepTimeThreshold, the body can sleep
+        float SleepTimer = 0.0f;
+
+
         // Flags
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false;
         bool bIsActive          = true;
+        // If true, this body is allowed to sleep when stationary
+        // Set to false for bodies that should always be active (player, etc.)
+        bool bCanSleep = true;
 
         // Shape
         ShapeData BodyShape;
@@ -107,6 +119,24 @@ namespace Umbra {
                 float size   = BodyShape.GetBox().GetSize().Magnitude();
                 BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), Math::Vector2f(size, size));
             }
+        }
+
+        // Put the body to sleep (stops simulation)
+        inline void Sleep() {
+            if (!bCanSleep || IsStatic()) {
+                return;
+            }
+            bIsSleeping       = true;
+            Velocity          = Math::Vector2f(0, 0);
+            AngularVelocity   = 0.0f;
+            ForceAccumulated  = Math::Vector2f(0, 0);
+            TorqueAccumulated = 0.0f;
+        }
+
+        // Wake the body up (resumes simulation)
+        inline void Wake() {
+            bIsSleeping = false;
+            SleepTimer  = 0.0f;
         }
     };
 

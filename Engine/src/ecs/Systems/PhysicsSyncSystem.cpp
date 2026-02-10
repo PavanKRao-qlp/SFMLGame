@@ -90,6 +90,7 @@ namespace Umbra {
         def.DynamicFriction    = rb->DynamicFriction;
         def.bAffectedByGravity = rb->bAffectedByGravity;
         def.bIsKinematic       = rb->bIsKinematic;
+        def.bCanSleep          = rb->bCanSleep;
         def.ShapeData          = ShapeData();
 
         if (mView->ecsRegister->HasComponent<BoxColliderComponent>(_entity)) {

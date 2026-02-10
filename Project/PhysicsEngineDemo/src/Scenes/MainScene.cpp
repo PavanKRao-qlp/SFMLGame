@@ -39,6 +39,9 @@ void MainScene::OnUpdate() {
     if (ImGui::Button("Broadphase AABB Tree")) {
         GetSceneManager().GoToScene("BroadphaseTree");
     }
+    if (ImGui::Button("Sleep Demo")) {
+        GetSceneManager().GoToScene("SleepDemo");
+    }
     ImGui::End();
 
     Umbra::RenderSystem::DebugDrawCircle(Umbra::Math::Vector2f(0.0f, 0.0f), mCircleRadius, true, Umbra::Color::White);
