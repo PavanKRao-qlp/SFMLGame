@@ -26,6 +26,7 @@ namespace Umbra {
         BodyHandle handleB;
         Math::Vector2f contactNormal; // Points from body A toward body B
         float penetration = 0; // Overlap depth along the contact normal
+        bool bIsTrigger   = false; // True if either body is a trigger
         Vector<ContactDef> contacts;
     };
 
@@ -34,6 +35,7 @@ namespace Umbra {
         BodyHandle HandleB;
         Math::Vector2f ContactNormal; // Zero for exit events
         float Penetration = 0.0f;    // Zero for exit events
+        bool bIsTrigger   = false;   // True if this was a trigger overlap
     };
 
     struct RaycastHit {

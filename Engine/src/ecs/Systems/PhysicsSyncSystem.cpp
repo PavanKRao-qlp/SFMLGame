@@ -91,18 +91,23 @@ namespace Umbra {
         def.bAffectedByGravity = rb->bAffectedByGravity;
         def.bIsKinematic       = rb->bIsKinematic;
         def.bCanSleep          = rb->bCanSleep;
+        def.Filter             = rb->Filter;
         def.ShapeData          = ShapeData();
 
+        // Determine trigger and shape from collider component
+        bool bEntityIsTrigger = false;
         if (mView->ecsRegister->HasComponent<BoxColliderComponent>(_entity)) {
-
             BoxColliderComponent* BoxCollider = mView->ecsRegister->GetComponent<BoxColliderComponent>(_entity);
             def.ShapeData                     = ShapeData::MakeBox(BoxCollider->Size);
+            bEntityIsTrigger                  = BoxCollider->bIsTrigger;
         }
         if (mView->ecsRegister->HasComponent<CircleColliderComponent>(_entity)) {
             CircleColliderComponent* CircleCollider =
                 mView->ecsRegister->GetComponent<CircleColliderComponent>(_entity);
-            def.ShapeData = ShapeData::MakeCircle(CircleCollider->Radius);
+            def.ShapeData    = ShapeData::MakeCircle(CircleCollider->Radius);
+            bEntityIsTrigger = CircleCollider->bIsTrigger;
         }
+        def.bIsTrigger = bEntityIsTrigger;
         // Store EntityID in UserData for reverse lookup
         def.UserData = reinterpret_cast<void*>(static_cast<uintptr_t>(_entity));
 
@@ -155,6 +160,7 @@ namespace Umbra {
             mPhysicsService->SetCoefOfRestitution(rb->Handle, rb->CoefOfRestitution);
             mPhysicsService->SetStaticFriction(rb->Handle, rb->StaticFriction);
             mPhysicsService->SetDynamicFriction(rb->Handle, rb->DynamicFriction);
+            mPhysicsService->SetCollisionFilter(rb->Handle, rb->Filter);
         }
     }
 

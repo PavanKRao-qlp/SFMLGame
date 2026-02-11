@@ -1,6 +1,7 @@
 #pragma once
 #include "ECS/Component.h"
 #include "Math/Vector.h"
+#include "Service/Physics/PhysicsBody.h"
 #include "Service/Physics/PhysicsHandle.h"
 
 namespace Umbra {
@@ -28,6 +29,7 @@ namespace Umbra {
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic = moved by game code, not physics
         bool bCanSleep          = true;
+        CollisionFilter Filter;
 
         // Sync flags
         bool bNeedsBodyCreation = true; // Set to true when component is added

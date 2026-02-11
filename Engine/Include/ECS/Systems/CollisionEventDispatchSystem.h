@@ -75,6 +75,65 @@ namespace Umbra {
                     }
                 }
             }
+
+            // ============== Trigger Events ==============
+
+            // Dispatch Trigger Enter events
+            for (const CollisionEvent& event : mPhysicsService->GetTriggerEnterEvents()) {
+                EntityID entityA = ResolveEntity(event.HandleA);
+                EntityID entityB = ResolveEntity(event.HandleB);
+
+                if (entityA != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityA)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityA);
+                    if (cb && cb->OnTriggerEnter) {
+                        cb->OnTriggerEnter(entityA, entityB, event);
+                    }
+                }
+                if (entityB != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityB)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityB);
+                    if (cb && cb->OnTriggerEnter) {
+                        cb->OnTriggerEnter(entityB, entityA, event);
+                    }
+                }
+            }
+
+            // Dispatch Trigger Stay events
+            for (const CollisionEvent& event : mPhysicsService->GetTriggerStayEvents()) {
+                EntityID entityA = ResolveEntity(event.HandleA);
+                EntityID entityB = ResolveEntity(event.HandleB);
+
+                if (entityA != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityA)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityA);
+                    if (cb && cb->OnTriggerStay) {
+                        cb->OnTriggerStay(entityA, entityB, event);
+                    }
+                }
+                if (entityB != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityB)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityB);
+                    if (cb && cb->OnTriggerStay) {
+                        cb->OnTriggerStay(entityB, entityA, event);
+                    }
+                }
+            }
+
+            // Dispatch Trigger Exit events
+            for (const CollisionEvent& event : mPhysicsService->GetTriggerExitEvents()) {
+                EntityID entityA = ResolveEntity(event.HandleA);
+                EntityID entityB = ResolveEntity(event.HandleB);
+
+                if (entityA != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityA)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityA);
+                    if (cb && cb->OnTriggerExit) {
+                        cb->OnTriggerExit(entityA, entityB);
+                    }
+                }
+                if (entityB != UINT64_MAX && reg->HasComponent<CollisionCallbackComponent>(entityB)) {
+                    auto* cb = reg->GetComponent<CollisionCallbackComponent>(entityB);
+                    if (cb && cb->OnTriggerExit) {
+                        cb->OnTriggerExit(entityB, entityA);
+                    }
+                }
+            }
         }
 
     private:

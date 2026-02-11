@@ -220,6 +220,11 @@ namespace Umbra {
                     return;
                 }
 
+                // Skip pairs that fail collision filter
+                if (!ShouldCollide(mBodies[i], mBodies[otherIndex])) {
+                    return;
+                }
+
                 BodyHandle handleA;
                 handleA.Index      = i;
                 handleA.Generation = mBodies[i].Generation;
@@ -242,6 +247,7 @@ namespace Umbra {
             collisionDef.handleB  = std::get<1>(handlePair);
             PhysicsBodyData bodyA = mBodies[collisionDef.handleA.Index];
             PhysicsBodyData bodyB = mBodies[collisionDef.handleB.Index];
+            collisionDef.bIsTrigger = bodyA.bIsTrigger || bodyB.bIsTrigger;
             if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
                 mCollisions.emplace_back(collisionDef);
             }
@@ -250,6 +256,9 @@ namespace Umbra {
 
     void PhysicsService::PrecomputeContactConstraints() {
         for (CollisionDef& collision : mCollisions) {
+            if (collision.bIsTrigger) {
+                continue;
+            }
             PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
             PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
 
@@ -303,6 +312,9 @@ namespace Umbra {
 
     void PhysicsService::ResolveContacts() {
         for (CollisionDef& collision : mCollisions) {
+            if (collision.bIsTrigger) {
+                continue;
+            }
             PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
             PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
 
@@ -382,6 +394,9 @@ namespace Umbra {
 
     void PhysicsService::PositionContraction() {
         for (const CollisionDef& collisionDef : mCollisions) {
+            if (collisionDef.bIsTrigger) {
+                continue;
+            }
             PhysicsBodyData& bodyA = *GetBodyData(collisionDef.handleA);
             PhysicsBodyData& bodyB = *GetBodyData(collisionDef.handleB);
 
@@ -429,6 +444,9 @@ namespace Umbra {
     void PhysicsService::UpdateSleepingBodies(float _deltaTime) {
         // A sleeping body should wake if it's colliding with an awake body
         for (const CollisionDef& collisionDef : mCollisions) {
+            if (collisionDef.bIsTrigger) {
+                continue;
+            }
             PhysicsBodyData& bodyA = *GetBodyData(collisionDef.handleA);
             PhysicsBodyData& bodyB = *GetBodyData(collisionDef.handleB);
 
@@ -523,6 +541,8 @@ namespace Umbra {
         body.bAffectedByGravity  = _def.bAffectedByGravity;
         body.bIsKinematic        = _def.bIsKinematic;
         body.bCanSleep           = _def.bCanSleep;
+        body.bIsTrigger          = _def.bIsTrigger;
+        body.Filter              = _def.Filter;
         body.bIsActive           = true;
         body.UserData            = _def.UserData;
         body.Generation          = generation;
@@ -747,6 +767,30 @@ namespace Umbra {
         return body ? body->DynamicFriction : 0.4f;
     }
 
+    CollisionFilter PhysicsService::GetCollisionFilter(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->Filter : CollisionFilter{};
+    }
+
+    void PhysicsService::SetCollisionFilter(BodyHandle _handle, const CollisionFilter& _filter) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->Filter = _filter;
+        }
+    }
+
+    bool PhysicsService::IsTrigger(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->bIsTrigger : false;
+    }
+
+    void PhysicsService::SetTrigger(BodyHandle _handle, bool _bIsTrigger) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->bIsTrigger = _bIsTrigger;
+        }
+    }
+
     // ============== Force Application ==============
 
     void PhysicsService::ApplyForce(BodyHandle _handle, Math::Vector2f _force) {
@@ -857,43 +901,73 @@ namespace Umbra {
         return mCollisionExitEvents;
     }
 
+    const Vector<CollisionEvent>& PhysicsService::GetTriggerEnterEvents() const {
+        return mTriggerEnterEvents;
+    }
+
+    const Vector<CollisionEvent>& PhysicsService::GetTriggerStayEvents() const {
+        return mTriggerStayEvents;
+    }
+
+    const Vector<CollisionEvent>& PhysicsService::GetTriggerExitEvents() const {
+        return mTriggerExitEvents;
+    }
+
     uint64 PhysicsService::MakeCollisionPairKey(uint32 _indexA, uint32 _indexB) {
         uint32 lo = _indexA < _indexB ? _indexA : _indexB;
         uint32 hi = _indexA < _indexB ? _indexB : _indexA;
         return (static_cast<uint64>(lo) << 32) | static_cast<uint64>(hi);
     }
 
+    bool PhysicsService::ShouldCollide(const PhysicsBodyData& _a, const PhysicsBodyData& _b) {
+        return (_a.Filter.CategoryBits & _b.Filter.MaskBits) != 0
+            && (_b.Filter.CategoryBits & _a.Filter.MaskBits) != 0;
+    }
+
     void PhysicsService::CategorizeCollisionEvents() {
         mCollisionEnterEvents.clear();
         mCollisionStayEvents.clear();
         mCollisionExitEvents.clear();
+        mTriggerEnterEvents.clear();
+        mTriggerStayEvents.clear();
+        mTriggerExitEvents.clear();
 
-        Set<uint64> currentPairs;
+        Set<uint64> currentCollisionPairs;
+        Set<uint64> currentTriggerPairs;
 
         for (const CollisionDef& collision : mCollisions) {
             uint64 key = MakeCollisionPairKey(collision.handleA.Index, collision.handleB.Index);
-            currentPairs.insert(key);
 
             CollisionEvent event;
             event.HandleA       = collision.handleA;
             event.HandleB       = collision.handleB;
             event.ContactNormal = collision.contactNormal;
             event.Penetration   = collision.penetration;
+            event.bIsTrigger    = collision.bIsTrigger;
 
-            if (mPreviousCollisionPairs.find(key) != mPreviousCollisionPairs.end()) {
-                mCollisionStayEvents.emplace_back(event);
+            if (collision.bIsTrigger) {
+                currentTriggerPairs.insert(key);
+                if (mPreviousTriggerPairs.find(key) != mPreviousTriggerPairs.end()) {
+                    mTriggerStayEvents.emplace_back(event);
+                } else {
+                    mTriggerEnterEvents.emplace_back(event);
+                }
             } else {
-                mCollisionEnterEvents.emplace_back(event);
+                currentCollisionPairs.insert(key);
+                if (mPreviousCollisionPairs.find(key) != mPreviousCollisionPairs.end()) {
+                    mCollisionStayEvents.emplace_back(event);
+                } else {
+                    mCollisionEnterEvents.emplace_back(event);
+                }
             }
         }
 
-        // Pairs that were colliding last frame but not this frame → Exit
+        // Collision pairs that were active last frame but not this frame → Exit
         for (uint64 prevKey : mPreviousCollisionPairs) {
-            if (currentPairs.find(prevKey) == currentPairs.end()) {
+            if (currentCollisionPairs.find(prevKey) == currentCollisionPairs.end()) {
                 CollisionEvent event;
-                event.HandleA.Index      = static_cast<uint32>(prevKey >> 32);
-                event.HandleB.Index      = static_cast<uint32>(prevKey & 0xFFFFFFFF);
-                // Reconstruct generations from current body data if still valid
+                event.HandleA.Index = static_cast<uint32>(prevKey >> 32);
+                event.HandleB.Index = static_cast<uint32>(prevKey & 0xFFFFFFFF);
                 if (event.HandleA.Index < mBodies.size() && mBodies[event.HandleA.Index].bIsActive) {
                     event.HandleA.Generation = mBodies[event.HandleA.Index].Generation;
                 }
@@ -906,7 +980,27 @@ namespace Umbra {
             }
         }
 
-        mPreviousCollisionPairs = std::move(currentPairs);
+        // Trigger pairs that were active last frame but not this frame → Exit
+        for (uint64 prevKey : mPreviousTriggerPairs) {
+            if (currentTriggerPairs.find(prevKey) == currentTriggerPairs.end()) {
+                CollisionEvent event;
+                event.HandleA.Index = static_cast<uint32>(prevKey >> 32);
+                event.HandleB.Index = static_cast<uint32>(prevKey & 0xFFFFFFFF);
+                if (event.HandleA.Index < mBodies.size() && mBodies[event.HandleA.Index].bIsActive) {
+                    event.HandleA.Generation = mBodies[event.HandleA.Index].Generation;
+                }
+                if (event.HandleB.Index < mBodies.size() && mBodies[event.HandleB.Index].bIsActive) {
+                    event.HandleB.Generation = mBodies[event.HandleB.Index].Generation;
+                }
+                event.ContactNormal = Math::Vector2f(0, 0);
+                event.Penetration   = 0.0f;
+                event.bIsTrigger    = true;
+                mTriggerExitEvents.emplace_back(event);
+            }
+        }
+
+        mPreviousCollisionPairs = std::move(currentCollisionPairs);
+        mPreviousTriggerPairs   = std::move(currentTriggerPairs);
     }
 
     // ============== Internal Access ==============

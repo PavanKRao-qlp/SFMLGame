@@ -6,6 +6,13 @@
 
 namespace Umbra {
 
+    /// @brief Bitmask-based collision filter (Box2D-style)
+    /// Two bodies A,B collide only if (A.Category & B.Mask) && (B.Category & A.Mask)
+    struct CollisionFilter {
+        uint16 CategoryBits = 0x0001; // What this body IS (default: layer 0)
+        uint16 MaskBits     = 0xFFFF; // What this body collides WITH (default: all)
+    };
+
     /// @brief Definition used to create a physics body
     struct BodyDef {
         Math::Vector2f Position = Math::Vector2f(0, 0);
@@ -23,6 +30,8 @@ namespace Umbra {
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic bodies are moved by game code
         bool bCanSleep          = true;
+        bool bIsTrigger         = false; // Trigger bodies detect overlap but skip physical response
+        CollisionFilter Filter;
         void* UserData          = nullptr; // Opaque pointer (can store EntityID)
     };
 
@@ -75,7 +84,11 @@ namespace Umbra {
         bool bIsActive          = true;
         // If true, this body is allowed to sleep when stationary
         // Set to false for bodies that should always be active (player, etc.)
-        bool bCanSleep = true;
+        bool bCanSleep  = true;
+        bool bIsTrigger = false; // Trigger bodies detect overlap but skip solver
+
+        // Collision filtering
+        CollisionFilter Filter;
 
         // Shape
         ShapeData BodyShape;

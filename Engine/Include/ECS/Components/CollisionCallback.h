@@ -14,6 +14,10 @@ namespace Umbra {
         Callback OnCollisionEnter;
         Callback OnCollisionStay;
         ExitCallback OnCollisionExit;
+
+        Callback OnTriggerEnter;
+        Callback OnTriggerStay;
+        ExitCallback OnTriggerExit;
     };
 
 } // namespace Umbra

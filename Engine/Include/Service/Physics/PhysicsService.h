@@ -72,6 +72,8 @@ namespace Umbra {
         float GetCoefOfRestitution(BodyHandle _handle) const;
         float GetStaticFriction(BodyHandle _handle) const;
         float GetDynamicFriction(BodyHandle _handle) const;
+        CollisionFilter GetCollisionFilter(BodyHandle _handle) const;
+        bool IsTrigger(BodyHandle _handle) const;
 
         // ============== Body State (Write) ==============
 
@@ -87,6 +89,8 @@ namespace Umbra {
         void SetUserData(BodyHandle _handle, void* _userData);
         void SetKinematic(BodyHandle _handle, bool _bIsKinematic);
         void SetAffectedByGravity(BodyHandle _handle, bool _bAffected);
+        void SetCollisionFilter(BodyHandle _handle, const CollisionFilter& _filter);
+        void SetTrigger(BodyHandle _handle, bool _bIsTrigger);
 
         // ============== Force Application ==============
 
@@ -134,6 +138,15 @@ namespace Umbra {
 
         /// @brief Returns collision pairs that ended this frame
         const Vector<CollisionEvent>& GetCollisionExitEvents() const;
+
+        /// @brief Returns trigger events that started this frame
+        const Vector<CollisionEvent>& GetTriggerEnterEvents() const;
+
+        /// @brief Returns trigger events that persisted from last frame
+        const Vector<CollisionEvent>& GetTriggerStayEvents() const;
+
+        /// @brief Returns trigger pairs that ended this frame
+        const Vector<CollisionEvent>& GetTriggerExitEvents() const;
 
         // ============== Spatial Queries ==============
 
@@ -199,6 +212,7 @@ namespace Umbra {
             const PhysicsBodyData& _body, float& _outDistance, Math::Vector2f& _outNormal) const;
 
         static uint64 MakeCollisionPairKey(uint32 _indexA, uint32 _indexB);
+        static bool ShouldCollide(const PhysicsBodyData& _a, const PhysicsBodyData& _b);
         void CategorizeCollisionEvents();
 
     private:
@@ -222,6 +236,12 @@ namespace Umbra {
         Vector<CollisionEvent> mCollisionEnterEvents;
         Vector<CollisionEvent> mCollisionStayEvents;
         Vector<CollisionEvent> mCollisionExitEvents;
+
+        // Trigger event tracking (enter/stay/exit)
+        Set<uint64> mPreviousTriggerPairs;
+        Vector<CollisionEvent> mTriggerEnterEvents;
+        Vector<CollisionEvent> mTriggerStayEvents;
+        Vector<CollisionEvent> mTriggerExitEvents;
     };
 
     // ============== Template Implementations ==============

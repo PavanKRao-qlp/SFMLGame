@@ -8,6 +8,7 @@ namespace Umbra {
     public:
         // virtual Math::Bounds2D GetBoundingBox() = 0;
         Math::Vector2f Offset;
+        bool bIsTrigger = false; // Trigger colliders detect overlap but skip physical response
     };
 
 
