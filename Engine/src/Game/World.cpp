@@ -35,7 +35,6 @@ namespace Umbra {
 
         // Initialize Physics Service Layer
         PhysicsServiceConfig physicsConfig;
-        physicsConfig.Gravity = Math::Vector2f(0.0f, -9.8f);
         mPhysicsService       = std::make_unique<PhysicsService>(physicsConfig);
         mPhysicsSyncSystem    = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
 
