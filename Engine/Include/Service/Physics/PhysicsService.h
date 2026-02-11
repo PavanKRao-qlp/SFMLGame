@@ -126,6 +126,38 @@ namespace Umbra {
         /// @brief Returns the list of collisions detected during the last Step()
         const Vector<CollisionDef>& GetCollisions() const;
 
+        /// @brief Returns collision events that started this frame
+        const Vector<CollisionEvent>& GetCollisionEnterEvents() const;
+
+        /// @brief Returns collision events that persisted from last frame
+        const Vector<CollisionEvent>& GetCollisionStayEvents() const;
+
+        /// @brief Returns collision pairs that ended this frame
+        const Vector<CollisionEvent>& GetCollisionExitEvents() const;
+
+        // ============== Spatial Queries ==============
+
+        /// @brief Tests if a world-space point is inside any body's shape
+        /// @param _point World-space point to test
+        /// @return Handle to the first body found, or BodyHandle::Invalid() if none
+        BodyHandle PointQuery(Math::Vector2f _point) const;
+
+        /// @brief Casts a ray and returns the closest hit
+        /// @param _origin Ray origin in world space
+        /// @param _direction Ray direction (will be normalized internally)
+        /// @param _maxDistance Maximum ray distance
+        /// @param _hit Output hit result
+        /// @return True if the ray hit a body
+        bool Raycast(Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance, RaycastHit& _hit) const;
+
+        /// @brief Casts a ray and returns all hits sorted by distance
+        /// @param _origin Ray origin in world space
+        /// @param _direction Ray direction (will be normalized internally)
+        /// @param _maxDistance Maximum ray distance
+        /// @return Vector of all hits sorted by distance (nearest first)
+        Vector<RaycastHit> RaycastAll(
+            Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance) const;
+
         // ============== Internal Access (for sync system) ==============
 
         /// @brief Gets direct access to body data (use with caution)
@@ -162,6 +194,13 @@ namespace Umbra {
         PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle);
         const PhysicsBodyData* GetBodyDataInternal(BodyHandle _handle) const;
 
+        bool PointInBody(Math::Vector2f _point, const PhysicsBodyData& _body) const;
+        bool RaycastBody(Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance,
+            const PhysicsBodyData& _body, float& _outDistance, Math::Vector2f& _outNormal) const;
+
+        static uint64 MakeCollisionPairKey(uint32 _indexA, uint32 _indexB);
+        void CategorizeCollisionEvents();
+
     private:
         PhysicsServiceConfig mConfig;
 
@@ -177,6 +216,12 @@ namespace Umbra {
         DynamicAABBTree mBroadphaseTree;
         uint32 mBroadphaseChecks    = 0;
         uint32 mBroadphasePairCount = 0;
+
+        // Collision event tracking (enter/stay/exit)
+        Set<uint64> mPreviousCollisionPairs;
+        Vector<CollisionEvent> mCollisionEnterEvents;
+        Vector<CollisionEvent> mCollisionStayEvents;
+        Vector<CollisionEvent> mCollisionExitEvents;
     };
 
     // ============== Template Implementations ==============

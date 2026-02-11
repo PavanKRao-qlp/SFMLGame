@@ -117,21 +117,25 @@ Entity Component System architecture for game object management.
 | BoundingVolumeAABB    | Implemented | AABB for broadphase               |
 | LifeTimeComponent     | Implemented | Entity lifetime management        |
 | TagComponent          | Implemented | String tag identification         |
+| CollisionCallbackComponent| Implemented | Enter/Stay/Exit collision callbacks |
+| RigidbodyHandleComponent| Implemented | Bridge to PhysicsService via handle |
 | CollisionEventComponent| Deprecated | Event-based collision (removed)  |
 
 #### Built-in Systems
-| System               | Status      | Phase       | Description                |
-|----------------------|-------------|-------------|----------------------------|
-| RenderSystem         | Implemented | Render      | Sprite rendering           |
-| PhysicsSystem        | Implemented | Simulation  | Physics simulation         |
-| CameraSystem         | Implemented | PreRender   | Camera view management     |
-| LifeTimeSystem       | Implemented | FrameEnd    | Entity destruction by time |
-| CollisionDetectionSystem | Deprecated | - | Old collision (removed)   |
-| CollisionEventResolverSystem | Deprecated | - | Event collision (removed)|
-| AnimationSystem      | Planned     | Simulation  | Sprite animation           |
-| ParticleSystem       | Planned     | Simulation  | Particle effects           |
-| AudioSystem          | Planned     | Simulation  | Spatial audio              |
-| ScriptSystem         | Planned     | Simulation  | Scripting support          |
+| System               | Status      | Phase       | Pri | Description                |
+|----------------------|-------------|-------------|-----|----------------------------|
+| RenderSystem         | Implemented | Render      | 0   | Sprite rendering           |
+| PhysicsSystem        | Implemented | Simulation  | 0   | Legacy physics simulation  |
+| PhysicsSyncSystem    | Implemented | Simulation  | 10  | ECS ↔ PhysicsService sync  |
+| CollisionEventDispatchSystem | Implemented | Simulation | 20 | Dispatches enter/stay/exit callbacks |
+| CameraSystem         | Implemented | PreRender   | 0   | Camera view management     |
+| LifeTimeSystem       | Implemented | FrameEnd    | -   | Entity destruction by time |
+| CollisionDetectionSystem | Deprecated | - | -   | Old collision (removed)   |
+| CollisionEventResolverSystem | Deprecated | - | - | Event collision (removed)|
+| AnimationSystem      | Planned     | Simulation  | -   | Sprite animation           |
+| ParticleSystem       | Planned     | Simulation  | -   | Particle effects           |
+| AudioSystem          | Planned     | Simulation  | -   | Spatial audio              |
+| ScriptSystem         | Planned     | Simulation  | -   | Scripting support          |
 
 ---
 
@@ -154,13 +158,20 @@ Engine services and subsystems.
 #### Physics Service
 | Class                     | Status      | Description                     |
 |---------------------------|-------------|---------------------------------|
-| CollisionDetector         | Implemented | Broad/narrow phase detection    |
-| ContactResolver           | Implemented | Impulse-based resolution        |
-| IBroadphaseResolver       | Implemented | Broadphase interface            |
-| BruteForceBroadphaseResolver | Implemented | O(n^2) broadphase           |
-| Collision                 | Implemented | Collision data structure        |
-| ContactPoint              | Implemented | Contact point data              |
-| PhysicsWorldConfig        | Implemented | Physics configuration           |
+| PhysicsService            | Implemented | Handle-based physics simulation |
+| PhysicsServiceConfig      | Implemented | Physics configuration           |
+| PhysicsBodyData           | Implemented | Internal body storage           |
+| BodyHandle                | Implemented | Generational index handle       |
+| BodyDef                   | Implemented | Body creation definition        |
+| CollisionDef              | Implemented | Per-frame collision data        |
+| CollisionEvent            | Implemented | Enter/stay/exit event data      |
+| CollisionQuery            | Implemented | SAT narrow-phase detection      |
+| DynamicAABBTree           | Implemented | Broadphase acceleration tree    |
+| RaycastHit                | Implemented | Ray query result                |
+| CollisionDetector         | Implemented | Legacy broad/narrow phase       |
+| ContactResolver           | Implemented | Legacy impulse resolution       |
+| IBroadphaseResolver       | Implemented | Legacy broadphase interface     |
+| BruteForceBroadphaseResolver | Implemented | Legacy O(n^2) broadphase    |
 | IForceGenerator           | Implemented | Force generator interface       |
 | ITorqueGenerator          | Implemented | Torque generator interface      |
 | SpringForceGenerator      | Implemented | Spring physics                  |

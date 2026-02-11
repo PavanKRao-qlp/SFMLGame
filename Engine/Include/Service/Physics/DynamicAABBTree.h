@@ -43,6 +43,15 @@ namespace Umbra {
         template <typename Func>
         void Query(const Math::Bounds2D& _aabb, Func&& _callback) const;
 
+        /// @brief Traverses the tree testing ray-AABB intersection and invokes callback for each leaf hit
+        /// @param _origin Ray origin
+        /// @param _invDirection Inverse of ray direction (1/dir.x, 1/dir.y)
+        /// @param _maxDistance Maximum ray distance
+        /// @param _callback Called with proxy ID for each leaf whose AABB the ray intersects
+        template <typename Func>
+        void RayCast(const Math::Vector2f& _origin, const Math::Vector2f& _invDirection, float _maxDistance,
+            Func&& _callback) const;
+
         // ============== Read-only Accessors ==============
 
         int32 GetRootNodeId() const;
@@ -100,6 +109,37 @@ namespace Umbra {
             const AABBTreeNode& node = mNodes[nodeId];
 
             if (node.Aabb.Intersects(_aabb)) {
+                if (node.IsLeaf()) {
+                    _callback(nodeId);
+                } else {
+                    stack.push(node.Left);
+                    stack.push(node.Right);
+                }
+            }
+        }
+    }
+
+    template <typename Func>
+    void DynamicAABBTree::RayCast(const Math::Vector2f& _origin, const Math::Vector2f& _invDirection,
+        float _maxDistance, Func&& _callback) const {
+        if (mRoot == NullNode) {
+            return;
+        }
+
+        Stack<int32> stack;
+        stack.push(mRoot);
+
+        while (!stack.empty()) {
+            int32 nodeId = stack.top();
+            stack.pop();
+
+            if (nodeId == NullNode) {
+                continue;
+            }
+
+            const AABBTreeNode& node = mNodes[nodeId];
+
+            if (node.Aabb.RayIntersects(_origin, _invDirection, _maxDistance)) {
                 if (node.IsLeaf()) {
                     _callback(nodeId);
                 } else {

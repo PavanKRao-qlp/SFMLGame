@@ -29,4 +29,18 @@ namespace Umbra {
         Vector<ContactDef> contacts;
     };
 
+    struct CollisionEvent {
+        BodyHandle HandleA;
+        BodyHandle HandleB;
+        Math::Vector2f ContactNormal; // Zero for exit events
+        float Penetration = 0.0f;    // Zero for exit events
+    };
+
+    struct RaycastHit {
+        BodyHandle Handle;
+        Math::Vector2f Point;   // World-space hit point
+        Math::Vector2f Normal;  // Surface normal at hit point
+        float Distance = 0.0f;  // Distance along ray from origin
+    };
+
 } // namespace Umbra

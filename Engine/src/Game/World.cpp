@@ -1,6 +1,7 @@
 #include "Game/World.h"
 
 #include "Core/AppWindow.h"
+#include "ECS/Components/CollisionCallback.h"
 #include "ECS/Components/LifeTime.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
@@ -18,6 +19,7 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<CircleColliderComponent>();
         mWorldRegister->RegisterComponent<RigidbodyHandleComponent>();
         mWorldRegister->RegisterComponent<LifeTimeComponent>();
+        mWorldRegister->RegisterComponent<CollisionCallbackComponent>();
 
         IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
 
@@ -42,6 +44,10 @@ namespace Umbra {
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
         // PhysicsSyncSystem runs after the old PhysicsSystem (lower priority = runs later)
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
+
+        // CollisionEventDispatchSystem runs after PhysicsSyncSystem
+        mCollisionEventDispatchSystem = std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, 20, mCollisionEventDispatchSystem);
     }
 
     World::World() {

@@ -1,6 +1,7 @@
 #pragma once
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/CameraSystem.h"
+#include "ECS/Systems/CollisionEventDispatchSystem.h"
 #include "ECS/Systems/PhysicsSyncSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/RenderSystem.h"
@@ -98,6 +99,7 @@ namespace Umbra {
         SharedPtr<CameraSystem> mCameraSystem;
         SharedPtr<PhysicsSystem> mPhysicsSystem;
         SharedPtr<PhysicsSyncSystem> mPhysicsSyncSystem;
+        SharedPtr<CollisionEventDispatchSystem> mCollisionEventDispatchSystem;
 
         // Physics Service Layer
         UniquePtr<PhysicsService> mPhysicsService;

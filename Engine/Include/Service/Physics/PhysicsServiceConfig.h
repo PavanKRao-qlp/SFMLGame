@@ -6,7 +6,7 @@ namespace Umbra {
 
     /// @brief Configuration for the physics service
     struct PhysicsServiceConfig {
-        Math::Vector2f Gravity              = Math::Vector2f(0.0f, -9.8f);
+        Math::Vector2f Gravity              = Math::Vector2f(0.0f, -98.0f);
         float LinearDamping                 = 0.975f; // Global damping applied to all bodies
         float AngularDamping                = 0.975f; // Global angular damping
         int VelocityIterations              = 8; // Solver iterations for velocity

@@ -91,6 +91,9 @@ namespace Umbra {
 
         // 11. Sleep or Wake bodies
         UpdateSleepingBodies(_deltaTime);
+
+        // 12. Categorize collision events (enter/stay/exit)
+        CategorizeCollisionEvents();
     }
 
     void PhysicsService::IntegrateForces(float _deltaTime) {
@@ -842,6 +845,70 @@ namespace Umbra {
         return mCollisions;
     }
 
+    const Vector<CollisionEvent>& PhysicsService::GetCollisionEnterEvents() const {
+        return mCollisionEnterEvents;
+    }
+
+    const Vector<CollisionEvent>& PhysicsService::GetCollisionStayEvents() const {
+        return mCollisionStayEvents;
+    }
+
+    const Vector<CollisionEvent>& PhysicsService::GetCollisionExitEvents() const {
+        return mCollisionExitEvents;
+    }
+
+    uint64 PhysicsService::MakeCollisionPairKey(uint32 _indexA, uint32 _indexB) {
+        uint32 lo = _indexA < _indexB ? _indexA : _indexB;
+        uint32 hi = _indexA < _indexB ? _indexB : _indexA;
+        return (static_cast<uint64>(lo) << 32) | static_cast<uint64>(hi);
+    }
+
+    void PhysicsService::CategorizeCollisionEvents() {
+        mCollisionEnterEvents.clear();
+        mCollisionStayEvents.clear();
+        mCollisionExitEvents.clear();
+
+        Set<uint64> currentPairs;
+
+        for (const CollisionDef& collision : mCollisions) {
+            uint64 key = MakeCollisionPairKey(collision.handleA.Index, collision.handleB.Index);
+            currentPairs.insert(key);
+
+            CollisionEvent event;
+            event.HandleA       = collision.handleA;
+            event.HandleB       = collision.handleB;
+            event.ContactNormal = collision.contactNormal;
+            event.Penetration   = collision.penetration;
+
+            if (mPreviousCollisionPairs.find(key) != mPreviousCollisionPairs.end()) {
+                mCollisionStayEvents.emplace_back(event);
+            } else {
+                mCollisionEnterEvents.emplace_back(event);
+            }
+        }
+
+        // Pairs that were colliding last frame but not this frame → Exit
+        for (uint64 prevKey : mPreviousCollisionPairs) {
+            if (currentPairs.find(prevKey) == currentPairs.end()) {
+                CollisionEvent event;
+                event.HandleA.Index      = static_cast<uint32>(prevKey >> 32);
+                event.HandleB.Index      = static_cast<uint32>(prevKey & 0xFFFFFFFF);
+                // Reconstruct generations from current body data if still valid
+                if (event.HandleA.Index < mBodies.size() && mBodies[event.HandleA.Index].bIsActive) {
+                    event.HandleA.Generation = mBodies[event.HandleA.Index].Generation;
+                }
+                if (event.HandleB.Index < mBodies.size() && mBodies[event.HandleB.Index].bIsActive) {
+                    event.HandleB.Generation = mBodies[event.HandleB.Index].Generation;
+                }
+                event.ContactNormal = Math::Vector2f(0, 0);
+                event.Penetration   = 0.0f;
+                mCollisionExitEvents.emplace_back(event);
+            }
+        }
+
+        mPreviousCollisionPairs = std::move(currentPairs);
+    }
+
     // ============== Internal Access ==============
 
     PhysicsBodyData* PhysicsService::GetBodyData(BodyHandle _handle) {
@@ -883,6 +950,265 @@ namespace Umbra {
             return nullptr;
         }
         return &mBodies[_handle.Index];
+    }
+
+    // ============== Spatial Queries ==============
+
+    bool PhysicsService::PointInBody(Math::Vector2f _point, const PhysicsBodyData& _body) const {
+        if (_body.BodyShape.IsCircle()) {
+            float r  = _body.BodyShape.GetCircle().GetRadius();
+            float dx = _point.x - _body.Position.x;
+            float dy = _point.y - _body.Position.y;
+            return (dx * dx + dy * dy) <= (r * r);
+        }
+
+        if (_body.BodyShape.IsBox()) {
+            // Transform point into body-local space (undo rotation)
+            float dx = _point.x - _body.Position.x;
+            float dy = _point.y - _body.Position.y;
+            float cosA = Math::Cos(-_body.Angle);
+            float sinA = Math::Sin(-_body.Angle);
+            float localX = dx * cosA - dy * sinA;
+            float localY = dx * sinA + dy * cosA;
+
+            Math::Vector2f halfSize = _body.BodyShape.GetBox().GetSize() * 0.5f;
+            return Math::Abs(localX) <= halfSize.x && Math::Abs(localY) <= halfSize.y;
+        }
+
+        return false;
+    }
+
+    bool PhysicsService::RaycastBody(Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance,
+        const PhysicsBodyData& _body, float& _outDistance, Math::Vector2f& _outNormal) const {
+
+        if (_body.BodyShape.IsCircle()) {
+            float r  = _body.BodyShape.GetCircle().GetRadius();
+            float dx = _origin.x - _body.Position.x;
+            float dy = _origin.y - _body.Position.y;
+
+            float a    = Math::Vector2f::Dot(_direction, _direction);
+            Math::Vector2f d(dx, dy);
+            float b    = 2.0f * Math::Vector2f::Dot(d, _direction);
+            float c    = Math::Vector2f::Dot(d, d) - r * r;
+            float disc = b * b - 4.0f * a * c;
+
+            if (disc < 0.0f) {
+                return false;
+            }
+
+            float sqrtDisc = Math::Sqrt(disc);
+            float t = (-b - sqrtDisc) / (2.0f * a);
+
+            // If the near root is behind us, try the far root (origin inside circle)
+            if (t < 0.0f) {
+                t = (-b + sqrtDisc) / (2.0f * a);
+            }
+
+            if (t < 0.0f || t > _maxDistance) {
+                return false;
+            }
+
+            _outDistance = t;
+            Math::Vector2f hitPoint = _origin + _direction * t;
+            _outNormal = hitPoint - _body.Position;
+            _outNormal.Normalize();
+            return true;
+        }
+
+        if (_body.BodyShape.IsBox()) {
+            // Transform ray into body-local space
+            float cosA = Math::Cos(-_body.Angle);
+            float sinA = Math::Sin(-_body.Angle);
+
+            float odx = _origin.x - _body.Position.x;
+            float ody = _origin.y - _body.Position.y;
+            Math::Vector2f localOrigin(odx * cosA - ody * sinA, odx * sinA + ody * cosA);
+            Math::Vector2f localDir(_direction.x * cosA - _direction.y * sinA,
+                _direction.x * sinA + _direction.y * cosA);
+
+            Math::Vector2f halfSize = _body.BodyShape.GetBox().GetSize() * 0.5f;
+
+            // Slab intersection in local space
+            float tMin = 0.0f;
+            float tMax = _maxDistance;
+            Math::Vector2f localNormal(0, 0);
+
+            // X slab
+            if (Math::Abs(localDir.x) < Math::EPSILON) {
+                if (localOrigin.x < -halfSize.x || localOrigin.x > halfSize.x) {
+                    return false;
+                }
+            } else {
+                float invDx = 1.0f / localDir.x;
+                float t1 = (-halfSize.x - localOrigin.x) * invDx;
+                float t2 = (halfSize.x - localOrigin.x) * invDx;
+                Math::Vector2f nNear(-1, 0);
+                if (t1 > t2) {
+                    std::swap(t1, t2);
+                    nNear = Math::Vector2f(1, 0);
+                }
+                if (t1 > tMin) {
+                    tMin = t1;
+                    localNormal = nNear;
+                }
+                tMax = Math::Min(tMax, t2);
+                if (tMin > tMax) {
+                    return false;
+                }
+            }
+
+            // Y slab
+            if (Math::Abs(localDir.y) < Math::EPSILON) {
+                if (localOrigin.y < -halfSize.y || localOrigin.y > halfSize.y) {
+                    return false;
+                }
+            } else {
+                float invDy = 1.0f / localDir.y;
+                float t1 = (-halfSize.y - localOrigin.y) * invDy;
+                float t2 = (halfSize.y - localOrigin.y) * invDy;
+                Math::Vector2f nNear(0, -1);
+                if (t1 > t2) {
+                    std::swap(t1, t2);
+                    nNear = Math::Vector2f(0, 1);
+                }
+                if (t1 > tMin) {
+                    tMin = t1;
+                    localNormal = nNear;
+                }
+                tMax = Math::Min(tMax, t2);
+                if (tMin > tMax) {
+                    return false;
+                }
+            }
+
+            if (tMin < 0.0f) {
+                return false;
+            }
+
+            _outDistance = tMin;
+
+            // Rotate normal back to world space
+            float cosR = Math::Cos(_body.Angle);
+            float sinR = Math::Sin(_body.Angle);
+            _outNormal = Math::Vector2f(
+                localNormal.x * cosR - localNormal.y * sinR,
+                localNormal.x * sinR + localNormal.y * cosR);
+            return true;
+        }
+
+        return false;
+    }
+
+    BodyHandle PhysicsService::PointQuery(Math::Vector2f _point) const {
+        // Create a tiny AABB at the point for broadphase query
+        Math::Bounds2D pointBounds(_point, Math::Vector2f(0.01f, 0.01f));
+
+        BodyHandle result = BodyHandle::Invalid();
+        mBroadphaseTree.Query(pointBounds, [&](int32 _proxyId) {
+            if (result.IsValid()) {
+                return; // Already found one
+            }
+
+            uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+            if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
+                return;
+            }
+
+            const PhysicsBodyData& body = mBodies[bodyIndex];
+            if (PointInBody(_point, body)) {
+                result.Index      = bodyIndex;
+                result.Generation = body.Generation;
+            }
+        });
+
+        return result;
+    }
+
+    bool PhysicsService::Raycast(
+        Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance, RaycastHit& _hit) const {
+        // Normalize direction
+        float dirLen = _direction.Magnitude();
+        if (dirLen < Math::EPSILON) {
+            return false;
+        }
+        _direction = _direction * (1.0f / dirLen);
+
+        Math::Vector2f invDir(
+            Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
+            Math::Abs(_direction.y) > Math::EPSILON ? 1.0f / _direction.y : 1e18f);
+
+        float closestDist = _maxDistance;
+        bool bHit         = false;
+
+        mBroadphaseTree.RayCast(
+            _origin, invDir, _maxDistance, [&](int32 _proxyId) {
+                uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+                if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
+                    return;
+                }
+
+                const PhysicsBodyData& body = mBodies[bodyIndex];
+                float dist                  = 0.0f;
+                Math::Vector2f normal;
+
+                if (RaycastBody(_origin, _direction, closestDist, body, dist, normal)) {
+                    if (dist < closestDist) {
+                        closestDist         = dist;
+                        _hit.Handle.Index      = bodyIndex;
+                        _hit.Handle.Generation = body.Generation;
+                        _hit.Point             = _origin + _direction * dist;
+                        _hit.Normal            = normal;
+                        _hit.Distance          = dist;
+                        bHit                   = true;
+                    }
+                }
+            });
+
+        return bHit;
+    }
+
+    Vector<RaycastHit> PhysicsService::RaycastAll(
+        Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance) const {
+        // Normalize direction
+        float dirLen = _direction.Magnitude();
+        if (dirLen < Math::EPSILON) {
+            return {};
+        }
+        _direction = _direction * (1.0f / dirLen);
+
+        Math::Vector2f invDir(
+            Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
+            Math::Abs(_direction.y) > Math::EPSILON ? 1.0f / _direction.y : 1e18f);
+
+        Vector<RaycastHit> hits;
+
+        mBroadphaseTree.RayCast(
+            _origin, invDir, _maxDistance, [&](int32 _proxyId) {
+                uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+                if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
+                    return;
+                }
+
+                const PhysicsBodyData& body = mBodies[bodyIndex];
+                float dist                  = 0.0f;
+                Math::Vector2f normal;
+
+                if (RaycastBody(_origin, _direction, _maxDistance, body, dist, normal)) {
+                    RaycastHit hit;
+                    hit.Handle.Index      = bodyIndex;
+                    hit.Handle.Generation = body.Generation;
+                    hit.Point             = _origin + _direction * dist;
+                    hit.Normal            = normal;
+                    hit.Distance          = dist;
+                    hits.emplace_back(hit);
+                }
+            });
+
+        // Sort by distance (nearest first)
+        std::sort(hits.begin(), hits.end(),
+            [](const RaycastHit& _a, const RaycastHit& _b) { return _a.Distance < _b.Distance; });
+
+        return hits;
     }
 
 } // namespace Umbra
