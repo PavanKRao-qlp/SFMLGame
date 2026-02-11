@@ -18,6 +18,9 @@ namespace Umbra {
         float LinearVelocitySleepThreshold  = 0.5f; // Velocity threshold under which  bodies can sleep
         float AngularVelocitySleepThreshold = 0.4f; // AngularVelocity threshold under which  bodies can sleep
         float SleepTimeThreshold            = 0.5f; // How long should a body be under threshold to sleep
+        bool bEnableCCD                     = true; // Global toggle for continuous collision detection
+        float CCDMotionThreshold            = 0.5f; // Minimum displacement (fraction of body extent) to trigger CCD
+        int CCDBoxBisectionIterations       = 8; // Bisection steps for box-box TOI
     };
 
 } // namespace Umbra

@@ -310,4 +310,203 @@ namespace Umbra::CollisionQuery {
         return 1;
     }
 
+    // ============== CCD Time-of-Impact Functions ==============
+
+    float TimeOfImpactCircleCircle(Math::Vector2f _posA0, Math::Vector2f _posA1, float _radiusA,
+        Math::Vector2f _posB, float _radiusB) {
+        // Sweep circle A from _posA0 to _posA1 against stationary circle B at _posB
+        // pA(t) = _posA0 + t * d, where d = _posA1 - _posA0
+        // Solve: |pA(t) - _posB|^2 = (rA + rB)^2
+        Math::Vector2f d    = _posA1 - _posA0;
+        Math::Vector2f f    = _posA0 - _posB;
+        float radiiSum      = _radiusA + _radiusB;
+
+        float a = Math::Vector2f::Dot(d, d);
+        float b = 2.0f * Math::Vector2f::Dot(f, d);
+        float c = Math::Vector2f::Dot(f, f) - radiiSum * radiiSum;
+
+        // Already overlapping at t=0
+        if (c <= 0.0f) {
+            return 0.0f;
+        }
+
+        // No relative motion
+        if (a < Math::EPSILON) {
+            return 1.0f;
+        }
+
+        float discriminant = b * b - 4.0f * a * c;
+        if (discriminant < 0.0f) {
+            return 1.0f; // No intersection
+        }
+
+        float sqrtDisc = Math::Sqrt(discriminant);
+        float t        = (-b - sqrtDisc) / (2.0f * a);
+
+        if (t >= 0.0f && t <= 1.0f) {
+            return t;
+        }
+        return 1.0f;
+    }
+
+    float TimeOfImpactCircleOBB(Math::Vector2f _posA0, Math::Vector2f _posA1, float _radiusA,
+        Math::Vector2f _posB, Math::Vector2f _sizeB, float _angleB) {
+        // Transform sweep into OBB-local space, expand OBB by circle radius, ray-cast center
+        float angleRad = Math::DegreeToRadian(_angleB);
+        float cosA     = Math::Cos(-angleRad);
+        float sinA     = Math::Sin(-angleRad);
+
+        // Transform circle positions into box-local space
+        Math::Vector2f d0    = _posA0 - _posB;
+        Math::Vector2f d1    = _posA1 - _posB;
+        Math::Vector2f localP0(d0.x * cosA - d0.y * sinA, d0.x * sinA + d0.y * cosA);
+        Math::Vector2f localP1(d1.x * cosA - d1.y * sinA, d1.x * sinA + d1.y * cosA);
+
+        // Ray from localP0 to localP1 in box-local space
+        Math::Vector2f localDir = localP1 - localP0;
+
+        // Expanded half-extents (box expanded by circle radius on each face)
+        Math::Vector2f halfSize = _sizeB * 0.5f + Math::Vector2f(_radiusA, _radiusA);
+
+        // Slab-method ray-box intersection
+        float tMin = 0.0f;
+        float tMax = 1.0f;
+
+        // X slab
+        if (Math::Abs(localDir.x) < Math::EPSILON) {
+            if (localP0.x < -halfSize.x || localP0.x > halfSize.x) {
+                return 1.0f;
+            }
+        } else {
+            float invDx = 1.0f / localDir.x;
+            float t1    = (-halfSize.x - localP0.x) * invDx;
+            float t2    = (halfSize.x - localP0.x) * invDx;
+            if (t1 > t2) {
+                std::swap(t1, t2);
+            }
+            tMin = Math::Max(tMin, t1);
+            tMax = Math::Min(tMax, t2);
+            if (tMin > tMax) {
+                return 1.0f;
+            }
+        }
+
+        // Y slab
+        if (Math::Abs(localDir.y) < Math::EPSILON) {
+            if (localP0.y < -halfSize.y || localP0.y > halfSize.y) {
+                return 1.0f;
+            }
+        } else {
+            float invDy = 1.0f / localDir.y;
+            float t1    = (-halfSize.y - localP0.y) * invDy;
+            float t2    = (halfSize.y - localP0.y) * invDy;
+            if (t1 > t2) {
+                std::swap(t1, t2);
+            }
+            tMin = Math::Max(tMin, t1);
+            tMax = Math::Min(tMax, t2);
+            if (tMin > tMax) {
+                return 1.0f;
+            }
+        }
+
+        // Check if already overlapping at t=0
+        if (Math::Abs(localP0.x) <= halfSize.x && Math::Abs(localP0.y) <= halfSize.y) {
+            return 0.0f;
+        }
+
+        if (tMin >= 0.0f && tMin <= 1.0f) {
+            return tMin;
+        }
+        return 1.0f;
+    }
+
+    float TimeOfImpactBoxBox(Math::Vector2f _posA0, Math::Vector2f _posA1, Math::Vector2f _sizeA, float _angleA,
+        Math::Vector2f _posB, Math::Vector2f _sizeB, float _angleB, int _bisectionIterations) {
+        // Binary search over t in [0,1]: interpolate position of box A, test overlap with SAT
+        float lo = 0.0f;
+        float hi = 1.0f;
+
+        // First check if there's overlap at t=1 (final position)
+        CollisionDef tempDef;
+        if (!TestBoxVsBoxSAT(_posA1, _sizeA, _angleA, _posB, _sizeB, _angleB, tempDef)) {
+            // Check a few intermediate samples to see if collision occurs during sweep
+            bool bFoundCollision = false;
+            for (int i = 1; i <= 4; ++i) {
+                float t              = static_cast<float>(i) / 4.0f;
+                Math::Vector2f posAt = _posA0 + (_posA1 - _posA0) * t;
+                CollisionDef sampleDef;
+                if (TestBoxVsBoxSAT(posAt, _sizeA, _angleA, _posB, _sizeB, _angleB, sampleDef)) {
+                    bFoundCollision = true;
+                    hi              = t;
+                    break;
+                }
+            }
+            if (!bFoundCollision) {
+                return 1.0f;
+            }
+        }
+
+        // Check overlap at t=0
+        CollisionDef startDef;
+        if (TestBoxVsBoxSAT(_posA0, _sizeA, _angleA, _posB, _sizeB, _angleB, startDef)) {
+            return 0.0f;
+        }
+
+        // Binary search for earliest TOI
+        for (int i = 0; i < _bisectionIterations; ++i) {
+            float mid            = (lo + hi) * 0.5f;
+            Math::Vector2f posMid = _posA0 + (_posA1 - _posA0) * mid;
+            CollisionDef midDef;
+            if (TestBoxVsBoxSAT(posMid, _sizeA, _angleA, _posB, _sizeB, _angleB, midDef)) {
+                hi = mid; // Collision at mid, search earlier
+            } else {
+                lo = mid; // No collision at mid, search later
+            }
+        }
+
+        return hi;
+    }
+
+    float ComputeTimeOfImpact(const PhysicsBodyData& _bodyA, Math::Vector2f _oldPosA,
+        const PhysicsBodyData& _bodyB, int _bisectionIterations) {
+        float angleBDeg = Math::RadianToDegree(_bodyB.Angle);
+        float angleADeg = Math::RadianToDegree(_bodyA.Angle);
+
+        if (_bodyA.BodyShape.IsCircle() && _bodyB.BodyShape.IsCircle()) {
+            return TimeOfImpactCircleCircle(_oldPosA, _bodyA.Position,
+                _bodyA.BodyShape.GetCircle().GetRadius(),
+                _bodyB.Position, _bodyB.BodyShape.GetCircle().GetRadius());
+        }
+
+        if (_bodyA.BodyShape.IsCircle() && _bodyB.BodyShape.IsBox()) {
+            return TimeOfImpactCircleOBB(_oldPosA, _bodyA.Position,
+                _bodyA.BodyShape.GetCircle().GetRadius(),
+                _bodyB.Position, _bodyB.BodyShape.GetBox().GetSize(), angleBDeg);
+        }
+
+        if (_bodyA.BodyShape.IsBox() && _bodyB.BodyShape.IsCircle()) {
+            // Sweep box A vs circle B: use circle-OBB with swapped roles
+            // Treat circle B as stationary, sweep box A as expanded circle check
+            // For simplicity, use bisection with SAT-like overlap test
+            // Actually, we can approximate: treat box A center sweeping against expanded box around circle
+            // Use bisection approach for this case too
+            float radiusB = _bodyB.BodyShape.GetCircle().GetRadius();
+            // Expand a virtual box around the circle for bisection
+            Math::Vector2f circleAsBox(radiusB * 2.0f, radiusB * 2.0f);
+            return TimeOfImpactBoxBox(_oldPosA, _bodyA.Position,
+                _bodyA.BodyShape.GetBox().GetSize(), angleADeg,
+                _bodyB.Position, circleAsBox, 0.0f, _bisectionIterations);
+        }
+
+        if (_bodyA.BodyShape.IsBox() && _bodyB.BodyShape.IsBox()) {
+            return TimeOfImpactBoxBox(_oldPosA, _bodyA.Position,
+                _bodyA.BodyShape.GetBox().GetSize(), angleADeg,
+                _bodyB.Position, _bodyB.BodyShape.GetBox().GetSize(), angleBDeg,
+                _bisectionIterations);
+        }
+
+        return 1.0f;
+    }
+
 } // namespace Umbra::CollisionQuery

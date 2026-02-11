@@ -43,5 +43,30 @@ namespace Umbra::CollisionQuery {
     /// @return
     int Clip(const Math::Vector2f& _normal, Pair<Math::Vector2f, Math::Vector2f>& _edge, float _clippingPlaneProj);
 
+    // ============== CCD Time-of-Impact Functions ==============
+
+    /// @brief Computes earliest time of impact between two moving circles
+    /// @return TOI in [0,1], where 1.0 means no collision during the sweep
+    float TimeOfImpactCircleCircle(Math::Vector2f _posA0, Math::Vector2f _posA1, float _radiusA,
+        Math::Vector2f _posB, float _radiusB);
+
+    /// @brief Computes earliest time of impact for a moving circle against a static OBB
+    /// @return TOI in [0,1], where 1.0 means no collision during the sweep
+    float TimeOfImpactCircleOBB(Math::Vector2f _posA0, Math::Vector2f _posA1, float _radiusA,
+        Math::Vector2f _posB, Math::Vector2f _sizeB, float _angleB);
+
+    /// @brief Computes earliest time of impact for a moving box against a static box via bisection
+    /// @return TOI in [0,1], where 1.0 means no collision during the sweep
+    float TimeOfImpactBoxBox(Math::Vector2f _posA0, Math::Vector2f _posA1, Math::Vector2f _sizeA, float _angleA,
+        Math::Vector2f _posB, Math::Vector2f _sizeB, float _angleB, int _bisectionIterations);
+
+    /// @brief Dispatcher that selects the correct TOI function based on body shapes
+    /// @param _bodyA The CCD body (swept from _oldPosA to its current position)
+    /// @param _oldPosA Pre-integration position of bodyA
+    /// @param _bodyB The candidate body at its current position
+    /// @param _bisectionIterations Number of bisection iterations for box-box
+    /// @return TOI in [0,1], where 1.0 means no collision during the sweep
+    float ComputeTimeOfImpact(const PhysicsBodyData& _bodyA, Math::Vector2f _oldPosA,
+        const PhysicsBodyData& _bodyB, int _bisectionIterations);
 
 } // namespace Umbra::CollisionQuery

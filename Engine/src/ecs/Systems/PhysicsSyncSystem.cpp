@@ -91,6 +91,7 @@ namespace Umbra {
         def.bAffectedByGravity = rb->bAffectedByGravity;
         def.bIsKinematic       = rb->bIsKinematic;
         def.bCanSleep          = rb->bCanSleep;
+        def.bEnableCCD         = rb->bEnableCCD;
         def.Filter             = rb->Filter;
         def.ShapeData          = ShapeData();
 

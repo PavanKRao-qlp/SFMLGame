@@ -29,6 +29,7 @@ namespace Umbra {
         bool bAffectedByGravity = true;
         bool bIsKinematic       = false; // Kinematic = moved by game code, not physics
         bool bCanSleep          = true;
+        bool bEnableCCD         = false; // Enable continuous collision detection (bullet body)
         CollisionFilter Filter;
 
         // Sync flags

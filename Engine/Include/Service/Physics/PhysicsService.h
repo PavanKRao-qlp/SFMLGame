@@ -92,6 +92,9 @@ namespace Umbra {
         void SetCollisionFilter(BodyHandle _handle, const CollisionFilter& _filter);
         void SetTrigger(BodyHandle _handle, bool _bIsTrigger);
 
+        bool IsCCDEnabled(BodyHandle _handle) const;
+        void SetCCDEnabled(BodyHandle _handle, bool _bEnable);
+
         // ============== Force Application ==============
 
         /// @brief Applies force at center of mass (no torque)
@@ -193,9 +196,11 @@ namespace Umbra {
 
     private:
         void IntegrateForces(float _deltaTime);
+        void SaveCCDState();
         void IntegrateVelocities(float _deltaTime);
         void ApplyDamping(float _deltaTime);
         void ClearForceAccumulators();
+        void PerformCCD();
         void UpdateBroadphaseProxies(float _deltaTime);
         void BroadphaseDetection();
         void NarrowPhaseDetection();

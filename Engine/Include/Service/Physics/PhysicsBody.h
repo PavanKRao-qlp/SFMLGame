@@ -31,6 +31,7 @@ namespace Umbra {
         bool bIsKinematic       = false; // Kinematic bodies are moved by game code
         bool bCanSleep          = true;
         bool bIsTrigger         = false; // Trigger bodies detect overlap but skip physical response
+        bool bEnableCCD         = false; // Enable continuous collision detection (bullet body)
         CollisionFilter Filter;
         void* UserData          = nullptr; // Opaque pointer (can store EntityID)
     };
@@ -86,6 +87,10 @@ namespace Umbra {
         // Set to false for bodies that should always be active (player, etc.)
         bool bCanSleep  = true;
         bool bIsTrigger = false; // Trigger bodies detect overlap but skip solver
+        bool bEnableCCD = false; // Continuous collision detection enabled
+
+        // CCD snapshot (pre-integration position for sweep tests)
+        Math::Vector2f CCDSavedPosition;
 
         // Collision filtering
         CollisionFilter Filter;

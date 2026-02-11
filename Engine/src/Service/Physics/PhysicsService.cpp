@@ -58,6 +58,9 @@ namespace Umbra {
         // 1. Integrate forces -> accelerations -> velocities
         IntegrateForces(_deltaTime);
 
+        // 1b. Save pre-integration positions for CCD bodies
+        SaveCCDState();
+
         // 2. Integrate velocities -> positions
         IntegrateVelocities(_deltaTime);
 
@@ -66,6 +69,9 @@ namespace Umbra {
 
         // 4. Clear force accumulators for next frame
         ClearForceAccumulators();
+
+        // 4b. Sweep CCD bodies and clamp positions to earliest TOI
+        PerformCCD();
 
         // 5. Update broadphase tree proxies
         UpdateBroadphaseProxies(_deltaTime);
@@ -169,6 +175,92 @@ namespace Umbra {
         }
     }
 
+
+    void PhysicsService::SaveCCDState() {
+        if (!mConfig.bEnableCCD) {
+            return;
+        }
+        for (auto& body : mBodies) {
+            if (!body.bIsActive || !body.bEnableCCD) {
+                continue;
+            }
+            body.CCDSavedPosition = body.Position;
+        }
+    }
+
+    void PhysicsService::PerformCCD() {
+        if (!mConfig.bEnableCCD) {
+            return;
+        }
+
+        for (uint32 i = 0; i < mBodies.size(); ++i) {
+            auto& body = mBodies[i];
+            if (!body.bIsActive || !body.bEnableCCD || body.IsStatic() || body.bIsSleeping) {
+                continue;
+            }
+
+            Math::Vector2f displacement = body.Position - body.CCDSavedPosition;
+            float displacementLen       = displacement.Magnitude();
+
+            // Compute motion threshold relative to body extent
+            float bodyExtent = 0.0f;
+            if (body.BodyShape.IsCircle()) {
+                bodyExtent = body.BodyShape.GetCircle().GetRadius() * 2.0f;
+            } else if (body.BodyShape.IsBox()) {
+                Math::Vector2f size = body.BodyShape.GetBox().GetSize();
+                bodyExtent          = Math::Min(size.x, size.y);
+            }
+            float threshold = bodyExtent * mConfig.CCDMotionThreshold;
+
+            if (displacementLen < threshold) {
+                continue; // Motion too small to need CCD
+            }
+
+            // Build swept AABB (union of AABB at old and new position)
+            body.UpdateBoundingAABB();
+            Math::Bounds2D aabbOld(body.CCDSavedPosition, body.BoundingAABB.Size);
+            Math::Bounds2D aabbNew(body.Position, body.BoundingAABB.Size);
+
+            // Union of both AABBs
+            Math::Vector2f sweepMin(
+                Math::Min(aabbOld.Min().x, aabbNew.Min().x),
+                Math::Min(aabbOld.Min().y, aabbNew.Min().y));
+            Math::Vector2f sweepMax(
+                Math::Max(aabbOld.Max().x, aabbNew.Max().x),
+                Math::Max(aabbOld.Max().y, aabbNew.Max().y));
+            Math::Vector2f sweepCenter = (sweepMin + sweepMax) * 0.5f;
+            Math::Vector2f sweepSize   = sweepMax - sweepMin;
+            Math::Bounds2D sweptAABB(sweepCenter, sweepSize);
+
+            float minTOI = 1.0f;
+
+            // Query broadphase for candidates
+            mBroadphaseTree.Query(sweptAABB, [&](int32 _proxyId) {
+                uint32 otherIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+                if (otherIndex == i) {
+                    return; // Skip self
+                }
+                if (otherIndex >= mBodies.size() || !mBodies[otherIndex].bIsActive) {
+                    return;
+                }
+                if (!ShouldCollide(body, mBodies[otherIndex])) {
+                    return;
+                }
+
+                float toi = CollisionQuery::ComputeTimeOfImpact(
+                    body, body.CCDSavedPosition, mBodies[otherIndex], mConfig.CCDBoxBisectionIterations);
+
+                if (toi < minTOI) {
+                    minTOI = toi;
+                }
+            });
+
+            // Clamp position to earliest TOI
+            if (minTOI < 1.0f) {
+                body.Position = body.CCDSavedPosition + displacement * minTOI;
+            }
+        }
+    }
 
     void PhysicsService::UpdateBroadphaseProxies(float _deltaTime) {
         for (uint32 i = 0; i < mBodies.size(); ++i) {
@@ -542,6 +634,7 @@ namespace Umbra {
         body.bIsKinematic        = _def.bIsKinematic;
         body.bCanSleep           = _def.bCanSleep;
         body.bIsTrigger          = _def.bIsTrigger;
+        body.bEnableCCD          = _def.bEnableCCD;
         body.Filter              = _def.Filter;
         body.bIsActive           = true;
         body.UserData            = _def.UserData;
@@ -788,6 +881,18 @@ namespace Umbra {
         PhysicsBodyData* body = GetBodyDataInternal(_handle);
         if (body) {
             body->bIsTrigger = _bIsTrigger;
+        }
+    }
+
+    bool PhysicsService::IsCCDEnabled(BodyHandle _handle) const {
+        const PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        return body ? body->bEnableCCD : false;
+    }
+
+    void PhysicsService::SetCCDEnabled(BodyHandle _handle, bool _bEnable) {
+        PhysicsBodyData* body = GetBodyDataInternal(_handle);
+        if (body) {
+            body->bEnableCCD = _bEnable;
         }
     }
 
