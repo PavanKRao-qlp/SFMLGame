@@ -55,6 +55,9 @@ namespace Umbra {
     // ============== Simulation ==============
 
     void PhysicsService::Step(float _deltaTime) {
+        // 0. Apply spring forces (force-based, before integration)
+        ApplySpringForces(_deltaTime);
+
         // 1. Integrate forces -> accelerations -> velocities
         IntegrateForces(_deltaTime);
 
@@ -85,14 +88,19 @@ namespace Umbra {
         // 8. Precompute constraint data (effective masses, bias) once per frame
         PrecomputeContactConstraints();
 
+        // 8b. Precompute joint constraint solver cache
+        PrecomputeConstraints(_deltaTime);
+
         // 9. Velocity solver - sequential impulse with accumulated clamping
         for (int i = 0; i < mConfig.VelocityIterations; i++) {
             ResolveContacts();
+            SolveConstraintVelocities();
         }
 
         // 10. Position correction iterations (separate from velocity)
         for (int i = 0; i < mConfig.PositionIterations; i++) {
             PositionContraction();
+            SolveConstraintPositions();
         }
 
         // 11. Sleep or Wake bodies
@@ -547,15 +555,36 @@ namespace Umbra {
                 continue;
             }
             // If one is sleeping and the other is awake and moving, wake the sleeper
-            bool bAIsAsleep = bodyA.bIsSleeping;
-            bool bBIsAsleep = bodyB.bIsSleeping;
             if (bodyA.bIsSleeping && !bodyB.bIsSleeping && !bodyB.IsStatic()) {
-                // B is awake and dynamic, wake A
                 bodyA.Wake();
             }
             if (bodyB.bIsSleeping && !bodyA.bIsSleeping && !bodyA.IsStatic()) {
-                // A is awake and dynamic, wake B
                 bodyB.Wake();
+            }
+        }
+
+        // Wake constraint partners: if one body in a constraint is awake, wake the other
+        auto wakePartner = [&](const BodyHandle& _hA, const BodyHandle& _hB) {
+            if (!IsBodyValid(_hA) || !IsBodyValid(_hB)) {
+                return;
+            }
+            PhysicsBodyData& bA = mBodies[_hA.Index];
+            PhysicsBodyData& bB = mBodies[_hB.Index];
+            if (bA.bIsSleeping && !bB.bIsSleeping && !bB.IsStatic()) {
+                bA.Wake();
+            }
+            if (bB.bIsSleeping && !bA.bIsSleeping && !bA.IsStatic()) {
+                bB.Wake();
+            }
+        };
+        for (const auto& c : mDistanceConstraints) {
+            if (c.bIsActive) {
+                wakePartner(c.HandleA, c.HandleB);
+            }
+        }
+        for (const auto& c : mHingeConstraints) {
+            if (c.bIsActive) {
+                wakePartner(c.HandleA, c.HandleB);
             }
         }
         // Update sleep timers and put bodies to sleep
@@ -677,6 +706,9 @@ namespace Umbra {
         if (body == nullptr) {
             return;
         }
+
+        // Destroy any constraints referencing this body
+        DestroyConstraintsForBody(_handle.Index);
 
         // Remove from broadphase tree before deactivating
         if (body->TreeProxyId != NullNode) {
@@ -1408,6 +1440,721 @@ namespace Umbra {
             [](const RaycastHit& _a, const RaycastHit& _b) { return _a.Distance < _b.Distance; });
 
         return hits;
+    }
+
+    // ============== Constraint Management ==============
+
+    ConstraintHandle PhysicsService::CreateSpring(const SpringDef& _def) {
+        if (!IsBodyValid(_def.BodyA)) {
+            return ConstraintHandle::Invalid();
+        }
+
+        uint32 index;
+        uint32 generation;
+        if (!mFreeSpringIndices.empty()) {
+            index = mFreeSpringIndices.back();
+            mFreeSpringIndices.pop_back();
+            generation = mSprings[index].Generation + 1;
+        } else {
+            index      = static_cast<uint32>(mSprings.size());
+            generation = 0;
+            mSprings.emplace_back();
+        }
+
+        SpringConstraintData& spring = mSprings[index];
+        spring.HandleA     = _def.BodyA;
+        spring.HandleB     = _def.BodyB;
+        spring.LocalAnchorA = _def.LocalAnchorA;
+        spring.LocalAnchorB = _def.LocalAnchorB;
+        spring.WorldAnchorB = _def.WorldAnchorB;
+        spring.Stiffness   = _def.Stiffness;
+        spring.Damping     = _def.Damping;
+        spring.RestLength  = _def.RestLength;
+        spring.bIsActive   = true;
+        spring.Generation  = generation;
+
+        // Auto-calculate rest length from initial positions if zero
+        if (spring.RestLength <= 0.0f) {
+            const PhysicsBodyData& bodyA = mBodies[_def.BodyA.Index];
+            float cA = Math::Cos(bodyA.Angle);
+            float sA = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldA = bodyA.Position + Math::Vector2f(
+                _def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
+                _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
+
+            Math::Vector2f worldB;
+            if (IsBodyValid(_def.BodyB)) {
+                const PhysicsBodyData& bodyB = mBodies[_def.BodyB.Index];
+                float cB = Math::Cos(bodyB.Angle);
+                float sB = Math::Sin(bodyB.Angle);
+                worldB = bodyB.Position + Math::Vector2f(
+                    _def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
+                    _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
+            } else {
+                worldB = _def.WorldAnchorB;
+            }
+            spring.RestLength = (worldB - worldA).Magnitude();
+        }
+
+        // Wake connected bodies
+        WakeConstraintBodies(_def.BodyA, _def.BodyB);
+
+        ConstraintHandle handle;
+        handle.Index      = index;
+        handle.Generation = generation;
+        return handle;
+    }
+
+    ConstraintHandle PhysicsService::CreateDistanceConstraint(const DistanceDef& _def) {
+        if (!IsBodyValid(_def.BodyA) || !IsBodyValid(_def.BodyB)) {
+            return ConstraintHandle::Invalid();
+        }
+
+        uint32 index;
+        uint32 generation;
+        if (!mFreeDistanceIndices.empty()) {
+            index = mFreeDistanceIndices.back();
+            mFreeDistanceIndices.pop_back();
+            generation = mDistanceConstraints[index].Generation + 1;
+        } else {
+            index      = static_cast<uint32>(mDistanceConstraints.size());
+            generation = 0;
+            mDistanceConstraints.emplace_back();
+        }
+
+        DistanceConstraintData& dc = mDistanceConstraints[index];
+        dc.HandleA      = _def.BodyA;
+        dc.HandleB      = _def.BodyB;
+        dc.LocalAnchorA = _def.LocalAnchorA;
+        dc.LocalAnchorB = _def.LocalAnchorB;
+        dc.Distance     = _def.Distance;
+        dc.ImpulseAccum = 0.0f;
+        dc.bIsActive    = true;
+        dc.Generation   = generation;
+
+        // Auto-calculate distance from initial positions if zero
+        if (dc.Distance <= 0.0f) {
+            const PhysicsBodyData& bodyA = mBodies[_def.BodyA.Index];
+            const PhysicsBodyData& bodyB = mBodies[_def.BodyB.Index];
+            float cA = Math::Cos(bodyA.Angle);
+            float sA = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldA = bodyA.Position + Math::Vector2f(
+                _def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
+                _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
+            float cB = Math::Cos(bodyB.Angle);
+            float sB = Math::Sin(bodyB.Angle);
+            Math::Vector2f worldB = bodyB.Position + Math::Vector2f(
+                _def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
+                _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
+            dc.Distance = (worldB - worldA).Magnitude();
+        }
+
+        WakeConstraintBodies(_def.BodyA, _def.BodyB);
+
+        ConstraintHandle handle;
+        handle.Index      = index;
+        handle.Generation = generation;
+        return handle;
+    }
+
+    ConstraintHandle PhysicsService::CreateHinge(const HingeDef& _def) {
+        if (!IsBodyValid(_def.BodyA) || !IsBodyValid(_def.BodyB)) {
+            return ConstraintHandle::Invalid();
+        }
+
+        uint32 index;
+        uint32 generation;
+        if (!mFreeHingeIndices.empty()) {
+            index = mFreeHingeIndices.back();
+            mFreeHingeIndices.pop_back();
+            generation = mHingeConstraints[index].Generation + 1;
+        } else {
+            index      = static_cast<uint32>(mHingeConstraints.size());
+            generation = 0;
+            mHingeConstraints.emplace_back();
+        }
+
+        HingeConstraintData& hc = mHingeConstraints[index];
+        hc.HandleA         = _def.BodyA;
+        hc.HandleB         = _def.BodyB;
+        hc.LocalAnchorA    = _def.LocalAnchorA;
+        hc.LocalAnchorB    = _def.LocalAnchorB;
+        hc.bEnableLimits   = _def.bEnableLimits;
+        hc.LowerAngle      = _def.LowerAngle;
+        hc.UpperAngle      = _def.UpperAngle;
+        hc.bEnableMotor    = _def.bEnableMotor;
+        hc.MotorSpeed      = _def.MotorSpeed;
+        hc.MaxMotorTorque  = _def.MaxMotorTorque;
+        hc.ImpulseAccum    = Math::Vector2f(0, 0);
+        hc.AngleImpulseAccum = 0.0f;
+        hc.MotorImpulseAccum = 0.0f;
+        hc.bIsActive       = true;
+        hc.Generation      = generation;
+
+        WakeConstraintBodies(_def.BodyA, _def.BodyB);
+
+        ConstraintHandle handle;
+        handle.Index      = index;
+        handle.Generation = generation;
+        return handle;
+    }
+
+    void PhysicsService::DestroyConstraint(ConstraintHandle _handle) {
+        if (!_handle.IsValid()) {
+            return;
+        }
+
+        // Check springs
+        if (_handle.Index < mSprings.size() && mSprings[_handle.Index].bIsActive
+            && mSprings[_handle.Index].Generation == _handle.Generation) {
+            mSprings[_handle.Index].bIsActive = false;
+            mFreeSpringIndices.push_back(_handle.Index);
+            return;
+        }
+
+        // Check distance constraints
+        if (_handle.Index < mDistanceConstraints.size() && mDistanceConstraints[_handle.Index].bIsActive
+            && mDistanceConstraints[_handle.Index].Generation == _handle.Generation) {
+            mDistanceConstraints[_handle.Index].bIsActive = false;
+            mFreeDistanceIndices.push_back(_handle.Index);
+            return;
+        }
+
+        // Check hinge constraints
+        if (_handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].bIsActive = false;
+            mFreeHingeIndices.push_back(_handle.Index);
+            return;
+        }
+    }
+
+    bool PhysicsService::IsConstraintValid(ConstraintHandle _handle) const {
+        if (!_handle.IsValid()) {
+            return false;
+        }
+
+        // Check all constraint types
+        if (_handle.Index < mSprings.size() && mSprings[_handle.Index].bIsActive
+            && mSprings[_handle.Index].Generation == _handle.Generation) {
+            return true;
+        }
+        if (_handle.Index < mDistanceConstraints.size() && mDistanceConstraints[_handle.Index].bIsActive
+            && mDistanceConstraints[_handle.Index].Generation == _handle.Generation) {
+            return true;
+        }
+        if (_handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            return true;
+        }
+        return false;
+    }
+
+    // ============== Constraint Getters/Setters ==============
+
+    void PhysicsService::SetSpringStiffness(ConstraintHandle _handle, float _stiffness) {
+        if (_handle.IsValid() && _handle.Index < mSprings.size() && mSprings[_handle.Index].bIsActive
+            && mSprings[_handle.Index].Generation == _handle.Generation) {
+            mSprings[_handle.Index].Stiffness = _stiffness;
+        }
+    }
+
+    void PhysicsService::SetSpringDamping(ConstraintHandle _handle, float _damping) {
+        if (_handle.IsValid() && _handle.Index < mSprings.size() && mSprings[_handle.Index].bIsActive
+            && mSprings[_handle.Index].Generation == _handle.Generation) {
+            mSprings[_handle.Index].Damping = _damping;
+        }
+    }
+
+    void PhysicsService::SetSpringRestLength(ConstraintHandle _handle, float _restLength) {
+        if (_handle.IsValid() && _handle.Index < mSprings.size() && mSprings[_handle.Index].bIsActive
+            && mSprings[_handle.Index].Generation == _handle.Generation) {
+            mSprings[_handle.Index].RestLength = _restLength;
+        }
+    }
+
+    void PhysicsService::SetHingeMotorEnabled(ConstraintHandle _handle, bool _bEnable) {
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
+            && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].bEnableMotor = _bEnable;
+        }
+    }
+
+    void PhysicsService::SetHingeMotorSpeed(ConstraintHandle _handle, float _speed) {
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
+            && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].MotorSpeed = _speed;
+        }
+    }
+
+    void PhysicsService::SetHingeMaxMotorTorque(ConstraintHandle _handle, float _maxTorque) {
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
+            && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].MaxMotorTorque = _maxTorque;
+        }
+    }
+
+    void PhysicsService::SetHingeLimitsEnabled(ConstraintHandle _handle, bool _bEnable) {
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
+            && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].bEnableLimits = _bEnable;
+        }
+    }
+
+    void PhysicsService::SetHingeLimits(ConstraintHandle _handle, float _lower, float _upper) {
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
+            && mHingeConstraints[_handle.Index].bIsActive
+            && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
+            mHingeConstraints[_handle.Index].LowerAngle = _lower;
+            mHingeConstraints[_handle.Index].UpperAngle = _upper;
+        }
+    }
+
+    // ============== Constraint Solver Implementation ==============
+
+    void PhysicsService::ApplySpringForces(float _deltaTime) {
+        for (auto& spring : mSprings) {
+            if (!spring.bIsActive) {
+                continue;
+            }
+            if (!IsBodyValid(spring.HandleA)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[spring.HandleA.Index];
+            if (bodyA.IsStatic() && bodyA.bIsKinematic) {
+                continue;
+            }
+
+            // Compute world-space anchor positions
+            float cosA = Math::Cos(bodyA.Angle);
+            float sinA = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldAnchorA = bodyA.Position + Math::Vector2f(
+                spring.LocalAnchorA.x * cosA - spring.LocalAnchorA.y * sinA,
+                spring.LocalAnchorA.x * sinA + spring.LocalAnchorA.y * cosA);
+
+            Math::Vector2f worldAnchorB;
+            PhysicsBodyData* pBodyB = nullptr;
+            if (IsBodyValid(spring.HandleB)) {
+                pBodyB = &mBodies[spring.HandleB.Index];
+                float cosB = Math::Cos(pBodyB->Angle);
+                float sinB = Math::Sin(pBodyB->Angle);
+                worldAnchorB = pBodyB->Position + Math::Vector2f(
+                    spring.LocalAnchorB.x * cosB - spring.LocalAnchorB.y * sinB,
+                    spring.LocalAnchorB.x * sinB + spring.LocalAnchorB.y * cosB);
+            } else {
+                worldAnchorB = spring.WorldAnchorB;
+            }
+
+            Math::Vector2f delta = worldAnchorB - worldAnchorA;
+            float currentLength = delta.Magnitude();
+            if (currentLength < Math::EPSILON) {
+                continue;
+            }
+
+            Math::Vector2f direction = delta * (1.0f / currentLength);
+
+            // Relative velocity along spring axis
+            Math::Vector2f velA = bodyA.Velocity;
+            Math::Vector2f velB = pBodyB ? pBodyB->Velocity : Math::Vector2f(0, 0);
+            float relVel = Math::Vector2f::Dot(velB - velA, direction);
+
+            // Hooke's law + damping: F = k * (x - x0) + c * v_rel
+            float forceMag = spring.Stiffness * (currentLength - spring.RestLength) + spring.Damping * relVel;
+            Math::Vector2f force = direction * forceMag;
+
+            // Apply force to body A (pulled toward B)
+            if (!bodyA.IsStatic() && !bodyA.bIsKinematic) {
+                if (Math::Abs(forceMag) > Math::EPSILON) {
+                    bodyA.Wake();
+                }
+                bodyA.ForceAccumulated += force;
+                Math::Vector2f rA = worldAnchorA - bodyA.Position;
+                bodyA.TorqueAccumulated += Math::Vector2f::Cross2D(rA, force);
+            }
+
+            // Apply opposite force to body B
+            if (pBodyB && !pBodyB->IsStatic() && !pBodyB->bIsKinematic) {
+                if (Math::Abs(forceMag) > Math::EPSILON) {
+                    pBodyB->Wake();
+                }
+                pBodyB->ForceAccumulated -= force;
+                Math::Vector2f rB = worldAnchorB - pBodyB->Position;
+                pBodyB->TorqueAccumulated -= Math::Vector2f::Cross2D(rB, force);
+            }
+        }
+    }
+
+    void PhysicsService::PrecomputeConstraints(float _deltaTime) {
+        float invDt = _deltaTime > 0.0f ? 1.0f / _deltaTime : 0.0f;
+        const float baumgarte = 0.2f;
+
+        // Precompute distance constraints
+        for (auto& dc : mDistanceConstraints) {
+            if (!dc.bIsActive || !IsBodyValid(dc.HandleA) || !IsBodyValid(dc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[dc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[dc.HandleB.Index];
+
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
+            // Compute lever arms in world space
+            float cosA = Math::Cos(bodyA.Angle);
+            float sinA = Math::Sin(bodyA.Angle);
+            dc.rA = Math::Vector2f(
+                dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
+                dc.LocalAnchorA.x * sinA + dc.LocalAnchorA.y * cosA);
+
+            float cosB = Math::Cos(bodyB.Angle);
+            float sinB = Math::Sin(bodyB.Angle);
+            dc.rB = Math::Vector2f(
+                dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
+                dc.LocalAnchorB.x * sinB + dc.LocalAnchorB.y * cosB);
+
+            Math::Vector2f worldA = bodyA.Position + dc.rA;
+            Math::Vector2f worldB = bodyB.Position + dc.rB;
+            Math::Vector2f delta = worldB - worldA;
+            float currentDist = delta.Magnitude();
+
+            if (currentDist > Math::EPSILON) {
+                dc.Axis = delta * (1.0f / currentDist);
+            } else {
+                dc.Axis = Math::Vector2f(1, 0);
+            }
+
+            // Effective mass along constraint axis
+            float rACrossN = Math::Vector2f::Cross2D(dc.rA, dc.Axis);
+            float rBCrossN = Math::Vector2f::Cross2D(dc.rB, dc.Axis);
+            float denom = invMassA + invMassB + rACrossN * rACrossN * invInertiaA
+                        + rBCrossN * rBCrossN * invInertiaB;
+            dc.EffectiveMass = denom > 0.0f ? 1.0f / denom : 0.0f;
+
+            // Baumgarte position correction bias
+            dc.Bias = baumgarte * invDt * (currentDist - dc.Distance);
+
+            // Reset accumulated impulse each frame (no warm-starting for simplicity)
+            dc.ImpulseAccum = 0.0f;
+        }
+
+        // Precompute hinge constraints
+        for (auto& hc : mHingeConstraints) {
+            if (!hc.bIsActive || !IsBodyValid(hc.HandleA) || !IsBodyValid(hc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[hc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[hc.HandleB.Index];
+
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
+            // Compute lever arms
+            float cosA = Math::Cos(bodyA.Angle);
+            float sinA = Math::Sin(bodyA.Angle);
+            hc.rA = Math::Vector2f(
+                hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
+                hc.LocalAnchorA.x * sinA + hc.LocalAnchorA.y * cosA);
+
+            float cosB = Math::Cos(bodyB.Angle);
+            float sinB = Math::Sin(bodyB.Angle);
+            hc.rB = Math::Vector2f(
+                hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
+                hc.LocalAnchorB.x * sinB + hc.LocalAnchorB.y * cosB);
+
+            // 2x2 effective mass matrix K for point constraint
+            // K = [invMA + invMB + rAy^2*invIA + rBy^2*invIB,   -rAx*rAy*invIA - rBx*rBy*invIB]
+            //     [-rAx*rAy*invIA - rBx*rBy*invIB,               invMA + invMB + rAx^2*invIA + rBx^2*invIB]
+            float totalInvMass = invMassA + invMassB;
+            hc.Kxx = totalInvMass + hc.rA.y * hc.rA.y * invInertiaA + hc.rB.y * hc.rB.y * invInertiaB;
+            hc.Kxy = -hc.rA.x * hc.rA.y * invInertiaA - hc.rB.x * hc.rB.y * invInertiaB;
+            hc.Kyx = hc.Kxy;
+            hc.Kyy = totalInvMass + hc.rA.x * hc.rA.x * invInertiaA + hc.rB.x * hc.rB.x * invInertiaB;
+
+            // Angular effective mass (for limits and motor)
+            float angularInvMass = invInertiaA + invInertiaB;
+            hc.AngleEffectiveMass = angularInvMass > 0.0f ? 1.0f / angularInvMass : 0.0f;
+
+            // Position error bias
+            Math::Vector2f posError = (bodyB.Position + hc.rB) - (bodyA.Position + hc.rA);
+            hc.PositionBias = posError * (baumgarte * invDt);
+
+            // Reset accumulators
+            hc.ImpulseAccum      = Math::Vector2f(0, 0);
+            hc.AngleImpulseAccum = 0.0f;
+            hc.MotorImpulseAccum = 0.0f;
+        }
+    }
+
+    void PhysicsService::SolveConstraintVelocities() {
+        // Solve distance constraints
+        for (auto& dc : mDistanceConstraints) {
+            if (!dc.bIsActive || !IsBodyValid(dc.HandleA) || !IsBodyValid(dc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[dc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[dc.HandleB.Index];
+
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
+            // Compute relative velocity at anchor points along constraint axis
+            Math::Vector2f velA = bodyA.Velocity + Math::Vector2f(-dc.rA.y, dc.rA.x) * bodyA.AngularVelocity;
+            Math::Vector2f velB = bodyB.Velocity + Math::Vector2f(-dc.rB.y, dc.rB.x) * bodyB.AngularVelocity;
+            float relVel = Math::Vector2f::Dot(velB - velA, dc.Axis);
+
+            float lambda = dc.EffectiveMass * -(relVel + dc.Bias);
+            dc.ImpulseAccum += lambda;
+
+            Math::Vector2f impulse = dc.Axis * lambda;
+            bodyA.Velocity -= impulse * invMassA;
+            bodyA.AngularVelocity -= Math::Vector2f::Cross2D(dc.rA, impulse) * invInertiaA;
+            bodyB.Velocity += impulse * invMassB;
+            bodyB.AngularVelocity += Math::Vector2f::Cross2D(dc.rB, impulse) * invInertiaB;
+        }
+
+        // Solve hinge constraints
+        for (auto& hc : mHingeConstraints) {
+            if (!hc.bIsActive || !IsBodyValid(hc.HandleA) || !IsBodyValid(hc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[hc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[hc.HandleB.Index];
+
+            float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
+            float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+            float invInertiaB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseInertia;
+
+            // === Point constraint (2 DOF) ===
+            Math::Vector2f velA = bodyA.Velocity + Math::Vector2f(-hc.rA.y, hc.rA.x) * bodyA.AngularVelocity;
+            Math::Vector2f velB = bodyB.Velocity + Math::Vector2f(-hc.rB.y, hc.rB.x) * bodyB.AngularVelocity;
+            Math::Vector2f Cdot = velB - velA;
+
+            // Add position bias
+            Math::Vector2f rhs = Cdot + hc.PositionBias;
+
+            // Solve K * lambda = -rhs using Cramer's rule for 2x2
+            float det = hc.Kxx * hc.Kyy - hc.Kxy * hc.Kyx;
+            Math::Vector2f lambda;
+            if (Math::Abs(det) > Math::EPSILON) {
+                float invDet = 1.0f / det;
+                lambda.x = -(hc.Kyy * rhs.x - hc.Kxy * rhs.y) * invDet;
+                lambda.y = -(-hc.Kyx * rhs.x + hc.Kxx * rhs.y) * invDet;
+            } else {
+                lambda = Math::Vector2f(0, 0);
+            }
+
+            hc.ImpulseAccum += lambda;
+
+            bodyA.Velocity -= lambda * invMassA;
+            bodyA.AngularVelocity -= Math::Vector2f::Cross2D(hc.rA, lambda) * invInertiaA;
+            bodyB.Velocity += lambda * invMassB;
+            bodyB.AngularVelocity += Math::Vector2f::Cross2D(hc.rB, lambda) * invInertiaB;
+
+            // === Motor ===
+            if (hc.bEnableMotor) {
+                float angVelError = (bodyB.AngularVelocity - bodyA.AngularVelocity) - hc.MotorSpeed;
+                float motorImpulse = hc.AngleEffectiveMass * -angVelError;
+
+                float oldMotorAccum = hc.MotorImpulseAccum;
+                hc.MotorImpulseAccum = Math::Clamp(
+                    oldMotorAccum + motorImpulse, -hc.MaxMotorTorque, hc.MaxMotorTorque);
+                motorImpulse = hc.MotorImpulseAccum - oldMotorAccum;
+
+                bodyA.AngularVelocity -= motorImpulse * invInertiaA;
+                bodyB.AngularVelocity += motorImpulse * invInertiaB;
+            }
+
+            // === Angular limits ===
+            if (hc.bEnableLimits) {
+                float relAngle = bodyB.Angle - bodyA.Angle;
+
+                // Normalize relative angle to [-PI, PI]
+                while (relAngle > Math::PI) relAngle -= 2.0f * Math::PI;
+                while (relAngle < -Math::PI) relAngle += 2.0f * Math::PI;
+
+                float angularError = 0.0f;
+                if (relAngle < hc.LowerAngle) {
+                    angularError = relAngle - hc.LowerAngle;
+                } else if (relAngle > hc.UpperAngle) {
+                    angularError = relAngle - hc.UpperAngle;
+                }
+
+                if (Math::Abs(angularError) > Math::EPSILON) {
+                    float relAngVel = bodyB.AngularVelocity - bodyA.AngularVelocity;
+                    float limitImpulse = hc.AngleEffectiveMass * -(relAngVel + angularError * 10.0f);
+
+                    // Clamp: at lower limit, impulse must be >= 0; at upper, must be <= 0
+                    float oldAccum = hc.AngleImpulseAccum;
+                    if (relAngle < hc.LowerAngle) {
+                        hc.AngleImpulseAccum = Math::Max(oldAccum + limitImpulse, 0.0f);
+                    } else {
+                        hc.AngleImpulseAccum = Math::Min(oldAccum + limitImpulse, 0.0f);
+                    }
+                    limitImpulse = hc.AngleImpulseAccum - oldAccum;
+
+                    bodyA.AngularVelocity -= limitImpulse * invInertiaA;
+                    bodyB.AngularVelocity += limitImpulse * invInertiaB;
+                }
+            }
+        }
+    }
+
+    void PhysicsService::SolveConstraintPositions() {
+        const float baumgarte = 0.2f;
+        const float slop      = 0.005f;
+
+        // Position correction for distance constraints
+        for (auto& dc : mDistanceConstraints) {
+            if (!dc.bIsActive || !IsBodyValid(dc.HandleA) || !IsBodyValid(dc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[dc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[dc.HandleB.Index];
+
+            float invMassA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invMassB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+
+            // Recompute world anchors from current positions
+            float cosA = Math::Cos(bodyA.Angle);
+            float sinA = Math::Sin(bodyA.Angle);
+            Math::Vector2f rA(
+                dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
+                dc.LocalAnchorA.x * sinA + dc.LocalAnchorA.y * cosA);
+
+            float cosB = Math::Cos(bodyB.Angle);
+            float sinB = Math::Sin(bodyB.Angle);
+            Math::Vector2f rB(
+                dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
+                dc.LocalAnchorB.x * sinB + dc.LocalAnchorB.y * cosB);
+
+            Math::Vector2f worldA = bodyA.Position + rA;
+            Math::Vector2f worldB = bodyB.Position + rB;
+            Math::Vector2f delta = worldB - worldA;
+            float currentDist = delta.Magnitude();
+
+            float error = currentDist - dc.Distance;
+            if (Math::Abs(error) <= slop) {
+                continue;
+            }
+
+            Math::Vector2f n = currentDist > Math::EPSILON ? delta * (1.0f / currentDist) : Math::Vector2f(1, 0);
+            float invMassSum = invMassA + invMassB;
+            if (invMassSum <= 0.0f) {
+                continue;
+            }
+
+            float correction = baumgarte * error / invMassSum;
+            bodyA.Position += n * (correction * invMassA);
+            bodyB.Position -= n * (correction * invMassB);
+        }
+
+        // Position correction for hinge constraints
+        for (auto& hc : mHingeConstraints) {
+            if (!hc.bIsActive || !IsBodyValid(hc.HandleA) || !IsBodyValid(hc.HandleB)) {
+                continue;
+            }
+
+            PhysicsBodyData& bodyA = mBodies[hc.HandleA.Index];
+            PhysicsBodyData& bodyB = mBodies[hc.HandleB.Index];
+
+            float invMassA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
+            float invMassB = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
+
+            // Recompute lever arms
+            float cosA = Math::Cos(bodyA.Angle);
+            float sinA = Math::Sin(bodyA.Angle);
+            Math::Vector2f rA(
+                hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
+                hc.LocalAnchorA.x * sinA + hc.LocalAnchorA.y * cosA);
+
+            float cosB = Math::Cos(bodyB.Angle);
+            float sinB = Math::Sin(bodyB.Angle);
+            Math::Vector2f rB(
+                hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
+                hc.LocalAnchorB.x * sinB + hc.LocalAnchorB.y * cosB);
+
+            Math::Vector2f posError = (bodyB.Position + rB) - (bodyA.Position + rA);
+            float errorMag = posError.Magnitude();
+            if (errorMag <= slop) {
+                continue;
+            }
+
+            float invMassSum = invMassA + invMassB;
+            if (invMassSum <= 0.0f) {
+                continue;
+            }
+
+            Math::Vector2f correction = posError * (baumgarte / invMassSum);
+            bodyA.Position += correction * invMassA;
+            bodyB.Position -= correction * invMassB;
+        }
+    }
+
+    void PhysicsService::DestroyConstraintsForBody(uint32 _bodyIndex) {
+        for (uint32 i = 0; i < mSprings.size(); ++i) {
+            auto& s = mSprings[i];
+            if (!s.bIsActive) {
+                continue;
+            }
+            if (s.HandleA.Index == _bodyIndex || (s.HandleB.IsValid() && s.HandleB.Index == _bodyIndex)) {
+                s.bIsActive = false;
+                mFreeSpringIndices.push_back(i);
+            }
+        }
+
+        for (uint32 i = 0; i < mDistanceConstraints.size(); ++i) {
+            auto& dc = mDistanceConstraints[i];
+            if (!dc.bIsActive) {
+                continue;
+            }
+            if (dc.HandleA.Index == _bodyIndex || dc.HandleB.Index == _bodyIndex) {
+                dc.bIsActive = false;
+                mFreeDistanceIndices.push_back(i);
+            }
+        }
+
+        for (uint32 i = 0; i < mHingeConstraints.size(); ++i) {
+            auto& hc = mHingeConstraints[i];
+            if (!hc.bIsActive) {
+                continue;
+            }
+            if (hc.HandleA.Index == _bodyIndex || hc.HandleB.Index == _bodyIndex) {
+                hc.bIsActive = false;
+                mFreeHingeIndices.push_back(i);
+            }
+        }
+    }
+
+    void PhysicsService::WakeConstraintBodies(const BodyHandle& _handleA, const BodyHandle& _handleB) {
+        if (IsBodyValid(_handleA)) {
+            PhysicsBodyData& bodyA = mBodies[_handleA.Index];
+            if (!bodyA.IsStatic()) {
+                bodyA.Wake();
+            }
+        }
+        if (IsBodyValid(_handleB)) {
+            PhysicsBodyData& bodyB = mBodies[_handleB.Index];
+            if (!bodyB.IsStatic()) {
+                bodyB.Wake();
+            }
+        }
     }
 
 } // namespace Umbra

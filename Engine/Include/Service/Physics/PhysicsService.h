@@ -2,6 +2,7 @@
 #include "EnginePCH.h"
 #include "Math/Vector.h"
 #include "Service/Physics/Collision.h"
+#include "Service/Physics/Constraint.h"
 #include "Service/Physics/DynamicAABBTree.h"
 #include "Service/Physics/PhysicsBody.h"
 #include "Service/Physics/PhysicsHandle.h"
@@ -174,6 +175,35 @@ namespace Umbra {
         Vector<RaycastHit> RaycastAll(
             Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance) const;
 
+        // ============== Constraints ==============
+
+        /// @brief Creates a spring constraint between two bodies (or one body and a world anchor)
+        ConstraintHandle CreateSpring(const SpringDef& _def);
+
+        /// @brief Creates a rigid distance constraint between two bodies
+        ConstraintHandle CreateDistanceConstraint(const DistanceDef& _def);
+
+        /// @brief Creates a hinge (revolute) joint between two bodies
+        ConstraintHandle CreateHinge(const HingeDef& _def);
+
+        /// @brief Destroys a constraint by handle
+        void DestroyConstraint(ConstraintHandle _handle);
+
+        /// @brief Checks if a constraint handle is valid
+        bool IsConstraintValid(ConstraintHandle _handle) const;
+
+        // Spring getters/setters
+        void SetSpringStiffness(ConstraintHandle _handle, float _stiffness);
+        void SetSpringDamping(ConstraintHandle _handle, float _damping);
+        void SetSpringRestLength(ConstraintHandle _handle, float _restLength);
+
+        // Hinge motor/limit control
+        void SetHingeMotorEnabled(ConstraintHandle _handle, bool _bEnable);
+        void SetHingeMotorSpeed(ConstraintHandle _handle, float _speed);
+        void SetHingeMaxMotorTorque(ConstraintHandle _handle, float _maxTorque);
+        void SetHingeLimitsEnabled(ConstraintHandle _handle, bool _bEnable);
+        void SetHingeLimits(ConstraintHandle _handle, float _lower, float _upper);
+
         // ============== Internal Access (for sync system) ==============
 
         /// @brief Gets direct access to body data (use with caution)
@@ -216,6 +246,14 @@ namespace Umbra {
         bool RaycastBody(Math::Vector2f _origin, Math::Vector2f _direction, float _maxDistance,
             const PhysicsBodyData& _body, float& _outDistance, Math::Vector2f& _outNormal) const;
 
+        // Constraint solver methods
+        void ApplySpringForces(float _deltaTime);
+        void PrecomputeConstraints(float _deltaTime);
+        void SolveConstraintVelocities();
+        void SolveConstraintPositions();
+        void DestroyConstraintsForBody(uint32 _bodyIndex);
+        void WakeConstraintBodies(const BodyHandle& _handleA, const BodyHandle& _handleB);
+
         static uint64 MakeCollisionPairKey(uint32 _indexA, uint32 _indexB);
         static bool ShouldCollide(const PhysicsBodyData& _a, const PhysicsBodyData& _b);
         void CategorizeCollisionEvents();
@@ -247,6 +285,14 @@ namespace Umbra {
         Vector<CollisionEvent> mTriggerEnterEvents;
         Vector<CollisionEvent> mTriggerStayEvents;
         Vector<CollisionEvent> mTriggerExitEvents;
+
+        // Constraint storage
+        Vector<SpringConstraintData> mSprings;
+        Vector<DistanceConstraintData> mDistanceConstraints;
+        Vector<HingeConstraintData> mHingeConstraints;
+        Vector<uint32> mFreeSpringIndices;
+        Vector<uint32> mFreeDistanceIndices;
+        Vector<uint32> mFreeHingeIndices;
     };
 
     // ============== Template Implementations ==============
