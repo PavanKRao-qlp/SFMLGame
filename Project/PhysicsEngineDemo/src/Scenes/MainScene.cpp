@@ -42,6 +42,12 @@ void MainScene::OnUpdate() {
     if (ImGui::Button("Sleep Demo")) {
         GetSceneManager().GoToScene("SleepDemo");
     }
+    if (ImGui::Button("Collision Filter & CCD")) {
+        GetSceneManager().GoToScene("FilterCCD");
+    }
+    if (ImGui::Button("Constraint Joints")) {
+        GetSceneManager().GoToScene("ConstraintJoints");
+    }
     ImGui::End();
 
     Umbra::RenderSystem::DebugDrawCircle(Umbra::Math::Vector2f(0.0f, 0.0f), mCircleRadius, true, Umbra::Color::White);

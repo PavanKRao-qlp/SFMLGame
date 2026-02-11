@@ -8,6 +8,8 @@
 #include "Scenes/ShapeRepresentationScene.h"
 #include "Scenes/BroadphaseTreeScene.h"
 #include "Scenes/SleepDemoScene.h"
+#include "Scenes/CollisionFilterCCDScene.h"
+#include "Scenes/ConstraintJointScene.h"
 
 PhysicsEngineDemo::PhysicsEngineDemo() {}
 
@@ -22,6 +24,8 @@ void PhysicsEngineDemo::Initialize() {
     Umbra::SharedPtr<Umbra::Scene> narrowPhaseScene         = std::make_shared<NarrowPhaseScene>();
     Umbra::SharedPtr<Umbra::Scene> broadphaseTreeScene     = std::make_shared<BroadphaseTreeScene>();
     Umbra::SharedPtr<Umbra::Scene> sleepDemoScene          = std::make_shared<SleepDemoScene>();
+    Umbra::SharedPtr<Umbra::Scene> filterCCDScene          = std::make_shared<CollisionFilterCCDScene>();
+    Umbra::SharedPtr<Umbra::Scene> constraintJointScene    = std::make_shared<ConstraintJointScene>();
 
     GetSceneManager().AddScene("MainScene", mainScene);
     GetSceneManager().AddScene("ParticleIntegration", particleIntegrationScene);
@@ -31,6 +35,8 @@ void PhysicsEngineDemo::Initialize() {
     GetSceneManager().AddScene("NarrowPhase", narrowPhaseScene);
     GetSceneManager().AddScene("BroadphaseTree", broadphaseTreeScene);
     GetSceneManager().AddScene("SleepDemo", sleepDemoScene);
+    GetSceneManager().AddScene("FilterCCD", filterCCDScene);
+    GetSceneManager().AddScene("ConstraintJoints", constraintJointScene);
 
     GetSceneManager().GoToScene(mainScene);
 }

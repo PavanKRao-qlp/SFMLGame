@@ -150,7 +150,7 @@ namespace Umbra {
             body.Angle +=
                 body.AngularVelocity * _deltaTime + body.AngularAcceleration * (Math::Pow(_deltaTime, 2) * 0.5f);
 
-            // Normalize angle to [0, 2*PI)
+            // Normalize angle to [0, 2*PI]
             body.Angle = Math::Fmod(body.Angle, Math::PI * 2.0f);
             if (body.Angle < 0) {
                 body.Angle += Math::PI * 2.0f;
@@ -231,11 +231,9 @@ namespace Umbra {
 
             // Union of both AABBs
             Math::Vector2f sweepMin(
-                Math::Min(aabbOld.Min().x, aabbNew.Min().x),
-                Math::Min(aabbOld.Min().y, aabbNew.Min().y));
+                Math::Min(aabbOld.Min().x, aabbNew.Min().x), Math::Min(aabbOld.Min().y, aabbNew.Min().y));
             Math::Vector2f sweepMax(
-                Math::Max(aabbOld.Max().x, aabbNew.Max().x),
-                Math::Max(aabbOld.Max().y, aabbNew.Max().y));
+                Math::Max(aabbOld.Max().x, aabbNew.Max().x), Math::Max(aabbOld.Max().y, aabbNew.Max().y));
             Math::Vector2f sweepCenter = (sweepMin + sweepMax) * 0.5f;
             Math::Vector2f sweepSize   = sweepMax - sweepMin;
             Math::Bounds2D sweptAABB(sweepCenter, sweepSize);
@@ -343,10 +341,10 @@ namespace Umbra {
         mCollisions.clear();
         for (const auto& handlePair : mOverlappingBoundsIndexPair) {
             CollisionDef collisionDef;
-            collisionDef.handleA  = std::get<0>(handlePair);
-            collisionDef.handleB  = std::get<1>(handlePair);
-            PhysicsBodyData bodyA = mBodies[collisionDef.handleA.Index];
-            PhysicsBodyData bodyB = mBodies[collisionDef.handleB.Index];
+            collisionDef.handleA    = std::get<0>(handlePair);
+            collisionDef.handleB    = std::get<1>(handlePair);
+            PhysicsBodyData bodyA   = mBodies[collisionDef.handleA.Index];
+            PhysicsBodyData bodyB   = mBodies[collisionDef.handleB.Index];
             collisionDef.bIsTrigger = bodyA.bIsTrigger || bodyB.bIsTrigger;
             if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
                 mCollisions.emplace_back(collisionDef);
@@ -381,17 +379,15 @@ namespace Umbra {
 
                 // Effective mass along the normal:
                 //   1 / (1/mA + 1/mB + (rA x n)^2/IA + (rB x n)^2/IB)
-                float rACrossN    = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
-                float rBCrossN    = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
-                float normalDenom = invMassSum + rACrossN * rACrossN * invInertiaA
-                                  + rBCrossN * rBCrossN * invInertiaB;
+                float rACrossN     = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
+                float rBCrossN     = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
+                float normalDenom  = invMassSum + rACrossN * rACrossN * invInertiaA + rBCrossN * rBCrossN * invInertiaB;
                 contact.normalMass = normalDenom > 0.0f ? 1.0f / normalDenom : 0.0f;
 
                 // Effective mass along the tangent (same formula, tangent direction)
                 float rACrossT     = Math::Vector2f::Cross2D(contact.rA, tangent);
                 float rBCrossT     = Math::Vector2f::Cross2D(contact.rB, tangent);
-                float tangentDenom = invMassSum + rACrossT * rACrossT * invInertiaA
-                                   + rBCrossT * rBCrossT * invInertiaB;
+                float tangentDenom = invMassSum + rACrossT * rACrossT * invInertiaA + rBCrossT * rBCrossT * invInertiaB;
                 contact.tangentMass = tangentDenom > 0.0f ? 1.0f / tangentDenom : 0.0f;
 
                 // Restitution velocity bias:
@@ -1057,8 +1053,7 @@ namespace Umbra {
     }
 
     bool PhysicsService::ShouldCollide(const PhysicsBodyData& _a, const PhysicsBodyData& _b) {
-        return (_a.Filter.CategoryBits & _b.Filter.MaskBits) != 0
-            && (_b.Filter.CategoryBits & _a.Filter.MaskBits) != 0;
+        return (_a.Filter.CategoryBits & _b.Filter.MaskBits) != 0 && (_b.Filter.CategoryBits & _a.Filter.MaskBits) != 0;
     }
 
     void PhysicsService::CategorizeCollisionEvents() {
@@ -1195,10 +1190,10 @@ namespace Umbra {
 
         if (_body.BodyShape.IsBox()) {
             // Transform point into body-local space (undo rotation)
-            float dx = _point.x - _body.Position.x;
-            float dy = _point.y - _body.Position.y;
-            float cosA = Math::Cos(-_body.Angle);
-            float sinA = Math::Sin(-_body.Angle);
+            float dx     = _point.x - _body.Position.x;
+            float dy     = _point.y - _body.Position.y;
+            float cosA   = Math::Cos(-_body.Angle);
+            float sinA   = Math::Sin(-_body.Angle);
             float localX = dx * cosA - dy * sinA;
             float localY = dx * sinA + dy * cosA;
 
@@ -1217,7 +1212,7 @@ namespace Umbra {
             float dx = _origin.x - _body.Position.x;
             float dy = _origin.y - _body.Position.y;
 
-            float a    = Math::Vector2f::Dot(_direction, _direction);
+            float a = Math::Vector2f::Dot(_direction, _direction);
             Math::Vector2f d(dx, dy);
             float b    = 2.0f * Math::Vector2f::Dot(d, _direction);
             float c    = Math::Vector2f::Dot(d, d) - r * r;
@@ -1228,7 +1223,7 @@ namespace Umbra {
             }
 
             float sqrtDisc = Math::Sqrt(disc);
-            float t = (-b - sqrtDisc) / (2.0f * a);
+            float t        = (-b - sqrtDisc) / (2.0f * a);
 
             // If the near root is behind us, try the far root (origin inside circle)
             if (t < 0.0f) {
@@ -1239,9 +1234,9 @@ namespace Umbra {
                 return false;
             }
 
-            _outDistance = t;
+            _outDistance            = t;
             Math::Vector2f hitPoint = _origin + _direction * t;
-            _outNormal = hitPoint - _body.Position;
+            _outNormal              = hitPoint - _body.Position;
             _outNormal.Normalize();
             return true;
         }
@@ -1254,8 +1249,8 @@ namespace Umbra {
             float odx = _origin.x - _body.Position.x;
             float ody = _origin.y - _body.Position.y;
             Math::Vector2f localOrigin(odx * cosA - ody * sinA, odx * sinA + ody * cosA);
-            Math::Vector2f localDir(_direction.x * cosA - _direction.y * sinA,
-                _direction.x * sinA + _direction.y * cosA);
+            Math::Vector2f localDir(
+                _direction.x * cosA - _direction.y * sinA, _direction.x * sinA + _direction.y * cosA);
 
             Math::Vector2f halfSize = _body.BodyShape.GetBox().GetSize() * 0.5f;
 
@@ -1271,15 +1266,15 @@ namespace Umbra {
                 }
             } else {
                 float invDx = 1.0f / localDir.x;
-                float t1 = (-halfSize.x - localOrigin.x) * invDx;
-                float t2 = (halfSize.x - localOrigin.x) * invDx;
+                float t1    = (-halfSize.x - localOrigin.x) * invDx;
+                float t2    = (halfSize.x - localOrigin.x) * invDx;
                 Math::Vector2f nNear(-1, 0);
                 if (t1 > t2) {
                     std::swap(t1, t2);
                     nNear = Math::Vector2f(1, 0);
                 }
                 if (t1 > tMin) {
-                    tMin = t1;
+                    tMin        = t1;
                     localNormal = nNear;
                 }
                 tMax = Math::Min(tMax, t2);
@@ -1295,15 +1290,15 @@ namespace Umbra {
                 }
             } else {
                 float invDy = 1.0f / localDir.y;
-                float t1 = (-halfSize.y - localOrigin.y) * invDy;
-                float t2 = (halfSize.y - localOrigin.y) * invDy;
+                float t1    = (-halfSize.y - localOrigin.y) * invDy;
+                float t2    = (halfSize.y - localOrigin.y) * invDy;
                 Math::Vector2f nNear(0, -1);
                 if (t1 > t2) {
                     std::swap(t1, t2);
                     nNear = Math::Vector2f(0, 1);
                 }
                 if (t1 > tMin) {
-                    tMin = t1;
+                    tMin        = t1;
                     localNormal = nNear;
                 }
                 tMax = Math::Min(tMax, t2);
@@ -1322,8 +1317,7 @@ namespace Umbra {
             float cosR = Math::Cos(_body.Angle);
             float sinR = Math::Sin(_body.Angle);
             _outNormal = Math::Vector2f(
-                localNormal.x * cosR - localNormal.y * sinR,
-                localNormal.x * sinR + localNormal.y * cosR);
+                localNormal.x * cosR - localNormal.y * sinR, localNormal.x * sinR + localNormal.y * cosR);
             return true;
         }
 
@@ -1364,36 +1358,34 @@ namespace Umbra {
         }
         _direction = _direction * (1.0f / dirLen);
 
-        Math::Vector2f invDir(
-            Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
+        Math::Vector2f invDir(Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
             Math::Abs(_direction.y) > Math::EPSILON ? 1.0f / _direction.y : 1e18f);
 
         float closestDist = _maxDistance;
         bool bHit         = false;
 
-        mBroadphaseTree.RayCast(
-            _origin, invDir, _maxDistance, [&](int32 _proxyId) {
-                uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
-                if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
-                    return;
-                }
+        mBroadphaseTree.RayCast(_origin, invDir, _maxDistance, [&](int32 _proxyId) {
+            uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+            if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
+                return;
+            }
 
-                const PhysicsBodyData& body = mBodies[bodyIndex];
-                float dist                  = 0.0f;
-                Math::Vector2f normal;
+            const PhysicsBodyData& body = mBodies[bodyIndex];
+            float dist                  = 0.0f;
+            Math::Vector2f normal;
 
-                if (RaycastBody(_origin, _direction, closestDist, body, dist, normal)) {
-                    if (dist < closestDist) {
-                        closestDist         = dist;
-                        _hit.Handle.Index      = bodyIndex;
-                        _hit.Handle.Generation = body.Generation;
-                        _hit.Point             = _origin + _direction * dist;
-                        _hit.Normal            = normal;
-                        _hit.Distance          = dist;
-                        bHit                   = true;
-                    }
+            if (RaycastBody(_origin, _direction, closestDist, body, dist, normal)) {
+                if (dist < closestDist) {
+                    closestDist            = dist;
+                    _hit.Handle.Index      = bodyIndex;
+                    _hit.Handle.Generation = body.Generation;
+                    _hit.Point             = _origin + _direction * dist;
+                    _hit.Normal            = normal;
+                    _hit.Distance          = dist;
+                    bHit                   = true;
                 }
-            });
+            }
+        });
 
         return bHit;
     }
@@ -1407,33 +1399,31 @@ namespace Umbra {
         }
         _direction = _direction * (1.0f / dirLen);
 
-        Math::Vector2f invDir(
-            Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
+        Math::Vector2f invDir(Math::Abs(_direction.x) > Math::EPSILON ? 1.0f / _direction.x : 1e18f,
             Math::Abs(_direction.y) > Math::EPSILON ? 1.0f / _direction.y : 1e18f);
 
         Vector<RaycastHit> hits;
 
-        mBroadphaseTree.RayCast(
-            _origin, invDir, _maxDistance, [&](int32 _proxyId) {
-                uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
-                if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
-                    return;
-                }
+        mBroadphaseTree.RayCast(_origin, invDir, _maxDistance, [&](int32 _proxyId) {
+            uint32 bodyIndex = mBroadphaseTree.GetBodyIndex(_proxyId);
+            if (bodyIndex >= mBodies.size() || !mBodies[bodyIndex].bIsActive) {
+                return;
+            }
 
-                const PhysicsBodyData& body = mBodies[bodyIndex];
-                float dist                  = 0.0f;
-                Math::Vector2f normal;
+            const PhysicsBodyData& body = mBodies[bodyIndex];
+            float dist                  = 0.0f;
+            Math::Vector2f normal;
 
-                if (RaycastBody(_origin, _direction, _maxDistance, body, dist, normal)) {
-                    RaycastHit hit;
-                    hit.Handle.Index      = bodyIndex;
-                    hit.Handle.Generation = body.Generation;
-                    hit.Point             = _origin + _direction * dist;
-                    hit.Normal            = normal;
-                    hit.Distance          = dist;
-                    hits.emplace_back(hit);
-                }
-            });
+            if (RaycastBody(_origin, _direction, _maxDistance, body, dist, normal)) {
+                RaycastHit hit;
+                hit.Handle.Index      = bodyIndex;
+                hit.Handle.Generation = body.Generation;
+                hit.Point             = _origin + _direction * dist;
+                hit.Normal            = normal;
+                hit.Distance          = dist;
+                hits.emplace_back(hit);
+            }
+        });
 
         // Sort by distance (nearest first)
         std::sort(hits.begin(), hits.end(),
@@ -1462,34 +1452,34 @@ namespace Umbra {
         }
 
         SpringConstraintData& spring = mSprings[index];
-        spring.HandleA     = _def.BodyA;
-        spring.HandleB     = _def.BodyB;
-        spring.LocalAnchorA = _def.LocalAnchorA;
-        spring.LocalAnchorB = _def.LocalAnchorB;
-        spring.WorldAnchorB = _def.WorldAnchorB;
-        spring.Stiffness   = _def.Stiffness;
-        spring.Damping     = _def.Damping;
-        spring.RestLength  = _def.RestLength;
-        spring.bIsActive   = true;
-        spring.Generation  = generation;
+        spring.HandleA               = _def.BodyA;
+        spring.HandleB               = _def.BodyB;
+        spring.LocalAnchorA          = _def.LocalAnchorA;
+        spring.LocalAnchorB          = _def.LocalAnchorB;
+        spring.WorldAnchorB          = _def.WorldAnchorB;
+        spring.Stiffness             = _def.Stiffness;
+        spring.Damping               = _def.Damping;
+        spring.RestLength            = _def.RestLength;
+        spring.bIsActive             = true;
+        spring.Generation            = generation;
 
         // Auto-calculate rest length from initial positions if zero
         if (spring.RestLength <= 0.0f) {
             const PhysicsBodyData& bodyA = mBodies[_def.BodyA.Index];
-            float cA = Math::Cos(bodyA.Angle);
-            float sA = Math::Sin(bodyA.Angle);
-            Math::Vector2f worldA = bodyA.Position + Math::Vector2f(
-                _def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
-                _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
+            float cA                     = Math::Cos(bodyA.Angle);
+            float sA                     = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldA        = bodyA.Position
+                                  + Math::Vector2f(_def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
+                                      _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
 
             Math::Vector2f worldB;
             if (IsBodyValid(_def.BodyB)) {
                 const PhysicsBodyData& bodyB = mBodies[_def.BodyB.Index];
-                float cB = Math::Cos(bodyB.Angle);
-                float sB = Math::Sin(bodyB.Angle);
-                worldB = bodyB.Position + Math::Vector2f(
-                    _def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
-                    _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
+                float cB                     = Math::Cos(bodyB.Angle);
+                float sB                     = Math::Sin(bodyB.Angle);
+                worldB                       = bodyB.Position
+                       + Math::Vector2f(_def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
+                           _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
             } else {
                 worldB = _def.WorldAnchorB;
             }
@@ -1523,29 +1513,29 @@ namespace Umbra {
         }
 
         DistanceConstraintData& dc = mDistanceConstraints[index];
-        dc.HandleA      = _def.BodyA;
-        dc.HandleB      = _def.BodyB;
-        dc.LocalAnchorA = _def.LocalAnchorA;
-        dc.LocalAnchorB = _def.LocalAnchorB;
-        dc.Distance     = _def.Distance;
-        dc.ImpulseAccum = 0.0f;
-        dc.bIsActive    = true;
-        dc.Generation   = generation;
+        dc.HandleA                 = _def.BodyA;
+        dc.HandleB                 = _def.BodyB;
+        dc.LocalAnchorA            = _def.LocalAnchorA;
+        dc.LocalAnchorB            = _def.LocalAnchorB;
+        dc.Distance                = _def.Distance;
+        dc.ImpulseAccum            = 0.0f;
+        dc.bIsActive               = true;
+        dc.Generation              = generation;
 
         // Auto-calculate distance from initial positions if zero
         if (dc.Distance <= 0.0f) {
             const PhysicsBodyData& bodyA = mBodies[_def.BodyA.Index];
             const PhysicsBodyData& bodyB = mBodies[_def.BodyB.Index];
-            float cA = Math::Cos(bodyA.Angle);
-            float sA = Math::Sin(bodyA.Angle);
-            Math::Vector2f worldA = bodyA.Position + Math::Vector2f(
-                _def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
-                _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
-            float cB = Math::Cos(bodyB.Angle);
-            float sB = Math::Sin(bodyB.Angle);
-            Math::Vector2f worldB = bodyB.Position + Math::Vector2f(
-                _def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
-                _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
+            float cA                     = Math::Cos(bodyA.Angle);
+            float sA                     = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldA        = bodyA.Position
+                                  + Math::Vector2f(_def.LocalAnchorA.x * cA - _def.LocalAnchorA.y * sA,
+                                      _def.LocalAnchorA.x * sA + _def.LocalAnchorA.y * cA);
+            float cB              = Math::Cos(bodyB.Angle);
+            float sB              = Math::Sin(bodyB.Angle);
+            Math::Vector2f worldB = bodyB.Position
+                                  + Math::Vector2f(_def.LocalAnchorB.x * cB - _def.LocalAnchorB.y * sB,
+                                      _def.LocalAnchorB.x * sB + _def.LocalAnchorB.y * cB);
             dc.Distance = (worldB - worldA).Magnitude();
         }
 
@@ -1575,21 +1565,21 @@ namespace Umbra {
         }
 
         HingeConstraintData& hc = mHingeConstraints[index];
-        hc.HandleA         = _def.BodyA;
-        hc.HandleB         = _def.BodyB;
-        hc.LocalAnchorA    = _def.LocalAnchorA;
-        hc.LocalAnchorB    = _def.LocalAnchorB;
-        hc.bEnableLimits   = _def.bEnableLimits;
-        hc.LowerAngle      = _def.LowerAngle;
-        hc.UpperAngle      = _def.UpperAngle;
-        hc.bEnableMotor    = _def.bEnableMotor;
-        hc.MotorSpeed      = _def.MotorSpeed;
-        hc.MaxMotorTorque  = _def.MaxMotorTorque;
-        hc.ImpulseAccum    = Math::Vector2f(0, 0);
-        hc.AngleImpulseAccum = 0.0f;
-        hc.MotorImpulseAccum = 0.0f;
-        hc.bIsActive       = true;
-        hc.Generation      = generation;
+        hc.HandleA              = _def.BodyA;
+        hc.HandleB              = _def.BodyB;
+        hc.LocalAnchorA         = _def.LocalAnchorA;
+        hc.LocalAnchorB         = _def.LocalAnchorB;
+        hc.bEnableLimits        = _def.bEnableLimits;
+        hc.LowerAngle           = _def.LowerAngle;
+        hc.UpperAngle           = _def.UpperAngle;
+        hc.bEnableMotor         = _def.bEnableMotor;
+        hc.MotorSpeed           = _def.MotorSpeed;
+        hc.MaxMotorTorque       = _def.MaxMotorTorque;
+        hc.ImpulseAccum         = Math::Vector2f(0, 0);
+        hc.AngleImpulseAccum    = 0.0f;
+        hc.MotorImpulseAccum    = 0.0f;
+        hc.bIsActive            = true;
+        hc.Generation           = generation;
 
         WakeConstraintBodies(_def.BodyA, _def.BodyB);
 
@@ -1674,40 +1664,35 @@ namespace Umbra {
     }
 
     void PhysicsService::SetHingeMotorEnabled(ConstraintHandle _handle, bool _bEnable) {
-        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
-            && mHingeConstraints[_handle.Index].bIsActive
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
             && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
             mHingeConstraints[_handle.Index].bEnableMotor = _bEnable;
         }
     }
 
     void PhysicsService::SetHingeMotorSpeed(ConstraintHandle _handle, float _speed) {
-        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
-            && mHingeConstraints[_handle.Index].bIsActive
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
             && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
             mHingeConstraints[_handle.Index].MotorSpeed = _speed;
         }
     }
 
     void PhysicsService::SetHingeMaxMotorTorque(ConstraintHandle _handle, float _maxTorque) {
-        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
-            && mHingeConstraints[_handle.Index].bIsActive
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
             && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
             mHingeConstraints[_handle.Index].MaxMotorTorque = _maxTorque;
         }
     }
 
     void PhysicsService::SetHingeLimitsEnabled(ConstraintHandle _handle, bool _bEnable) {
-        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
-            && mHingeConstraints[_handle.Index].bIsActive
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
             && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
             mHingeConstraints[_handle.Index].bEnableLimits = _bEnable;
         }
     }
 
     void PhysicsService::SetHingeLimits(ConstraintHandle _handle, float _lower, float _upper) {
-        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size()
-            && mHingeConstraints[_handle.Index].bIsActive
+        if (_handle.IsValid() && _handle.Index < mHingeConstraints.size() && mHingeConstraints[_handle.Index].bIsActive
             && mHingeConstraints[_handle.Index].Generation == _handle.Generation) {
             mHingeConstraints[_handle.Index].LowerAngle = _lower;
             mHingeConstraints[_handle.Index].UpperAngle = _upper;
@@ -1731,27 +1716,27 @@ namespace Umbra {
             }
 
             // Compute world-space anchor positions
-            float cosA = Math::Cos(bodyA.Angle);
-            float sinA = Math::Sin(bodyA.Angle);
-            Math::Vector2f worldAnchorA = bodyA.Position + Math::Vector2f(
-                spring.LocalAnchorA.x * cosA - spring.LocalAnchorA.y * sinA,
-                spring.LocalAnchorA.x * sinA + spring.LocalAnchorA.y * cosA);
+            float cosA                  = Math::Cos(bodyA.Angle);
+            float sinA                  = Math::Sin(bodyA.Angle);
+            Math::Vector2f worldAnchorA = bodyA.Position
+                                        + Math::Vector2f(spring.LocalAnchorA.x * cosA - spring.LocalAnchorA.y * sinA,
+                                            spring.LocalAnchorA.x * sinA + spring.LocalAnchorA.y * cosA);
 
             Math::Vector2f worldAnchorB;
             PhysicsBodyData* pBodyB = nullptr;
             if (IsBodyValid(spring.HandleB)) {
-                pBodyB = &mBodies[spring.HandleB.Index];
-                float cosB = Math::Cos(pBodyB->Angle);
-                float sinB = Math::Sin(pBodyB->Angle);
-                worldAnchorB = pBodyB->Position + Math::Vector2f(
-                    spring.LocalAnchorB.x * cosB - spring.LocalAnchorB.y * sinB,
-                    spring.LocalAnchorB.x * sinB + spring.LocalAnchorB.y * cosB);
+                pBodyB       = &mBodies[spring.HandleB.Index];
+                float cosB   = Math::Cos(pBodyB->Angle);
+                float sinB   = Math::Sin(pBodyB->Angle);
+                worldAnchorB = pBodyB->Position
+                             + Math::Vector2f(spring.LocalAnchorB.x * cosB - spring.LocalAnchorB.y * sinB,
+                                 spring.LocalAnchorB.x * sinB + spring.LocalAnchorB.y * cosB);
             } else {
                 worldAnchorB = spring.WorldAnchorB;
             }
 
             Math::Vector2f delta = worldAnchorB - worldAnchorA;
-            float currentLength = delta.Magnitude();
+            float currentLength  = delta.Magnitude();
             if (currentLength < Math::EPSILON) {
                 continue;
             }
@@ -1761,10 +1746,10 @@ namespace Umbra {
             // Relative velocity along spring axis
             Math::Vector2f velA = bodyA.Velocity;
             Math::Vector2f velB = pBodyB ? pBodyB->Velocity : Math::Vector2f(0, 0);
-            float relVel = Math::Vector2f::Dot(velB - velA, direction);
+            float relVel        = Math::Vector2f::Dot(velB - velA, direction);
 
             // Hooke's law + damping: F = k * (x - x0) + c * v_rel
-            float forceMag = spring.Stiffness * (currentLength - spring.RestLength) + spring.Damping * relVel;
+            float forceMag       = spring.Stiffness * (currentLength - spring.RestLength) + spring.Damping * relVel;
             Math::Vector2f force = direction * forceMag;
 
             // Apply force to body A (pulled toward B)
@@ -1790,7 +1775,7 @@ namespace Umbra {
     }
 
     void PhysicsService::PrecomputeConstraints(float _deltaTime) {
-        float invDt = _deltaTime > 0.0f ? 1.0f / _deltaTime : 0.0f;
+        float invDt           = _deltaTime > 0.0f ? 1.0f / _deltaTime : 0.0f;
         const float baumgarte = 0.2f;
 
         // Precompute distance constraints
@@ -1810,20 +1795,18 @@ namespace Umbra {
             // Compute lever arms in world space
             float cosA = Math::Cos(bodyA.Angle);
             float sinA = Math::Sin(bodyA.Angle);
-            dc.rA = Math::Vector2f(
-                dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
-                dc.LocalAnchorA.x * sinA + dc.LocalAnchorA.y * cosA);
+            dc.rA      = Math::Vector2f(dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
+                     dc.LocalAnchorA.x * sinA + dc.LocalAnchorA.y * cosA);
 
             float cosB = Math::Cos(bodyB.Angle);
             float sinB = Math::Sin(bodyB.Angle);
-            dc.rB = Math::Vector2f(
-                dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
-                dc.LocalAnchorB.x * sinB + dc.LocalAnchorB.y * cosB);
+            dc.rB      = Math::Vector2f(dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
+                     dc.LocalAnchorB.x * sinB + dc.LocalAnchorB.y * cosB);
 
             Math::Vector2f worldA = bodyA.Position + dc.rA;
             Math::Vector2f worldB = bodyB.Position + dc.rB;
-            Math::Vector2f delta = worldB - worldA;
-            float currentDist = delta.Magnitude();
+            Math::Vector2f delta  = worldB - worldA;
+            float currentDist     = delta.Magnitude();
 
             if (currentDist > Math::EPSILON) {
                 dc.Axis = delta * (1.0f / currentDist);
@@ -1834,8 +1817,7 @@ namespace Umbra {
             // Effective mass along constraint axis
             float rACrossN = Math::Vector2f::Cross2D(dc.rA, dc.Axis);
             float rBCrossN = Math::Vector2f::Cross2D(dc.rB, dc.Axis);
-            float denom = invMassA + invMassB + rACrossN * rACrossN * invInertiaA
-                        + rBCrossN * rBCrossN * invInertiaB;
+            float denom = invMassA + invMassB + rACrossN * rACrossN * invInertiaA + rBCrossN * rBCrossN * invInertiaB;
             dc.EffectiveMass = denom > 0.0f ? 1.0f / denom : 0.0f;
 
             // Baumgarte position correction bias
@@ -1862,32 +1844,30 @@ namespace Umbra {
             // Compute lever arms
             float cosA = Math::Cos(bodyA.Angle);
             float sinA = Math::Sin(bodyA.Angle);
-            hc.rA = Math::Vector2f(
-                hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
-                hc.LocalAnchorA.x * sinA + hc.LocalAnchorA.y * cosA);
+            hc.rA      = Math::Vector2f(hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
+                     hc.LocalAnchorA.x * sinA + hc.LocalAnchorA.y * cosA);
 
             float cosB = Math::Cos(bodyB.Angle);
             float sinB = Math::Sin(bodyB.Angle);
-            hc.rB = Math::Vector2f(
-                hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
-                hc.LocalAnchorB.x * sinB + hc.LocalAnchorB.y * cosB);
+            hc.rB      = Math::Vector2f(hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
+                     hc.LocalAnchorB.x * sinB + hc.LocalAnchorB.y * cosB);
 
             // 2x2 effective mass matrix K for point constraint
             // K = [invMA + invMB + rAy^2*invIA + rBy^2*invIB,   -rAx*rAy*invIA - rBx*rBy*invIB]
             //     [-rAx*rAy*invIA - rBx*rBy*invIB,               invMA + invMB + rAx^2*invIA + rBx^2*invIB]
             float totalInvMass = invMassA + invMassB;
-            hc.Kxx = totalInvMass + hc.rA.y * hc.rA.y * invInertiaA + hc.rB.y * hc.rB.y * invInertiaB;
-            hc.Kxy = -hc.rA.x * hc.rA.y * invInertiaA - hc.rB.x * hc.rB.y * invInertiaB;
-            hc.Kyx = hc.Kxy;
-            hc.Kyy = totalInvMass + hc.rA.x * hc.rA.x * invInertiaA + hc.rB.x * hc.rB.x * invInertiaB;
+            hc.Kxx             = totalInvMass + hc.rA.y * hc.rA.y * invInertiaA + hc.rB.y * hc.rB.y * invInertiaB;
+            hc.Kxy             = -hc.rA.x * hc.rA.y * invInertiaA - hc.rB.x * hc.rB.y * invInertiaB;
+            hc.Kyx             = hc.Kxy;
+            hc.Kyy             = totalInvMass + hc.rA.x * hc.rA.x * invInertiaA + hc.rB.x * hc.rB.x * invInertiaB;
 
             // Angular effective mass (for limits and motor)
-            float angularInvMass = invInertiaA + invInertiaB;
+            float angularInvMass  = invInertiaA + invInertiaB;
             hc.AngleEffectiveMass = angularInvMass > 0.0f ? 1.0f / angularInvMass : 0.0f;
 
             // Position error bias
             Math::Vector2f posError = (bodyB.Position + hc.rB) - (bodyA.Position + hc.rA);
-            hc.PositionBias = posError * (baumgarte * invDt);
+            hc.PositionBias         = posError * (baumgarte * invDt);
 
             // Reset accumulators
             hc.ImpulseAccum      = Math::Vector2f(0, 0);
@@ -1914,7 +1894,7 @@ namespace Umbra {
             // Compute relative velocity at anchor points along constraint axis
             Math::Vector2f velA = bodyA.Velocity + Math::Vector2f(-dc.rA.y, dc.rA.x) * bodyA.AngularVelocity;
             Math::Vector2f velB = bodyB.Velocity + Math::Vector2f(-dc.rB.y, dc.rB.x) * bodyB.AngularVelocity;
-            float relVel = Math::Vector2f::Dot(velB - velA, dc.Axis);
+            float relVel        = Math::Vector2f::Dot(velB - velA, dc.Axis);
 
             float lambda = dc.EffectiveMass * -(relVel + dc.Bias);
             dc.ImpulseAccum += lambda;
@@ -1953,8 +1933,8 @@ namespace Umbra {
             Math::Vector2f lambda;
             if (Math::Abs(det) > Math::EPSILON) {
                 float invDet = 1.0f / det;
-                lambda.x = -(hc.Kyy * rhs.x - hc.Kxy * rhs.y) * invDet;
-                lambda.y = -(-hc.Kyx * rhs.x + hc.Kxx * rhs.y) * invDet;
+                lambda.x     = -(hc.Kyy * rhs.x - hc.Kxy * rhs.y) * invDet;
+                lambda.y     = -(-hc.Kyx * rhs.x + hc.Kxx * rhs.y) * invDet;
             } else {
                 lambda = Math::Vector2f(0, 0);
             }
@@ -1968,13 +1948,12 @@ namespace Umbra {
 
             // === Motor ===
             if (hc.bEnableMotor) {
-                float angVelError = (bodyB.AngularVelocity - bodyA.AngularVelocity) - hc.MotorSpeed;
+                float angVelError  = (bodyB.AngularVelocity - bodyA.AngularVelocity) - hc.MotorSpeed;
                 float motorImpulse = hc.AngleEffectiveMass * -angVelError;
 
-                float oldMotorAccum = hc.MotorImpulseAccum;
-                hc.MotorImpulseAccum = Math::Clamp(
-                    oldMotorAccum + motorImpulse, -hc.MaxMotorTorque, hc.MaxMotorTorque);
-                motorImpulse = hc.MotorImpulseAccum - oldMotorAccum;
+                float oldMotorAccum  = hc.MotorImpulseAccum;
+                hc.MotorImpulseAccum = Math::Clamp(oldMotorAccum + motorImpulse, -hc.MaxMotorTorque, hc.MaxMotorTorque);
+                motorImpulse         = hc.MotorImpulseAccum - oldMotorAccum;
 
                 bodyA.AngularVelocity -= motorImpulse * invInertiaA;
                 bodyB.AngularVelocity += motorImpulse * invInertiaB;
@@ -1985,8 +1964,12 @@ namespace Umbra {
                 float relAngle = bodyB.Angle - bodyA.Angle;
 
                 // Normalize relative angle to [-PI, PI]
-                while (relAngle > Math::PI) relAngle -= 2.0f * Math::PI;
-                while (relAngle < -Math::PI) relAngle += 2.0f * Math::PI;
+                while (relAngle > Math::PI) {
+                    relAngle -= 2.0f * Math::PI;
+                }
+                while (relAngle < -Math::PI) {
+                    relAngle += 2.0f * Math::PI;
+                }
 
                 float angularError = 0.0f;
                 if (relAngle < hc.LowerAngle) {
@@ -1996,7 +1979,7 @@ namespace Umbra {
                 }
 
                 if (Math::Abs(angularError) > Math::EPSILON) {
-                    float relAngVel = bodyB.AngularVelocity - bodyA.AngularVelocity;
+                    float relAngVel    = bodyB.AngularVelocity - bodyA.AngularVelocity;
                     float limitImpulse = hc.AngleEffectiveMass * -(relAngVel + angularError * 10.0f);
 
                     // Clamp: at lower limit, impulse must be >= 0; at upper, must be <= 0
@@ -2034,20 +2017,18 @@ namespace Umbra {
             // Recompute world anchors from current positions
             float cosA = Math::Cos(bodyA.Angle);
             float sinA = Math::Sin(bodyA.Angle);
-            Math::Vector2f rA(
-                dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
+            Math::Vector2f rA(dc.LocalAnchorA.x * cosA - dc.LocalAnchorA.y * sinA,
                 dc.LocalAnchorA.x * sinA + dc.LocalAnchorA.y * cosA);
 
             float cosB = Math::Cos(bodyB.Angle);
             float sinB = Math::Sin(bodyB.Angle);
-            Math::Vector2f rB(
-                dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
+            Math::Vector2f rB(dc.LocalAnchorB.x * cosB - dc.LocalAnchorB.y * sinB,
                 dc.LocalAnchorB.x * sinB + dc.LocalAnchorB.y * cosB);
 
             Math::Vector2f worldA = bodyA.Position + rA;
             Math::Vector2f worldB = bodyB.Position + rB;
-            Math::Vector2f delta = worldB - worldA;
-            float currentDist = delta.Magnitude();
+            Math::Vector2f delta  = worldB - worldA;
+            float currentDist     = delta.Magnitude();
 
             float error = currentDist - dc.Distance;
             if (Math::Abs(error) <= slop) {
@@ -2080,18 +2061,16 @@ namespace Umbra {
             // Recompute lever arms
             float cosA = Math::Cos(bodyA.Angle);
             float sinA = Math::Sin(bodyA.Angle);
-            Math::Vector2f rA(
-                hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
+            Math::Vector2f rA(hc.LocalAnchorA.x * cosA - hc.LocalAnchorA.y * sinA,
                 hc.LocalAnchorA.x * sinA + hc.LocalAnchorA.y * cosA);
 
             float cosB = Math::Cos(bodyB.Angle);
             float sinB = Math::Sin(bodyB.Angle);
-            Math::Vector2f rB(
-                hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
+            Math::Vector2f rB(hc.LocalAnchorB.x * cosB - hc.LocalAnchorB.y * sinB,
                 hc.LocalAnchorB.x * sinB + hc.LocalAnchorB.y * cosB);
 
             Math::Vector2f posError = (bodyB.Position + rB) - (bodyA.Position + rA);
-            float errorMag = posError.Magnitude();
+            float errorMag          = posError.Magnitude();
             if (errorMag <= slop) {
                 continue;
             }
