@@ -1,5 +1,6 @@
 #pragma once
 #include "Asset/AssetRegister.h"
+#include "Asset/AudioResource.h"
 #include "Asset/IResource.h"
 #include "Asset/Texture.h"
 #include "Asset/TextureResource.h"
@@ -10,6 +11,7 @@ namespace Umbra {
         /* data */
     public:
         SharedPtr<Texture> GetTexture(const String& _filePath);
+        SharedPtr<Audio> GetAudio(const String& _filePath);
 
     private:
         AssetManager();

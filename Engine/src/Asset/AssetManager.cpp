@@ -14,4 +14,12 @@ namespace Umbra {
         }
         return refTexture;
     }
+    SharedPtr<Audio> AssetManager::GetAudio(const String& _filePath) {
+        SharedPtr<Audio> refAudio = nullptr;
+        SharedPtr<AudioResource> refAudioResource = GetResource<AudioResource>(_filePath);
+        if (refAudioResource != nullptr) {
+            refAudio = std::make_shared<Audio>(refAudioResource);
+        }
+        return refAudio;
+    }
 } // namespace Umbra
