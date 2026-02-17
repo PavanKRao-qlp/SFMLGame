@@ -33,7 +33,7 @@ namespace Umbra {
         bool bIsTrigger         = false; // Trigger bodies detect overlap but skip physical response
         bool bEnableCCD         = false; // Enable continuous collision detection (bullet body)
         CollisionFilter Filter;
-        void* UserData          = nullptr; // Opaque pointer (can store EntityID)
+        void* UserData = nullptr; // Opaque pointer (can store EntityID)
     };
 
     /// @brief Internal physics body data stored in SOA layout within PhysicsService
@@ -134,8 +134,12 @@ namespace Umbra {
                 BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), Math::Vector2f(size, size));
             }
             if (BodyShape.IsBox()) {
-                float size   = BodyShape.GetBox().GetSize().Magnitude();
-                BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), Math::Vector2f(size, size));
+                float sizeX = BodyShape.GetBox().GetSize().x;
+                float sizeY = BodyShape.GetBox().GetSize().y;
+                Math::Vector2f AABBSize =
+                    Math::Vector2f(Math::Abs(sizeX * Math::Cos(Angle)) + Math::Abs(sizeY * Math::Sin(Angle)),
+                        Math::Abs(sizeX * Math::Sin(Angle)) + Math::Abs(sizeY * Math::Cos(Angle)));
+                BoundingAABB = Math::Bounds2D(Math::Vector2f(0, 0), AABBSize);
             }
         }
 

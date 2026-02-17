@@ -7,7 +7,7 @@
 #include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
 #include "ECS/System.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Math/MathUtils.h"
 #include "Physics/Collision.h"
 #include "Physics/CollisionDetector.h"
@@ -155,8 +155,8 @@ namespace Umbra {
                 }
                 if (boundingVolume != nullptr) {
                     mCollisionDetector->AddBoundingVolume(*boundingVolume);
-                    RenderSystem::DrawDebugBox(boundingVolume->FatBounds, bRebuilt, Color::Red);
-                    RenderSystem::DrawDebugBox(boundingVolume->SlimBounds, false, Color::Yellow);
+                    ServiceLocator::GetRenderService()->DebugDrawBox(boundingVolume->FatBounds, bRebuilt, Color::Red);
+                    ServiceLocator::GetRenderService()->DebugDrawBox(boundingVolume->SlimBounds, false, Color::Yellow);
                 }
                 /*
                 make a Bounding Volume data

@@ -1,7 +1,7 @@
 #include "Physics/CollisionDetector.h"
 
 #include "ECS/ECSRegister.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Physics/BruteForceBroadphaseResolver.h"
 #include "Umbra.h"
 
@@ -303,8 +303,8 @@ namespace Umbra {
     bool CollisionDetector::CheckCircleCircleOverlap(
         Math::Vector2f _positionA, Math::Vector2f _positionB, float _radiusA, float _radiusB, Collision& _collision) {
 
-        RenderSystem::DebugDrawCircle(_positionA, _radiusA);
-        RenderSystem::DebugDrawCircle(_positionB, _radiusB);
+        ServiceLocator::GetRenderService()->DebugDrawCircle(_positionA, _radiusA);
+        ServiceLocator::GetRenderService()->DebugDrawCircle(_positionB, _radiusB);
 
         // Check if circles are overlapping
         Math::Vector2f displacement = _positionB - _positionA;
@@ -323,8 +323,8 @@ namespace Umbra {
             //_positionA + ((_radiusA - contact.mPenetration) * contact.mContactNormal);
             _collision.AddContact(contact);
 
-            RenderSystem::DebugDrawCircle(contact.mContactPosition, 1, true, Color::Red);
-            RenderSystem::DebugDrawLine(contact.mContactPosition,
+            ServiceLocator::GetRenderService()->DebugDrawCircle(contact.mContactPosition, 1, true, Color::Red);
+            ServiceLocator::GetRenderService()->DebugDrawLine(contact.mContactPosition,
                 contact.mContactPosition + (-1 * contact.mContactNormal * contact.mPenetration));
 
             return true;
@@ -334,8 +334,8 @@ namespace Umbra {
 
     bool CollisionDetector::CheckBoxBoxOverlapAABB(
         Math::Bounds2D _boundsA, Math::Bounds2D _boundsB, Collision& _collision) {
-        RenderSystem::DrawDebugBox(_boundsA);
-        RenderSystem::DrawDebugBox(_boundsB);
+        ServiceLocator::GetRenderService()->DebugDrawBox(_boundsA);
+        ServiceLocator::GetRenderService()->DebugDrawBox(_boundsB);
         if (_boundsA.Intersects(_boundsB)) {
         }
         return false;

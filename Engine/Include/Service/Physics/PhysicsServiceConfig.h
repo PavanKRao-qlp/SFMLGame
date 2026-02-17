@@ -13,7 +13,7 @@ namespace Umbra {
         int PositionIterations              = 3; // Solver iterations for position
         float BaumgarteScale                = 0.2f; // Position correction factor
         uint32 InitialBodyCapacity          = 256; // Pre-allocated body slots
-        float AABBFattenMargin              = 0.1f; // Fat AABB uniform expansion margin
+        float AABBFattenMargin              = 15.5f; // Fat AABB uniform expansion margin
         float AABBDisplacementMultiplier    = 2.0f; // Velocity-based AABB extension scale
         float LinearVelocitySleepThreshold  = 0.5f; // Velocity threshold under which  bodies can sleep
         float AngularVelocitySleepThreshold = 0.4f; // AngularVelocity threshold under which  bodies can sleep

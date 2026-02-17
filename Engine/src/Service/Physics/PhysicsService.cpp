@@ -538,7 +538,16 @@ namespace Umbra {
 
 
     void PhysicsService::UpdateSleepingBodies(float _deltaTime) {
-        // A sleeping body should wake if it's colliding with an awake body
+        float linSleepSq = mConfig.LinearVelocitySleepThreshold * mConfig.LinearVelocitySleepThreshold;
+        float angSleep   = mConfig.AngularVelocitySleepThreshold;
+
+        // Returns true if a body's velocity is below the sleep thresholds
+        auto isBelowSleepThreshold = [&](const PhysicsBodyData& _body) -> bool {
+            return Math::Vector2f::Dot(_body.Velocity, _body.Velocity) < linSleepSq
+                && Math::Abs(_body.AngularVelocity) < angSleep;
+        };
+
+        // A sleeping body should wake only if it's colliding with a significantly moving body
         for (const CollisionDef& collisionDef : mCollisions) {
             if (collisionDef.bIsTrigger) {
                 continue;
@@ -550,16 +559,20 @@ namespace Umbra {
             if (bodyA.IsStatic() && bodyB.IsStatic()) {
                 continue;
             }
-            // If one is sleeping and the other is awake and moving, wake the sleeper
+            // Only wake the sleeper if the awake partner is moving above sleep threshold
             if (bodyA.bIsSleeping && !bodyB.bIsSleeping && !bodyB.IsStatic()) {
-                bodyA.Wake();
+                if (!isBelowSleepThreshold(bodyB)) {
+                    bodyA.Wake();
+                }
             }
             if (bodyB.bIsSleeping && !bodyA.bIsSleeping && !bodyA.IsStatic()) {
-                bodyB.Wake();
+                if (!isBelowSleepThreshold(bodyA)) {
+                    bodyB.Wake();
+                }
             }
         }
 
-        // Wake constraint partners: if one body in a constraint is awake, wake the other
+        // Wake constraint partners: only if the awake partner is moving significantly
         auto wakePartner = [&](const BodyHandle& _hA, const BodyHandle& _hB) {
             if (!IsBodyValid(_hA) || !IsBodyValid(_hB)) {
                 return;
@@ -567,10 +580,14 @@ namespace Umbra {
             PhysicsBodyData& bA = mBodies[_hA.Index];
             PhysicsBodyData& bB = mBodies[_hB.Index];
             if (bA.bIsSleeping && !bB.bIsSleeping && !bB.IsStatic()) {
-                bA.Wake();
+                if (!isBelowSleepThreshold(bB)) {
+                    bA.Wake();
+                }
             }
             if (bB.bIsSleeping && !bA.bIsSleeping && !bA.IsStatic()) {
-                bB.Wake();
+                if (!isBelowSleepThreshold(bA)) {
+                    bB.Wake();
+                }
             }
         };
         for (const auto& c : mDistanceConstraints) {
