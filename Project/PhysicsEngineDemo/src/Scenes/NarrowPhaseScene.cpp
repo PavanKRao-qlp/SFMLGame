@@ -4,7 +4,7 @@
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -71,20 +71,49 @@ void NarrowPhaseScene::OnBeginPlay() {
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
         world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(400.0f, 20.0f));
     }
-
-    // --- Static angled ramp ---
+    // --- Left wall ---
     {
         Umbra::EntityID entity = world->CreateEntity();
         mEntities.push_back(entity);
         world->AddComponent<Umbra::TransformComponent>(
-            entity, Umbra::Math::Vector2f(-100.0f, -120.0f), Umbra::Math::Vector2f(160.0f, 15.0f), 20.0f);
+            entity, Umbra::Math::Vector2f(-200.0f, 0.0f), Umbra::Math::Vector2f(20.0f, 380.0f), 0.0f);
 
         Umbra::RigidbodyHandleComponent rb;
         rb.Mass               = 0.0f;
         rb.bAffectedByGravity = false;
         rb.CoefOfRestitution  = 0.3f;
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
-        world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(160.0f, 15.0f));
+        world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(20.0f, 380.0f));
+    }
+
+    // --- Right wall ---
+    {
+        Umbra::EntityID entity = world->CreateEntity();
+        mEntities.push_back(entity);
+        world->AddComponent<Umbra::TransformComponent>(
+            entity, Umbra::Math::Vector2f(200.0f, 0.0f), Umbra::Math::Vector2f(20.0f, 380.0f), 0.0f);
+
+        Umbra::RigidbodyHandleComponent rb;
+        rb.Mass               = 0.0f;
+        rb.bAffectedByGravity = false;
+        rb.CoefOfRestitution  = 0.3f;
+        world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
+        world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(20.0f, 380.0f));
+    }
+
+    // --- Static angled ramp ---
+    {
+        Umbra::EntityID entity = world->CreateEntity();
+        mEntities.push_back(entity);
+        world->AddComponent<Umbra::TransformComponent>(
+            entity, Umbra::Math::Vector2f(-100.0f, -120.0f), Umbra::Math::Vector2f(160.0f, 35.0f), 20.0f);
+
+        Umbra::RigidbodyHandleComponent rb;
+        rb.Mass               = 0.0f;
+        rb.bAffectedByGravity = false;
+        rb.CoefOfRestitution  = 0.3f;
+        world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
+        world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(160.0f, 35.0f));
     }
 
     // --- Static circle ---
@@ -107,7 +136,7 @@ void NarrowPhaseScene::OnBeginPlay() {
         mPlayerBox = world->CreateEntity();
         mEntities.push_back(mPlayerBox);
 
-        Umbra::Math::Vector2f size(40.0f, 40.0f);
+        Umbra::Math::Vector2f size(40.0f, 80.0f);
         world->AddComponent<Umbra::TransformComponent>(mPlayerBox, Umbra::Math::Vector2f(0.0f, 0.0f), size, 0.0f);
 
         Umbra::RigidbodyHandleComponent rb;
@@ -115,12 +144,14 @@ void NarrowPhaseScene::OnBeginPlay() {
         rb.bAffectedByGravity = false;
         rb.bIsKinematic       = true;
         world->AddComponent<Umbra::RigidbodyHandleComponent>(mPlayerBox, rb);
-        world->AddComponent<Umbra::CircleColliderComponent>(mPlayerBox, size.x);
+        Umbra::BoxColliderComponent BoxComponent = Umbra::BoxColliderComponent(size);
+        BoxComponent.bIsTrigger                  = true;
+        world->AddComponent<Umbra::BoxColliderComponent>(mPlayerBox, BoxComponent);
         // world->AddComponent<Umbra::BoxColliderComponent>(mPlayerBox, size);
     }
 
     // --- Dynamic circles ---
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 3; ++i) {
         Umbra::EntityID entity = world->CreateEntity();
         mEntities.push_back(entity);
 
@@ -145,12 +176,12 @@ void NarrowPhaseScene::OnBeginPlay() {
     }
 
     // --- Dynamic boxes ---
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 3; ++i) {
         Umbra::EntityID entity = world->CreateEntity();
         mEntities.push_back(entity);
 
         float posX  = -80.0f + i * 50.0f;
-        float posY  = 100.0f + Umbra::Random::RandomRange(0.0f, 60.0f);
+        float posY  = 100.0f + Umbra::Random::RandomRange(0.0f, 100.0f);
         float sizeX = Umbra::Random::RandomRange(20.0f, 45.0f);
         float sizeY = Umbra::Random::RandomRange(20.0f, 45.0f);
         float angle = Umbra::Random::RandomRange(-30.0f, 30.0f);
@@ -227,11 +258,11 @@ void NarrowPhaseScene::DrawColliderOutlines() {
         }
 
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), false, color);
         } else if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
         }
     }
 }
@@ -253,7 +284,7 @@ void NarrowPhaseScene::DrawBoundingVolumes() {
         }
 
         Umbra::Math::Bounds2D bounds(transform->Position, physBody->BoundingAABB.Size);
-        Umbra::RenderSystem::DrawDebugBox(bounds, false, Umbra::Color::Red);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(bounds, false, Umbra::Color::Red);
     }
 }
 
@@ -266,7 +297,7 @@ void NarrowPhaseScene::DrawCollisionInfo() {
     mContactPointCount = 0;
 
     const float normalLength  = 25.0f;
-    const float contactRadius = 1.0f;
+    const float contactRadius = 3.0f;
 
     for (const auto& collision : collisions) {
         mContactPointCount += static_cast<int>(collision.contacts.size());
@@ -274,7 +305,7 @@ void NarrowPhaseScene::DrawCollisionInfo() {
         // Draw contact points
         if (bShowContactPoints) {
             for (const auto& contact : collision.contacts) {
-                Umbra::RenderSystem::DebugDrawCircle(contact.contactPoint, contactRadius, true, Umbra::Color::Red);
+                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(contact.contactPoint, contactRadius, true, Umbra::Color::Green);
             }
         }
 
@@ -282,7 +313,7 @@ void NarrowPhaseScene::DrawCollisionInfo() {
         if (bShowContactNormals) {
             for (const auto& contact : collision.contacts) {
                 Umbra::Math::Vector2f normalEnd = contact.contactPoint + collision.contactNormal * normalLength;
-                Umbra::RenderSystem::DebugDrawLine(contact.contactPoint, normalEnd, Umbra::Color::Yellow);
+                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(contact.contactPoint, normalEnd, Umbra::Color::Yellow);
             }
         }
 
@@ -290,7 +321,7 @@ void NarrowPhaseScene::DrawCollisionInfo() {
         if (bShowPenetration) {
             for (const auto& contact : collision.contacts) {
                 Umbra::Math::Vector2f penEnd = contact.contactPoint + collision.contactNormal * -collision.penetration;
-                Umbra::RenderSystem::DebugDrawLine(contact.contactPoint, penEnd, Umbra::Color::Cyan);
+                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(contact.contactPoint, penEnd, Umbra::Color::Cyan);
             }
         }
     }

@@ -5,7 +5,6 @@
 #include "ECS/Components/LifeTime.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
-#include "ECS/Systems/RenderSystem.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
 
 namespace Umbra {
@@ -30,7 +29,7 @@ namespace Umbra {
         mCameraSystem->SetScreenSize(
             Math::Vector2f(static_cast<float>(windowSize.x), static_cast<float>(windowSize.y)));
 
-        mRenderSystem  = std::make_shared<RenderSystem>(renderDevice, GEngineStatics.ImGuiBackend);
+        mRenderSyncSystem = std::make_shared<RenderSyncSystem>();
         mPhysicsSystem = std::make_shared<PhysicsSystem>();
 
         // Initialize Physics Service Layer
@@ -39,7 +38,7 @@ namespace Umbra {
         mPhysicsSyncSystem    = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
 
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
-        mWorldRegister->AddSystem(ESystemPhase::Render, 0, mRenderSystem);
+        mWorldRegister->AddSystem(ESystemPhase::PreRender, 10, mRenderSyncSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
         // PhysicsSyncSystem runs after the old PhysicsSystem (lower priority = runs later)
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
@@ -72,7 +71,6 @@ namespace Umbra {
     void World::Render() {
         mWorldRegister->Update(ESystemPhase::FrameStart);
         mWorldRegister->Update(ESystemPhase::PreRender);
-        mWorldRegister->Update(ESystemPhase::Render);
         mWorldRegister->Update(ESystemPhase::FrameEnd);
     }
 

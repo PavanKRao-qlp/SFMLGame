@@ -1,7 +1,7 @@
 #include "LandingScene.h"
 
 #include "Core/Random.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "Umbra.h"

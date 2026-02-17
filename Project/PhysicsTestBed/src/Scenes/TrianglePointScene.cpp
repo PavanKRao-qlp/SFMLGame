@@ -4,7 +4,7 @@
 #include "Graphics/Color.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -20,7 +20,7 @@ void TrianglePointScene::Initialize() {
 
 void TrianglePointScene::OnFixedUpdate() {
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
     auto vertices = mTriangle.GetVertices();
     auto normals  = mTriangle.GetNormals();
     for (int i = 0; i < vertices.size(); i++) {
@@ -32,9 +32,9 @@ void TrianglePointScene::OnFixedUpdate() {
         } else if (i == 2) {
             color = Umbra::Color::Red;
         }
-        Umbra::RenderSystem::DebugDrawLine(vertices[i], vertices[(i + 1) % vertices.size()], Umbra::Color::White);
-        Umbra::RenderSystem::DebugDrawLine(normals[i] * -100, normals[i] * 100, color);
-        Umbra::RenderSystem::DebugDrawCircle(vertices[i], 1.75f, true, color);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(vertices[i], vertices[(i + 1) % vertices.size()], Umbra::Color::White);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(normals[i] * -100, normals[i] * 100, color);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertices[i], 1.75f, true, color);
     }
     for (int i = 0; i < normals.size(); i++) {
         for (int j = 0; j < vertices.size(); j++) {
@@ -49,8 +49,8 @@ void TrianglePointScene::OnFixedUpdate() {
             } else if (j == 2) {
                 color = Umbra::Color::Red;
             }
-            Umbra::RenderSystem::DebugDrawCircle(projectionOnNormalScaled, 1.75f, true, color);
-            Umbra::RenderSystem::DebugDrawLine(vertices[j], projectionOnNormalScaled, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(projectionOnNormalScaled, 1.75f, true, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(vertices[j], projectionOnNormalScaled, color);
         }
     }
 }

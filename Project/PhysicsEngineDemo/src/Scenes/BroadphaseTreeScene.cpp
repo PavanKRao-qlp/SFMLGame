@@ -4,7 +4,7 @@
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -317,11 +317,11 @@ void BroadphaseTreeScene::DrawColliderOutlines() {
         }
 
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), false, color);
         } else if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
         }
     }
 }
@@ -343,7 +343,7 @@ void BroadphaseTreeScene::DrawTightAABBs() {
         }
 
         Umbra::Math::Bounds2D bounds(transform->Position, physBody->BoundingAABB.Size);
-        Umbra::RenderSystem::DrawDebugBox(bounds, false, Umbra::Color::Red);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(bounds, false, Umbra::Color::Red);
     }
 }
 
@@ -364,7 +364,7 @@ void BroadphaseTreeScene::DrawFatAABBs() {
         }
 
         const Umbra::Math::Bounds2D& fatAabb = tree.GetFatAABB(physBody->TreeProxyId);
-        Umbra::RenderSystem::DrawDebugBox(fatAabb, false, Umbra::Color::Yellow);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(fatAabb, false, Umbra::Color::Yellow);
     }
 }
 
@@ -412,7 +412,7 @@ void BroadphaseTreeScene::DrawTreeInternalNodes() {
             uint8_t alpha       = static_cast<uint8_t>(alphaFraction * 180.0f + 40.0f);
             Umbra::Color color  = Umbra::Color::FromU8(0, 255, 255, alpha);
 
-            Umbra::RenderSystem::DrawDebugBox(node.Aabb, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(node.Aabb, false, color);
 
             TraversalEntry leftEntry;
             leftEntry.NodeId = node.Left;

@@ -22,7 +22,7 @@ private:
     Umbra::EntityID mPlayerBox = 0;
     float mPlayerSpeed         = 10.0f;
     bool bShowBoundingVolumes  = false;
-    bool bShowContactPoints    = true;
+    bool bShowContactPoints    = false;
     bool bShowContactNormals   = false;
     bool bShowPenetration      = false;
     int mCollisionCount        = 0;

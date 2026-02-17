@@ -8,7 +8,6 @@
 #include "ECS/Systems/CollisionEventResolverSystem.h"
 #include "ECS/Systems/LifeTimeSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
-#include "ECS/Systems/RenderSystem.h"
 #include "ECS/Systems/RotationSystem.h"
 #include "Game/IGameInstance.h"
 #include "Game/SceneManager.h"
@@ -17,6 +16,7 @@
 #include "Platform/NativeFileSystem.h"
 #include "Platform/PakFileSystem.h"
 #include "Platform/VirtualFileManager.h"
+#include "Service/ServiceLocator.h"
 #include "UI/Backends/SfmlImguiImpl.h"
 #include "Umbra.h"
 #include "Graphics/IRenderDevice.h"
@@ -102,6 +102,11 @@ namespace Umbra {
             EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
             mUIManager->Init(mAppWindow->GetRenderDevice()->GetNativeWindowHandle(), 800, 800);
             GEngineStatics.ImGuiBackend = mUIManager.get();
+
+            // Initialize services
+            ServiceLocator::Initialize();
+            ServiceLocator::GetRenderService()->Initialize(mAppWindow->GetRenderDevice());
+
             UMBRA_LOG_INFO("App Initalized!");
             return true;
         }
@@ -114,6 +119,7 @@ namespace Umbra {
         mUIManager.reset();
         mSceneManager->ShutDown();
         mSceneManager.reset();
+        ServiceLocator::Shutdown();
         mAppWindow->CloseWindow();
         mAppWindow.reset();
         mGameInstance->ShutDown();
@@ -183,8 +189,14 @@ namespace Umbra {
         // Begin UI frame
         mUIManager->NewFrame(EngineTime::GetDeltaTime());
 
-        // Render scene (includes OnUpdate and World rendering)
+        // Begin render frame (clears screen and resets quad queue)
+        ServiceLocator::GetRenderService()->BeginFrame();
+
+        // Render scene (submits quads via RenderSyncSystem)
         mSceneManager->Render();
+
+        // Flush render service (sort, cull, batch, draw, flush debug)
+        ServiceLocator::GetRenderService()->Flush();
 
         // End UI frame
         mUIManager->Render();

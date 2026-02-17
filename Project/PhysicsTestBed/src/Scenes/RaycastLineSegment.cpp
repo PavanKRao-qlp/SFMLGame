@@ -3,7 +3,7 @@
 #include "Core/Random.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -21,13 +21,13 @@ void RaycastLineSegment::OnFixedUpdate() {
     mRay.Direction = Umbra::Math::Vector2f(1, 0).GetRotated(mAngle);
     Umbra::Math::Vector2f pos;
     if (Umbra::Math::TestRayLineSegment(mRay, mPointA, mPointB, pos)) {
-        Umbra::RenderSystem::DebugDrawCircle(pos, 2, true, Umbra::Color::Green);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pos, 2, true, Umbra::Color::Green);
     }
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(mPointA, 2, true, Umbra::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(mPointB, 2, true, Umbra::Color::Red);
-    Umbra::RenderSystem::DebugDrawLine(mPointA, mPointB, Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mPointA, 2, true, Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mPointB, 2, true, Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mPointA, mPointB, Umbra::Color::Red);
 }
 
 void RaycastLineSegment::OnUpdate() {

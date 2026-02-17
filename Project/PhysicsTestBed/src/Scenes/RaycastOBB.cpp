@@ -3,7 +3,7 @@
 #include "Core/Random.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -46,24 +46,24 @@ void RaycastOBB::OnFixedUpdate() {
         float tMaxX                    = (rayToMax.x) / (rayDirInLocal.x);
         float tMaxY                    = (rayToMax.y) / (rayDirInLocal.y);
 
-        Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMin.y),
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMin.y),
             bounds.Center + (boxXBasis * 500) + (boxYBasis * localMin.y), Umbra::Color::Blue);
-        Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMax.y),
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(bounds.Center + (boxXBasis * -500) + (boxYBasis * localMax.y),
             bounds.Center + (boxXBasis * 500) + (boxYBasis * localMax.y), Umbra::Color::Blue);
-        Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * -500),
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * -500),
             bounds.Center + (boxXBasis * localMin.x) + (boxYBasis * 500), Umbra::Color::Blue);
-        Umbra::RenderSystem::DebugDrawLine(bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * -500),
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * -500),
             bounds.Center + (boxXBasis * localMax.x) + (boxYBasis * 500), Umbra::Color::Blue);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinX, 3.5f, false, Umbra::Color::Cyan);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMinY, 3.5f, true, Umbra::Color::Cyan);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxX, 3.5f, false, Umbra::Color::Magenta);
-        Umbra::RenderSystem::DebugDrawCircle(mRay.Position + mRay.Direction * tMaxY, 3.5f, true, Umbra::Color::Magenta);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position + mRay.Direction * tMinX, 3.5f, false, Umbra::Color::Cyan);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position + mRay.Direction * tMinY, 3.5f, true, Umbra::Color::Cyan);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position + mRay.Direction * tMaxX, 3.5f, false, Umbra::Color::Magenta);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position + mRay.Direction * tMaxY, 3.5f, true, Umbra::Color::Magenta);
     }
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 0.75f, true, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position, 0.75f, true, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
     if (bHit) {
-        Umbra::RenderSystem::DebugDrawCircle(hitPoint, 2.f, true, Umbra::Color::Green);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(hitPoint, 2.f, true, Umbra::Color::Green);
     }
 }
 

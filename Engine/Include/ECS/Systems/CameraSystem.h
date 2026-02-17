@@ -6,6 +6,7 @@
 #include "ECS/Enity.h"
 #include "ECS/System.h"
 #include "Graphics/IRenderDevice.h"
+#include "Service/ServiceLocator.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -42,6 +43,12 @@ namespace Umbra {
                     mRenderDevice->SetViewport(ViewPortRect);
                     mRenderDevice->SetViewCenter(transform->Position.x, transform->Position.y);
                     mRenderDevice->ApplyView();
+
+                    // Update RenderService with camera state for frustum culling
+                    if (auto* rs = ServiceLocator::GetRenderService()) {
+                        rs->SetCamera(transform->Position, camera->GetOrthographicSize(), mRenderAspectRatio);
+                    }
+
                     break; // Only use the first active camera
                 }
             }

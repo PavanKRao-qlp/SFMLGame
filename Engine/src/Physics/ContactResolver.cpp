@@ -1,7 +1,7 @@
 #include "Physics/ContactResolver.h"
 
 #include "ECS/ECSRegister.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Physics/Collision.h"
 #include "Umbra.h"
 
@@ -25,7 +25,7 @@ namespace Umbra {
             for (Collision collision : _collisions) {
                 for (ContactPoint& contact : collision.GetContacts()) {
 
-                    RenderSystem::DebugDrawLine(contact.mContactPosition,
+                    ServiceLocator::GetRenderService()->DebugDrawLine(contact.mContactPosition,
                         contact.mContactPosition + (contact.mContactNormal * contact.mPenetration), Color::Red);
                     ResolveContact(&contact, collision.mBodyA, collision.mBodyB, _deltaTime);
                 }

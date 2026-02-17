@@ -5,7 +5,7 @@
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"

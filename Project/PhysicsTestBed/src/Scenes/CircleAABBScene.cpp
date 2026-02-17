@@ -1,7 +1,7 @@
 #include "CircleAABBScene.h"
 
 #include "Core/Random.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -21,13 +21,13 @@ void CircleAABBScene::OnFixedUpdate() {
     Umbra::Math::Vector2f pointOnBox     = Umbra::Math::GetClosestPointOnBoundEdge(RectAABB, worldMousePos);
     mDistance                            = (worldMousePos - pointWithinBox).Magnitude();
     mDistanceToProj                      = (worldMousePos - pointOnBox).Magnitude();
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
-    Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Yellow);
-    Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
-    Umbra::RenderSystem::DrawDebugBox(RectAABB);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Yellow);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(RectAABB);
     bool bColliding = (mDistance <= mRadius);
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green : Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green : Umbra::Color::Red);
 }
 
 void CircleAABBScene::OnUpdate() {

@@ -1,6 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include "Service/Physics/PhysicsService.h"
+#include "Service/Render/RenderService.h"
 
 namespace Umbra {
 
@@ -22,8 +23,17 @@ namespace Umbra {
             sPhysicsService = std::move(_service);
         }
 
+        /// @brief Get the render service
+        static RenderService* GetRenderService() { return sRenderService.get(); }
+
+        /// @brief Register a custom render service
+        static void RegisterRenderService(UniquePtr<RenderService> _service) {
+            sRenderService = std::move(_service);
+        }
+
     private:
         static UniquePtr<PhysicsService> sPhysicsService;
+        static UniquePtr<RenderService> sRenderService;
     };
 
 } // namespace Umbra

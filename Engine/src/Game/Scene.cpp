@@ -21,7 +21,6 @@ namespace Umbra {
     }
 
     void Scene::Render() {
-        GEngineStatics.AppWindowPtr->GetRenderDevice()->Clear(Color::Black);
         this->OnUpdate();
         mWorld->Update();
         mWorld->Render();

@@ -9,8 +9,7 @@ namespace Umbra {
     enum class ESystemPhase {
         FrameStart, // Input collection, etc.
         Simulation, // Physics, AI
-        PreRender, // Visibility culling
-        Render, // Actual drawing
+        PreRender, // Visibility culling, quad submission
         FrameEnd // Cleanup
     };
 

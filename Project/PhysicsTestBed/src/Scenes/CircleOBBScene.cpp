@@ -3,7 +3,7 @@
 #include "Core/Random.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -55,8 +55,8 @@ void CircleOBBScene::OnFixedUpdate() {
                 color = Umbra::Color::Red;
             }
             Umbra::Math::Vector2f edgeMid = corners[i] + (edge * 0.5f);
-            Umbra::RenderSystem::DebugDrawCircle(corners[i], 2.5f, false, color);
-            Umbra::RenderSystem::DebugDrawLine(edgeMid, edgeMid + (normal * 10), color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(corners[i], 2.5f, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(edgeMid, edgeMid + (normal * 10), color);
         }
         for (int n = 0; n < normals.size(); n++) {
             Umbra::Color normalColor = Umbra::Color::Red;
@@ -85,36 +85,36 @@ void CircleOBBScene::OnFixedUpdate() {
                 } else if (i == 3) {
                     color = Umbra::Color::Red;
                 }
-                Umbra::RenderSystem::DebugDrawCircle(
+                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                     projectionOnNormalScaled, (n == 0 || n == 1) ? 2.5f : 3.5f, n == 0 || n == 1, normalColor);
                 Umbra::Math::Vector2f projectionGuide = projectionOnNormalScaled - corners[i];
-                Umbra::RenderSystem::DebugDrawLine(corners[i], corners[i] + projectionGuide, color);
+                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(corners[i], corners[i] + projectionGuide, color);
             }
             float mouseProjection                               = Umbra::Math::Vector2f::Dot(worldMousePos, normal);
             Umbra::Math::Vector2f mouseProjectionOnNormalScaled = normal * mouseProjection;
 
-            Umbra::RenderSystem::DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 500, normalColor);
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 500, normalColor);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 mouseProjectionOnNormalScaled, (n == 0 || n == 1) ? 2.5f : 3.5f, n == 0 || n == 1, normalColor);
-            Umbra::RenderSystem::DebugDrawLine(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
                 worldMousePos, worldMousePos - mouseProjectionOnNormalScaled, Umbra::Color::Cyan);
         }
 
-        Umbra::RenderSystem::DebugDrawCircle(transform->Position, 0.75f, true, Umbra::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(pointInOBB, 3.f, true, Umbra::Color::Magenta);
-        Umbra::RenderSystem::DebugDrawCircle(pointOnOBB, 2.5f, true, Umbra::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
-        Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
-        Umbra::RenderSystem::DebugDrawCircle(
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transform->Position, 0.75f, true, Umbra::Color::White);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointInOBB, 3.f, true, Umbra::Color::Magenta);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointOnOBB, 2.5f, true, Umbra::Color::White);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Cyan);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, Umbra::Color::White);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
             worldMousePos, mRadius, false, !bColliding ? Umbra::Color::Red : Umbra::Color::Green);
     }
 
-    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
-    // Umbra::RenderSystem::DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
-    // Umbra::RenderSystem::DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Blue);
-    // Umbra::RenderSystem::DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mPoint, 1.f, true, Umbra::Color::White);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointOnBox, 1.2f, true, Umbra::Color::Blue);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(pointWithinBox, 1.f, true, Umbra::Color::Green);
     // bool bColliding = (mDistance <= mRadius);
-    // Umbra::RenderSystem::DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green :
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, mRadius, false, bColliding ? Umbra::Color::Green :
     // Umbra::Color::Red);
 }
 

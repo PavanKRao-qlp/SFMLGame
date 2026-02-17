@@ -19,7 +19,11 @@ public:
     static constexpr uint16_t CATEGORY_BLUE    = 0x0008;
     static constexpr uint16_t CATEGORY_BULLET  = 0x0010;
 
-    enum class EFilterGroup { Red, Green, Blue };
+    enum class EFilterGroup {
+        Red,
+        Green,
+        Blue
+    };
 
 private:
     void DrawColliderOutlines();
@@ -34,10 +38,10 @@ private:
     Umbra::Vector<Umbra::EntityID> mStaticEntities;
     Umbra::Vector<Umbra::EntityID> mBulletEntities;
 
-    bool bShowColliders       = true;
-    bool bRedCollidesGreen    = false;
-    bool bRedCollidesBlue     = false;
-    bool bGreenCollidesBlue   = false;
-    bool bBulletCCDEnabled    = true;
-    float mBulletSpeed        = 2000.0f;
+    bool bShowColliders     = true;
+    bool bRedCollidesGreen  = true;
+    bool bRedCollidesBlue   = true;
+    bool bGreenCollidesBlue = false;
+    bool bBulletCCDEnabled  = true;
+    float mBulletSpeed      = 2000.0f;
 };

@@ -4,7 +4,7 @@
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -103,6 +103,7 @@ void CollisionFilterCCDScene::OnUpdate() {
                 Umbra::CollisionFilter filter;
                 filter.CategoryBits = category;
                 filter.MaskBits     = mask;
+                rb->Filter          = filter;
                 physicsService->SetCollisionFilter(rb->Handle, filter);
             }
         }
@@ -244,6 +245,8 @@ void CollisionFilterCCDScene::OnBeginPlay() {
         rb.CoefOfRestitution  = 0.4f;
         rb.Filter.CategoryBits = CATEGORY_RED;
         rb.Filter.MaskBits     = CATEGORY_DEFAULT | CATEGORY_RED | CATEGORY_BULLET;
+        if (bRedCollidesGreen) rb.Filter.MaskBits |= CATEGORY_GREEN;
+        if (bRedCollidesBlue)  rb.Filter.MaskBits |= CATEGORY_BLUE;
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
 
         Umbra::CircleColliderComponent circle;
@@ -270,6 +273,8 @@ void CollisionFilterCCDScene::OnBeginPlay() {
         rb.CoefOfRestitution  = 0.4f;
         rb.Filter.CategoryBits = CATEGORY_GREEN;
         rb.Filter.MaskBits     = CATEGORY_DEFAULT | CATEGORY_GREEN | CATEGORY_BULLET;
+        if (bRedCollidesGreen)  rb.Filter.MaskBits |= CATEGORY_RED;
+        if (bGreenCollidesBlue) rb.Filter.MaskBits |= CATEGORY_BLUE;
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
         world->AddComponent<Umbra::BoxColliderComponent>(entity, Umbra::Math::Vector2f(sizeX, sizeY));
 
@@ -292,6 +297,8 @@ void CollisionFilterCCDScene::OnBeginPlay() {
         rb.CoefOfRestitution  = 0.4f;
         rb.Filter.CategoryBits = CATEGORY_BLUE;
         rb.Filter.MaskBits     = CATEGORY_DEFAULT | CATEGORY_BLUE | CATEGORY_BULLET;
+        if (bRedCollidesBlue)   rb.Filter.MaskBits |= CATEGORY_RED;
+        if (bGreenCollidesBlue) rb.Filter.MaskBits |= CATEGORY_GREEN;
         world->AddComponent<Umbra::RigidbodyHandleComponent>(entity, rb);
 
         Umbra::CircleColliderComponent circle;
@@ -363,7 +370,7 @@ void CollisionFilterCCDScene::DrawColliderOutlines() {
         Umbra::Color color(0.3f, 0.3f, 0.3f);
         if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
         }
     }
 
@@ -382,11 +389,11 @@ void CollisionFilterCCDScene::DrawColliderOutlines() {
         Umbra::Color color = GroupColor(info.Group);
 
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), true, color);
         } else if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, true, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, true, color);
         }
     }
 
@@ -404,7 +411,7 @@ void CollisionFilterCCDScene::DrawColliderOutlines() {
 
         Umbra::Color color = Umbra::Color::Yellow;
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), true, color);
         }
     }

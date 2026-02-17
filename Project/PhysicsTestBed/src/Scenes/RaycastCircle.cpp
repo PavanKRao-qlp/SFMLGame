@@ -3,7 +3,7 @@
 #include "Core/Random.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -30,14 +30,14 @@ void RaycastCircle::OnFixedUpdate() {
     bool bCastHit                    = (proj - distToEdge) > 0;
     Umbra::Math::Vector2f castPointA = projPoint + (mRay.Direction * distToEdge);
     Umbra::Math::Vector2f castPointB = projPoint - (mRay.Direction * distToEdge);
-    Umbra::RenderSystem::DebugDrawCircle(mPoint, mRadius, false, !bCastHit ? Umbra::Color::Red : Umbra::Color::Green);
-    Umbra::RenderSystem::DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawCircle(projPoint, 2, true, Umbra::Color::Magenta);
-    Umbra::RenderSystem::DebugDrawCircle(castPointA, 2, true, Umbra::Color::Yellow);
-    Umbra::RenderSystem::DebugDrawCircle(castPointB, 2, true, Umbra::Color::Blue);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mRay.Position, mPoint, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(mPoint, projPoint, Umbra::Color::Magenta);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mPoint, mRadius, false, !bCastHit ? Umbra::Color::Red : Umbra::Color::Green);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mRay.Position, 2, true, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(projPoint, 2, true, Umbra::Color::Magenta);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(castPointA, 2, true, Umbra::Color::Yellow);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(castPointB, 2, true, Umbra::Color::Blue);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mRay.Position, mRay.Position + mRay.Direction * 500, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mRay.Position, mPoint, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mPoint, projPoint, Umbra::Color::Magenta);
 }
 
 void RaycastCircle::OnUpdate() {

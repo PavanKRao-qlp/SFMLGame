@@ -23,8 +23,8 @@ private:
     Umbra::EntityID mPlayerEntity = 0;
     float mPlayerSpeed            = 10.0f;
 
-    bool bShowColliders      = true;
-    bool bShowTightAABBs     = false;
-    bool bShowFatAABBs       = true;
-    bool bShowTreeNodes      = true;
+    bool bShowColliders  = true;
+    bool bShowTightAABBs = false;
+    bool bShowFatAABBs   = false;
+    bool bShowTreeNodes  = false;
 };

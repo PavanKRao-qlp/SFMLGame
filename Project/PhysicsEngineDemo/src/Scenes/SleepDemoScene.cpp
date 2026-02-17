@@ -4,7 +4,7 @@
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -312,11 +312,11 @@ void SleepDemoScene::DrawColliderOutlines() {
         }
 
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), false, color);
         } else if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
         }
     }
 }

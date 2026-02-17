@@ -1,7 +1,7 @@
 #include "BVHScene.h"
 
 #include "Core/Random.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
@@ -36,8 +36,8 @@ void BVHScene::OnFixedUpdate() {
         mRayCastColliding = false;
     }
 
-    Umbra::RenderSystem::DrawDebugBox(mouseBound, false, Umbra::Color::Cyan);
-    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos + mouseRay.Direction * 10000, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(mouseBound, false, Umbra::Color::Cyan);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(worldMousePos, worldMousePos + mouseRay.Direction * 10000, Umbra::Color::Cyan);
 }
 
 void BVHScene::OnUpdate() {

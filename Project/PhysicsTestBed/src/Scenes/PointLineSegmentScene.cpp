@@ -1,7 +1,7 @@
 #include "PointLineSegmentScene.h"
 
 #include "Core/Random.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -15,7 +15,7 @@ void PointLineSegmentScene::Initialize() {
 }
 
 void PointLineSegmentScene::OnFixedUpdate() {
-    Umbra::RenderSystem::DebugDrawLine(mPointA, mPointB);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mPointA, mPointB);
     Umbra::Math::Vector2f worldMousePos = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
     Umbra::Math::Vector2f onLinePos     = Umbra::Math::GetClosestPointInLineSegment(mPointA, mPointB, worldMousePos);
     Umbra::Math::Vector2f normal =
@@ -23,12 +23,12 @@ void PointLineSegmentScene::OnFixedUpdate() {
     mDistance      = Umbra::Math::GetDistanceToClosestPointInLineSegment(mPointA, mPointB, worldMousePos);
     mOrthoDistance = Umbra::Math::GetOrthogonalDistanceFromPointToLineSegment(mPointA, mPointB, worldMousePos);
     bOnLine        = Umbra::Math::IsPointOnLineSegment(mPointA, mPointB, worldMousePos, 1);
-    Umbra::RenderSystem::DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
-    Umbra::RenderSystem::DebugDrawCircle(onLinePos, 1.f, true, Umbra::Color::Green);
-    Umbra::RenderSystem::DebugDrawLine(worldMousePos, worldMousePos - (worldMousePos - onLinePos), Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 1.5f, true, Umbra::Color::Red);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(onLinePos, 1.f, true, Umbra::Color::Green);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(worldMousePos, worldMousePos - (worldMousePos - onLinePos), Umbra::Color::Red);
     Umbra::Math::Vector2f midPoint = mPointA + (mPointB - mPointA) * 0.5f;
-    Umbra::RenderSystem::DebugDrawCircle(midPoint, 1.f, true, Umbra::Color::Blue);
-    Umbra::RenderSystem::DebugDrawLine(midPoint, midPoint + (normal * 20), Umbra::Color::Blue);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(midPoint, 1.f, true, Umbra::Color::Blue);
+    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(midPoint, midPoint + (normal * 20), Umbra::Color::Blue);
 }
 
 void PointLineSegmentScene::OnUpdate() {

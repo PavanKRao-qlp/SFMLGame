@@ -5,7 +5,7 @@
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -112,10 +112,10 @@ void BoundingVolumeScene::DrawColliderOutlines() {
         Umbra::PhysicsBodyData* physBody = physicsService->GetBodyData(rb->Handle);
         if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, 0, true);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, 0, true);
         }
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), true);
         }
     }
@@ -145,11 +145,11 @@ void BoundingVolumeScene::DrawColliderOutlines() {
 
     //     if (world->HasComponent<Umbra::CircleColliderComponent>(entity)) {
     //         Umbra::CircleColliderComponent* circle = world->GetComponent<Umbra::CircleColliderComponent>(entity);
-    //         Umbra::RenderSystem::DebugDrawCircle(transform->Position + circle->Offset, circle->Radius, false, color);
+    //         Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transform->Position + circle->Offset, circle->Radius, false, color);
     //     } else if (world->HasComponent<Umbra::BoxColliderComponent>(entity)) {
     //         Umbra::BoxColliderComponent* box = world->GetComponent<Umbra::BoxColliderComponent>(entity);
     //         Umbra::Math::Bounds2D bounds(transform->Position + box->Offset, box->Size);
-    //         Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+    //         Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
     //     }
     // }
 }
@@ -167,6 +167,6 @@ void BoundingVolumeScene::DrawBoundsOutlines() {
         }
         Umbra::PhysicsBodyData* physBody = physicsService->GetBodyData(rb->Handle);
         Umbra::Math::Bounds2D bounds(transform->Position, physBody->BoundingAABB.Size);
-        Umbra::RenderSystem::DrawDebugOrientedBox(bounds, 0, false, Umbra::Color::Red);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, 0, false, Umbra::Color::Red);
     }
 }

@@ -3,7 +3,7 @@
 #include "ECS/Components/Collider.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "Service/ServiceLocator.h"
 #include "Game/IGameInstance.h"
 #include "Graphics/Color.h"
 #include "Input/Input.h"
@@ -486,16 +486,16 @@ void ConstraintJointScene::DrawConstraintLines() {
     // ── Spring line (yellow) ────────────────────────────────────
     if (mSpringBodyHandle.IsValid()) {
         Umbra::Math::Vector2f bodyPos = physicsService->GetPosition(mSpringBodyHandle);
-        Umbra::RenderSystem::DebugDrawLine(mSpringWorldAnchor, bodyPos, Umbra::Color::Yellow);
-        Umbra::RenderSystem::DebugDrawCircle(mSpringWorldAnchor, 4.0f, true, Umbra::Color::Yellow);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(mSpringWorldAnchor, bodyPos, Umbra::Color::Yellow);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(mSpringWorldAnchor, 4.0f, true, Umbra::Color::Yellow);
     }
 
     // ── Distance line (cyan) ────────────────────────────────────
     if (mDistanceBodyA.IsValid() && mDistanceBodyB.IsValid()) {
         Umbra::Math::Vector2f posA = physicsService->GetPosition(mDistanceBodyA);
         Umbra::Math::Vector2f posB = physicsService->GetPosition(mDistanceBodyB);
-        Umbra::RenderSystem::DebugDrawLine(posA, posB, Umbra::Color::Cyan);
-        Umbra::RenderSystem::DebugDrawCircle(posA, 4.0f, true, Umbra::Color::Cyan);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(posA, posB, Umbra::Color::Cyan);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(posA, 4.0f, true, Umbra::Color::Cyan);
     }
 
     // ── Spring chain lines (green) ──────────────────────────────
@@ -503,18 +503,18 @@ void ConstraintJointScene::DrawConstraintLines() {
         if (mChainBodyHandles[i].IsValid() && mChainBodyHandles[i + 1].IsValid()) {
             Umbra::Math::Vector2f posA = physicsService->GetPosition(mChainBodyHandles[i]);
             Umbra::Math::Vector2f posB = physicsService->GetPosition(mChainBodyHandles[i + 1]);
-            Umbra::RenderSystem::DebugDrawLine(posA, posB, Umbra::Color::Green);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(posA, posB, Umbra::Color::Green);
         }
     }
 
     // ── Hinge marker (magenta) ──────────────────────────────────
     if (mHingeBodyA.IsValid()) {
         Umbra::Math::Vector2f posA = physicsService->GetPosition(mHingeBodyA);
-        Umbra::RenderSystem::DebugDrawCircle(posA, 6.0f, true, Umbra::Color::Magenta);
+        Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(posA, 6.0f, true, Umbra::Color::Magenta);
 
         if (mHingeBodyB.IsValid()) {
             Umbra::Math::Vector2f posB = physicsService->GetPosition(mHingeBodyB);
-            Umbra::RenderSystem::DebugDrawLine(posA, posB, Umbra::Color::Magenta);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(posA, posB, Umbra::Color::Magenta);
         }
     }
 }
@@ -538,11 +538,11 @@ void ConstraintJointScene::DrawColliderOutlines() {
         Umbra::Color color = (physBody->InverseMass == 0.0f) ? Umbra::Color(0.4f, 0.4f, 0.4f) : Umbra::Color::White;
 
         if (physBody->BodyShape.IsCircle()) {
-            Umbra::RenderSystem::DebugDrawCircle(
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
                 transform->Position, physBody->BodyShape.GetCircle().GetRadius(), false, color);
         } else if (physBody->BodyShape.IsBox()) {
             Umbra::Math::Bounds2D bounds(transform->Position, physBody->BodyShape.GetBox().GetSize());
-            Umbra::RenderSystem::DrawDebugOrientedBox(bounds, transform->Angle, false, color);
+            Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(bounds, transform->Angle, false, color);
         }
     }
 }
