@@ -1,10 +1,12 @@
 #pragma once
 #include "ECS/ECSRegister.h"
+#include "ECS/Systems/AudioSyncSystem.h"
 #include "ECS/Systems/CameraSystem.h"
 #include "ECS/Systems/CollisionEventDispatchSystem.h"
 #include "ECS/Systems/PhysicsSyncSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
-#include "ECS/Systems/RenderSystem.h"
+#include "ECS/Systems/RenderSyncSystem.h"
+#include "Service/Audio/AudioService.h"
 #include "Service/Physics/PhysicsService.h"
 #include "Umbra.h"
 
@@ -93,9 +95,20 @@ namespace Umbra {
         /// @brief Get velocity of an entity (uses cached value for efficiency)
         Math::Vector2f GetVelocity(EntityID _entity);
 
+        // ============== Audio Service Layer ==============
+
+        /// @brief Get the audio service for this world
+        AudioService* GetAudioService();
+
+        /// @brief Play a sound (fire-and-forget convenience)
+        void PlaySound(const String& _filePath, ESoundGroup _group = ESoundGroup::SFX);
+
+        /// @brief Set volume for a sound group
+        void SetGroupVolume(ESoundGroup _group, float _volume);
+
     private:
         SharedPtr<ECSRegister> mWorldRegister;
-        SharedPtr<RenderSystem> mRenderSystem;
+        SharedPtr<RenderSyncSystem> mRenderSyncSystem;
         SharedPtr<CameraSystem> mCameraSystem;
         SharedPtr<PhysicsSystem> mPhysicsSystem;
         SharedPtr<PhysicsSyncSystem> mPhysicsSyncSystem;
@@ -103,6 +116,10 @@ namespace Umbra {
 
         // Physics Service Layer
         UniquePtr<PhysicsService> mPhysicsService;
+
+        // Audio Service Layer
+        UniquePtr<AudioService> mAudioService;
+        SharedPtr<AudioSyncSystem> mAudioSyncSystem;
     };
 
 } // namespace Umbra

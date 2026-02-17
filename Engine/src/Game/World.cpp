@@ -1,10 +1,12 @@
 #include "Game/World.h"
 
 #include "Core/AppWindow.h"
+#include "ECS/Components/AudioSource.h"
 #include "ECS/Components/CollisionCallback.h"
 #include "ECS/Components/LifeTime.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
+#include "Service/Audio/AudioServiceConfig.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
 
 namespace Umbra {
@@ -19,6 +21,7 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<RigidbodyHandleComponent>();
         mWorldRegister->RegisterComponent<LifeTimeComponent>();
         mWorldRegister->RegisterComponent<CollisionCallbackComponent>();
+        mWorldRegister->RegisterComponent<AudioSourceComponent>();
 
         IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
 
@@ -30,7 +33,7 @@ namespace Umbra {
             Math::Vector2f(static_cast<float>(windowSize.x), static_cast<float>(windowSize.y)));
 
         mRenderSyncSystem = std::make_shared<RenderSyncSystem>();
-        mPhysicsSystem = std::make_shared<PhysicsSystem>();
+        mPhysicsSystem    = std::make_shared<PhysicsSystem>();
 
         // Initialize Physics Service Layer
         PhysicsServiceConfig physicsConfig;
@@ -46,6 +49,12 @@ namespace Umbra {
         // CollisionEventDispatchSystem runs after PhysicsSyncSystem
         mCollisionEventDispatchSystem = std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 20, mCollisionEventDispatchSystem);
+
+        // Initialize Audio Service Layer
+        AudioServiceConfig audioConfig;
+        mAudioService    = std::make_unique<AudioService>(audioConfig);
+        mAudioSyncSystem = std::make_shared<AudioSyncSystem>(mAudioService.get());
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, 30, mAudioSyncSystem);
     }
 
     World::World() {
@@ -54,6 +63,8 @@ namespace Umbra {
     }
 
     World::~World() {
+        mAudioSyncSystem.reset();
+        mAudioService.reset();
         mPhysicsSyncSystem.reset();
         mWorldRegister.reset();
         mPhysicsService.reset();
@@ -161,6 +172,24 @@ namespace Umbra {
             return rb->CachedVelocity;
         }
         return Math::Vector2f(0, 0);
+    }
+
+    // ============== Audio Service Layer ==============
+
+    AudioService* World::GetAudioService() {
+        return mAudioService.get();
+    }
+
+    void World::PlaySound(const String& _filePath, ESoundGroup _group) {
+        if (mAudioService) {
+            mAudioService->PlaySound(_filePath, _group);
+        }
+    }
+
+    void World::SetGroupVolume(ESoundGroup _group, float _volume) {
+        if (mAudioService) {
+            mAudioService->SetGroupVolume(_group, _volume);
+        }
     }
 
 } // namespace Umbra

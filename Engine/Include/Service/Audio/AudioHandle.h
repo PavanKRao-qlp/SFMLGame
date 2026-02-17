@@ -1,0 +1,29 @@
+#pragma once
+#include "EnginePCH.h"
+
+namespace Umbra {
+
+    /// @brief Opaque handle to a sound in the AudioService
+    /// Uses generational index pattern to detect stale handles
+    struct SoundHandle {
+        uint32 Index      = UINT32_MAX;
+        uint32 Generation = 0;
+
+        inline bool IsValid() const {
+            return Index != UINT32_MAX;
+        }
+
+        inline bool operator==(const SoundHandle& _other) const {
+            return Index == _other.Index && Generation == _other.Generation;
+        }
+
+        inline bool operator!=(const SoundHandle& _other) const {
+            return !(*this == _other);
+        }
+
+        static SoundHandle Invalid() {
+            return SoundHandle{UINT32_MAX, 0};
+        }
+    };
+
+} // namespace Umbra
