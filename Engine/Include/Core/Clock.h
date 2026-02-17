@@ -47,6 +47,8 @@ namespace Umbra {
     class EngineTime {
     private:
         inline static Clock clock;
+        inline static float mTimeScale = 1.0f;
+        inline static bool mbPaused    = false;
 
     public:
         inline static Timestamp GetTimestampMS() {
@@ -62,8 +64,26 @@ namespace Umbra {
             clock.Tick();
             return GetDeltaTime();
         }
+        /// Raw unscaled delta time
         inline static float GetDeltaTime() {
             return clock.GetDeltaTime();
+        }
+        /// Delta time affected by pause and time scale
+        inline static float GetScaledDeltaTime() {
+            return mbPaused ? 0.f : clock.GetDeltaTime() * mTimeScale;
+        }
+
+        inline static void SetTimeScale(float _timeScale) {
+            mTimeScale = _timeScale;
+        }
+        inline static float GetTimeScale() {
+            return mTimeScale;
+        }
+        inline static void SetPaused(bool _paused) {
+            mbPaused = _paused;
+        }
+        inline static bool IsPaused() {
+            return mbPaused;
         }
     };
 } // namespace Umbra

@@ -21,7 +21,6 @@ namespace Umbra {
         bool InitializeGameInstance();
 
         bool bAppRequestExit = false;
-        bool bAppPaused      = false;
         FGameConfig mGameConfig;
         // class World* mWorld;
         // class ECSRegister mWorldRegister;

@@ -154,16 +154,15 @@ namespace Umbra {
             EngineTime::Reset();
             while (!bAppRequestExit) {
 
-                float deltaTime = EngineTime::Tick();
-                if (deltaTime == 0) {
-                    UMBRA_LOG_CRITICAL("0 DT !! suffering from success");
-                }
-                if (!bAppPaused) {
-                    if (deltaTime > mGameConfig.MaxPhysicsDeltaTime) { // Handle spiral of death
-                        UMBRA_LOG_WARNING("Long frame detected %f", deltaTime);
-                        deltaTime = mGameConfig.MaxPhysicsDeltaTime;
+                EngineTime::Tick();
+                float scaledDt = EngineTime::GetScaledDeltaTime();
+
+                if (scaledDt > 0.f) {
+                    if (scaledDt > mGameConfig.MaxPhysicsDeltaTime) { // Handle spiral of death
+                        UMBRA_LOG_WARNING("Long frame detected %f", scaledDt);
+                        scaledDt = mGameConfig.MaxPhysicsDeltaTime;
                     }
-                    accumulatedDelta += deltaTime;
+                    accumulatedDelta += scaledDt;
                     while (accumulatedDelta >= mGameConfig.FixedDeltaTime) {
                         accumulatedDelta -= mGameConfig.FixedDeltaTime;
                         OnFixedUpdate();
