@@ -16,6 +16,7 @@
 #include <string>
 #include <typeindex>
 #include <typeinfo>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <variant>
