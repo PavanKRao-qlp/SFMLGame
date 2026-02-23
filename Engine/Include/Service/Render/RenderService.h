@@ -42,7 +42,7 @@ namespace Umbra {
 
     private:
         bool IsInViewBounds(const Math::Vector2f& _renderPos, const Math::Vector2f& _size,
-            const FloatRect& _viewBounds, float _margin) const;
+            const Math::Bounds2D& _viewBounds, float _margin) const;
 
         IRenderDevice* mRenderDevice = nullptr;
         DebugDrawer mDebugDrawer;

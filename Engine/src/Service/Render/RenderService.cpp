@@ -40,8 +40,11 @@ namespace Umbra {
             return;
         }
 
-        FloatRect viewBounds = mRenderDevice->GetViewBounds();
-        float cullMargin     = 50.0f;
+        FloatRect vb     = mRenderDevice->GetViewBounds();
+        Math::Bounds2D viewBounds(
+            {vb.Left + vb.Width * 0.5f, vb.Top + vb.Height * 0.5f},
+            {vb.Width, vb.Height});
+        float cullMargin = 50.0f;
 
         // Sort by ZOrder (lower values render first, appearing behind)
         std::stable_sort(mQuadQueue.begin(), mQuadQueue.end(),
@@ -119,21 +122,10 @@ namespace Umbra {
     // --- Private ---
 
     bool RenderService::IsInViewBounds(const Math::Vector2f& _renderPos, const Math::Vector2f& _size,
-        const FloatRect& _viewBounds, float _margin) const {
-        float halfWidth  = _size.x * 0.5f + _margin;
-        float halfHeight = _size.y * 0.5f + _margin;
-
-        float left   = _renderPos.x - halfWidth;
-        float right  = _renderPos.x + halfWidth;
-        float top    = _renderPos.y - halfHeight;
-        float bottom = _renderPos.y + halfHeight;
-
-        float viewLeft   = _viewBounds.Left;
-        float viewRight  = _viewBounds.Left + _viewBounds.Width;
-        float viewTop    = _viewBounds.Top;
-        float viewBottom = _viewBounds.Top + _viewBounds.Height;
-
-        return !(right < viewLeft || left > viewRight || bottom < viewTop || top > viewBottom);
+        const Math::Bounds2D& _viewBounds, float _margin) const {
+        Math::Vector2f marginVec(_margin * 2.f, _margin * 2.f);
+        Math::Bounds2D quadBounds(_renderPos, _size + marginVec);
+        return quadBounds.Intersects(_viewBounds);
     }
 
 } // namespace Umbra

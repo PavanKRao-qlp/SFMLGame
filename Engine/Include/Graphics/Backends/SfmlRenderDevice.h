@@ -80,10 +80,10 @@ namespace Umbra {
         bool mBatching = false;
         struct BatchData {
             sf::VertexArray vertices;
-            const sf::Texture* texture;
+            const sf::Texture* texture = nullptr;
         };
-        UMap<void*, BatchData> mBatchMap;
-        sf::VertexArray mUntexturedBatch;
+        Vector<BatchData> mBatchList;
+        void* mCurrentBatchTexture = nullptr;
     };
 
 } // namespace Umbra

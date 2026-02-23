@@ -233,9 +233,8 @@ namespace Umbra {
 
     void SfmlRenderDevice::BeginBatch() {
         mBatching = true;
-        mBatchMap.clear();
-        mUntexturedBatch.clear();
-        mUntexturedBatch.setPrimitiveType(sf::Quads);
+        mBatchList.clear();
+        mCurrentBatchTexture = reinterpret_cast<void*>(~uintptr_t(0)); // sentinel
     }
 
     void SfmlRenderDevice::BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
@@ -243,36 +242,30 @@ namespace Umbra {
         const FloatRect& _uvRect) {
         if (!mBatching) return;
 
-        const sf::Texture* texture = static_cast<const sf::Texture*>(_textureHandle);
-
-        if (texture) {
-            auto it = mBatchMap.find(_textureHandle);
-            if (it == mBatchMap.end()) {
-                BatchData data;
-                data.vertices.setPrimitiveType(sf::Quads);
-                data.texture = texture;
-                mBatchMap[_textureHandle] = data;
-                it = mBatchMap.find(_textureHandle);
-            }
-            AddQuadVertices(it->second.vertices, _position, _size, _origin, _angle, _color, texture, _uvRect);
-        } else {
-            AddQuadVertices(mUntexturedBatch, _position, _size, _origin, _angle, _color, nullptr, _uvRect);
+        // Start a new batch when the texture changes
+        if (_textureHandle != mCurrentBatchTexture || mBatchList.empty()) {
+            mCurrentBatchTexture = _textureHandle;
+            BatchData data;
+            data.vertices.setPrimitiveType(sf::Quads);
+            data.texture = static_cast<const sf::Texture*>(_textureHandle);
+            mBatchList.push_back(std::move(data));
         }
+
+        AddQuadVertices(mBatchList.back().vertices, _position, _size, _origin, _angle, _color,
+            static_cast<const sf::Texture*>(_textureHandle), _uvRect);
     }
 
     void SfmlRenderDevice::EndBatch() {
         if (!mWindow || !mBatching) return;
         mBatching = false;
 
-        // Draw untextured quads first
-        if (mUntexturedBatch.getVertexCount() > 0) {
-            mWindow->draw(mUntexturedBatch);
-        }
-
-        // Draw textured batches
-        for (auto& [handle, batch] : mBatchMap) {
+        for (auto& batch : mBatchList) {
             if (batch.vertices.getVertexCount() > 0) {
-                mWindow->draw(batch.vertices, batch.texture);
+                if (batch.texture) {
+                    mWindow->draw(batch.vertices, batch.texture);
+                } else {
+                    mWindow->draw(batch.vertices);
+                }
             }
         }
     }
