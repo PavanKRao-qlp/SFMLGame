@@ -28,6 +28,8 @@ namespace Umbra {
     protected:
         class IGameInstance& GetGameInstance();
         class SceneManager& GetSceneManager();
+        // Returns the context passed to the most recent GoToScene call.
+        const class SceneContext& GetSceneContext() const;
         EntityID GetCameraEntity();
         void SetMainCamera(EntityID _camera);
 

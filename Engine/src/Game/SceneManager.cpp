@@ -38,16 +38,17 @@ namespace Umbra {
         return mCurrentScene;
     }
 
-    void SceneManager::GoToScene(const String& _sceneId) {
+    void SceneManager::GoToScene(const String& _sceneId, SceneContext _context) {
         if (mSceneMap.find(_sceneId) == mSceneMap.end()) {
             UMBRA_LOG_CRITICAL("Trying To Load Unkown Scene!:%s", _sceneId.c_str());
             mGameInstance->QuitApplication();
         }
-        {
-            GoToScene(mSceneMap[_sceneId]);
-        }
+        GoToScene(mSceneMap[_sceneId], std::move(_context));
     }
 
+    const SceneContext& SceneManager::GetContext() const {
+        return mContext;
+    }
 
     void SceneManager::ShutDown() {
         if (mCurrentScene) {
@@ -64,7 +65,7 @@ namespace Umbra {
         mSceneMap.clear();
     }
 
-    void SceneManager::GoToScene(SharedPtr<Scene>& _scene) {
+    void SceneManager::GoToScene(SharedPtr<Scene>& _scene, SceneContext _context) {
         if (mCurrentScene) {
             UMBRA_LOG_INFO("GoToScene exiting %s", mCurrentScene->GetSceneID().c_str());
             // Call OnEndPlay before transitioning
@@ -75,6 +76,9 @@ namespace Umbra {
             mDeletedScene = mCurrentScene;
             mCurrentScene.reset();
         }
+
+        // Store the context so the incoming scene can read it in OnBeginPlay
+        mContext = std::move(_context);
 
         // Create new instance from template
         mCurrentScene = _scene->InstantiateCopy();

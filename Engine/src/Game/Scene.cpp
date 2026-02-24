@@ -1,6 +1,7 @@
 #include "Game/Scene.h"
 
 #include "Game/IGameInstance.h"
+#include "Game/SceneManager.h"
 #include "Graphics/Color.h"
 namespace Umbra {
     Scene::Scene() {}
@@ -62,6 +63,10 @@ namespace Umbra {
 
     SceneManager& Scene::GetSceneManager() {
         return *mSceneManager;
+    }
+
+    const SceneContext& Scene::GetSceneContext() const {
+        return mSceneManager->GetContext();
     }
 
     EntityID Scene::GetCameraEntity() {

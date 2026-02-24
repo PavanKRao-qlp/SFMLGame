@@ -1,4 +1,5 @@
 #include "Game/World.h"
+#include "Game/PrefabManager.h"
 
 #include "Core/AppWindow.h"
 #include "ECS/Components/AudioSource.h"
@@ -190,6 +191,16 @@ namespace Umbra {
         if (mAudioService) {
             mAudioService->SetGroupVolume(_group, _volume);
         }
+    }
+
+    // ============== Prefab Layer ==============
+
+    EntityID World::Instantiate(const String& _prefabName) {
+        return PrefabManager::GetInstance()->Instantiate(_prefabName, *this);
+    }
+
+    EntityID World::Instantiate(const String& _prefabName, std::function<void(EntityID)> _overrideFn) {
+        return PrefabManager::GetInstance()->Instantiate(_prefabName, *this, std::move(_overrideFn));
     }
 
 } // namespace Umbra

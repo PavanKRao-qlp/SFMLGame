@@ -1,6 +1,7 @@
 #pragma once
 #include "EnginePCH.h"
 #include "Game/Scene.h"
+#include "Game/SceneContext.h"
 namespace Umbra {
     class SceneManager {
     private:
@@ -10,8 +11,15 @@ namespace Umbra {
         void Render();
         void AddScene(String _sceneId, SharedPtr<Scene> _scene);
         const SharedPtr<Scene>& GetCurrentScene();
-        void GoToScene(SharedPtr<Scene>& _scene);
-        void GoToScene(const String& _sceneId);
+
+        // Transition by scene pointer (optional context forwarded to the incoming scene).
+        void GoToScene(SharedPtr<Scene>& _scene, SceneContext _context = {});
+        // Transition by registered scene ID (optional context forwarded to the incoming scene).
+        void GoToScene(const String& _sceneId, SceneContext _context = {});
+
+        // Returns the context that was passed to the most recent GoToScene call.
+        const SceneContext& GetContext() const;
+
         void ShutDown();
 
         SceneManager(/* args */);
@@ -24,5 +32,6 @@ namespace Umbra {
         IGameInstance* mGameInstance;
         SharedPtr<Scene> mDeletedScene;
         bool bCurrentSceneStarted = false;
+        SceneContext mContext;
     };
 } // namespace Umbra
