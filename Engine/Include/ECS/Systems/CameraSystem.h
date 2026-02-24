@@ -41,12 +41,12 @@ namespace Umbra {
                         ViewPortRect.Top    = (1 - ViewPortRect.Height) / 2.f;
                     }
                     mRenderDevice->SetViewport(ViewPortRect);
-                    mRenderDevice->SetViewCenter(transform->Position.x, transform->Position.y);
+                    mRenderDevice->SetViewCenter(transform->WorldPosition.x, transform->WorldPosition.y);
                     mRenderDevice->ApplyView();
 
                     // Update RenderService with camera state for frustum culling
                     if (auto* rs = ServiceLocator::GetRenderService()) {
-                        rs->SetCamera(transform->Position, camera->GetOrthographicSize(), mRenderAspectRatio);
+                        rs->SetCamera(transform->WorldPosition, camera->GetOrthographicSize(), mRenderAspectRatio);
                     }
 
                     break; // Only use the first active camera

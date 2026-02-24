@@ -29,10 +29,11 @@ namespace Umbra {
                     mView->ecsRegister->GetComponent<TransformComponent>(entity);
 
                 RenderQuad quad;
-                quad.Position   = transform->Position;
-                quad.Size       = transform->Size;
+                quad.Position   = transform->WorldPosition;
+                quad.Size       = {transform->Size.x * transform->WorldScale.x,
+                                   transform->Size.y * transform->WorldScale.y};
                 quad.Pivot      = transform->Pivot;
-                quad.Angle      = transform->Angle;
+                quad.Angle      = transform->WorldAngle;
                 quad.ZOrder     = sprite->zOrder;
                 quad.Tint       = sprite->color;
                 quad.RefTexture = sprite->refTexture;

@@ -2,6 +2,8 @@
 #include "Game/PrefabManager.h"
 
 #include "Core/AppWindow.h"
+#include "ECS/Components/AnimatorComponent.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Components/AudioSource.h"
 #include "ECS/Components/CollisionCallback.h"
 #include "ECS/Components/LifeTime.h"
@@ -23,6 +25,7 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<LifeTimeComponent>();
         mWorldRegister->RegisterComponent<CollisionCallbackComponent>();
         mWorldRegister->RegisterComponent<AudioSourceComponent>();
+        mWorldRegister->RegisterComponent<AnimatorComponent>();
 
         IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
 
@@ -33,6 +36,8 @@ namespace Umbra {
         mCameraSystem->SetScreenSize(
             Math::Vector2f(static_cast<float>(windowSize.x), static_cast<float>(windowSize.y)));
 
+        mSceneGraphSystem = std::make_shared<SceneGraphSystem>();
+        mAnimationSystem  = std::make_shared<AnimationSystem>();
         mRenderSyncSystem = std::make_shared<RenderSyncSystem>();
         mPhysicsSystem    = std::make_shared<PhysicsSystem>();
 
@@ -41,9 +46,11 @@ namespace Umbra {
         mPhysicsService       = std::make_unique<PhysicsService>(physicsConfig);
         mPhysicsSyncSystem    = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
 
+        mWorldRegister->AddSystem(ESystemPhase::PreRender, -5, mSceneGraphSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 10, mRenderSyncSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, 5, mAnimationSystem);
         // PhysicsSyncSystem runs after the old PhysicsSystem (lower priority = runs later)
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
 
@@ -191,6 +198,51 @@ namespace Umbra {
         if (mAudioService) {
             mAudioService->SetGroupVolume(_group, _volume);
         }
+    }
+
+    // ============== Scene Graph Layer ==============
+
+    void World::SetParent(EntityID _child, EntityID _parent) {
+        if (!mWorldRegister->HasComponent<TransformComponent>(_child)
+            || !mWorldRegister->HasComponent<TransformComponent>(_parent)) {
+            return;
+        }
+        // Detach from existing parent first.
+        DetachFromParent(_child);
+
+        TransformComponent* childT  = mWorldRegister->GetComponent<TransformComponent>(_child);
+        TransformComponent* parentT = mWorldRegister->GetComponent<TransformComponent>(_parent);
+        childT->Parent = _parent;
+        parentT->Children.push_back(_child);
+    }
+
+    void World::DetachFromParent(EntityID _child) {
+        if (!mWorldRegister->HasComponent<TransformComponent>(_child))
+            return;
+
+        TransformComponent* childT = mWorldRegister->GetComponent<TransformComponent>(_child);
+        if (childT->Parent == MAX_ENTITY)
+            return;
+
+        TransformComponent* parentT = mWorldRegister->GetComponent<TransformComponent>(childT->Parent);
+        if (parentT) {
+            auto& ch = parentT->Children;
+            ch.erase(std::remove(ch.begin(), ch.end(), _child), ch.end());
+        }
+        childT->Parent = MAX_ENTITY;
+    }
+
+    EntityID World::GetParent(EntityID _entity) const {
+        if (!mWorldRegister->HasComponent<TransformComponent>(_entity))
+            return MAX_ENTITY;
+        return mWorldRegister->GetComponent<TransformComponent>(_entity)->Parent;
+    }
+
+    const Vector<EntityID>& World::GetChildren(EntityID _entity) const {
+        static const Vector<EntityID> empty;
+        if (!mWorldRegister->HasComponent<TransformComponent>(_entity))
+            return empty;
+        return mWorldRegister->GetComponent<TransformComponent>(_entity)->Children;
     }
 
     // ============== Prefab Layer ==============

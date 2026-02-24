@@ -5,7 +5,9 @@
 #include "ECS/Systems/CollisionEventDispatchSystem.h"
 #include "ECS/Systems/PhysicsSyncSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
+#include "ECS/Systems/AnimationSystem.h"
 #include "ECS/Systems/RenderSyncSystem.h"
+#include "ECS/Systems/SceneGraphSystem.h"
 #include "Service/Audio/AudioService.h"
 #include "Service/Physics/PhysicsService.h"
 #include "Umbra.h"
@@ -106,8 +108,34 @@ namespace Umbra {
         /// @brief Set volume for a sound group
         void SetGroupVolume(ESoundGroup _group, float _volume);
 
+        // ============== Scene Graph Layer ==============
+
+        /// @brief Attach _child to _parent in the scene hierarchy.
+        ///        Detaches _child from its current parent first if it has one.
+        ///        Both entities must have a TransformComponent.
+        void SetParent(EntityID _child, EntityID _parent);
+
+        /// @brief Remove _child from its current parent, making it a root entity.
+        void DetachFromParent(EntityID _child);
+
+        /// @brief Returns the parent of _entity, or MAX_ENTITY if it is a root.
+        EntityID GetParent(EntityID _entity) const;
+
+        /// @brief Returns the direct children of _entity.
+        const Vector<EntityID>& GetChildren(EntityID _entity) const;
+
+        // ============== Prefab Layer ==============
+
+        /// @brief Instantiate a registered prefab by name. Returns MAX_ENTITY if not found.
+        EntityID Instantiate(const String& _prefabName);
+
+        /// @brief Instantiate a registered prefab by name, then run an override on the new entity.
+        EntityID Instantiate(const String& _prefabName, std::function<void(EntityID)> _overrideFn);
+
     private:
         SharedPtr<ECSRegister> mWorldRegister;
+        SharedPtr<SceneGraphSystem> mSceneGraphSystem;
+        SharedPtr<AnimationSystem> mAnimationSystem;
         SharedPtr<RenderSyncSystem> mRenderSyncSystem;
         SharedPtr<CameraSystem> mCameraSystem;
         SharedPtr<PhysicsSystem> mPhysicsSystem;

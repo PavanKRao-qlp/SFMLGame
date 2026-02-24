@@ -12,6 +12,13 @@ namespace Umbra {
         return nullptr;
     }
 
+    Math::Vector2i Texture::GetSize() const {
+        if (refTextureResource && refTextureResource->mTexture) {
+            return refTextureResource->mTexture->GetSize();
+        }
+        return Math::Vector2i(0, 0);
+    }
+
     bool TextureResource::Load() {
         mTexture = std::make_unique<SfmlTexture>();
         return mTexture->LoadFromFile(filePath);

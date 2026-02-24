@@ -2,6 +2,7 @@
 #pragma once
 #include "Asset/TextureResource.h"
 #include "Graphics/ITexture.h"
+#include "Math/Vector.h"
 #include "Umbra.h"
 
 namespace Umbra {
@@ -19,6 +20,7 @@ namespace Umbra {
     public:
         Texture(SharedPtr<TextureResource> _textureResource);
         void* GetNativeHandle();
+        Math::Vector2i GetSize() const;
 
     private:
         SharedPtr<TextureResource> refTextureResource;
