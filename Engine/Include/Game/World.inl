@@ -42,6 +42,11 @@ namespace Umbra {
     }
 
     template <typename T>
+    inline void World::RegisterComponent() {
+        mWorldRegister->RegisterComponent<T>();
+    }
+
+    template <typename T>
     inline void World::AddComponent(EntityID _entity, T _component) {
         mWorldRegister->AddComponent<T>(_entity, _component);
     }

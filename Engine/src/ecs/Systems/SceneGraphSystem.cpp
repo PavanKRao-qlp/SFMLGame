@@ -1,3 +1,4 @@
+#include "ECS/ECSRegister.h"
 #include "ECS/Systems/SceneGraphSystem.h"
 #include "ECS/Components/Transform.h"
 #include "ECS/View.h"

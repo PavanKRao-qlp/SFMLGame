@@ -13,3 +13,6 @@
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "external/LDtkLoader"]
+	path = external/LDtkLoader
+	url = https://github.com/Madour/LDtkLoader.git

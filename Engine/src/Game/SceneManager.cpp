@@ -1,6 +1,8 @@
 #include "Game/SceneManager.h"
 
 #include "Game/IGameInstance.h"
+#include "LDtk/LDtkScene.h"
+
 namespace Umbra {
 
     void SceneManager::Simulate() {
@@ -84,6 +86,16 @@ namespace Umbra {
         mCurrentScene = _scene->InstantiateCopy();
         mCurrentScene->Construct();
         bCurrentSceneStarted = false;
+    }
+
+    void SceneManager::LoadLDTKScene(const String& _ldtkPath, const String& _levelName) {
+        String id = "__ldtk__" + _ldtkPath + "__" + _levelName;
+        // Only register once; re-use the existing template on subsequent calls.
+        if (mSceneMap.find(id) == mSceneMap.end()) {
+            auto scene = std::make_shared<LDtkScene>(_ldtkPath, _levelName);
+            AddScene(id, scene);
+        }
+        GoToScene(id);
     }
 
     SceneManager::SceneManager() {}

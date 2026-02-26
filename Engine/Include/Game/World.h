@@ -34,6 +34,9 @@ namespace Umbra {
         void DestroyEntity(EntityID _entity);
 
         template <typename T>
+        void RegisterComponent();
+
+        template <typename T>
         void AddComponent(EntityID _entity, T _component);
 
         void AddTag(EntityID _entity, const String& _tag);

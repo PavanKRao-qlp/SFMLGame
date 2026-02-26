@@ -16,26 +16,32 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/imgui_demo.cpp
 )
 add_subdirectory(external/SFML)
-add_subdirectory(external/glm) 
+add_subdirectory(external/glm)
 add_subdirectory(external/imgui-sfml)
-#add_subdirectory(external/hlslpp) 
+add_subdirectory(external/miniaudio)
+add_subdirectory(external/LDtkLoader)
+#add_subdirectory(external/hlslpp)
 include_directories(
     Engine/include/
     external/SFML/include
     external/glm
     external/imgui
     external/imgui-sfml
+    external/miniaudio
+    external/LDtkLoader/include
  )
 
 # Add all source files from Game/src
 file(GLOB_RECURSE SOURCES_ENGINE "Engine/src/*.cpp")
 
 add_library(Engine2D STATIC ${SOURCES_ENGINE} ${IMGUI_SFML_SOURCES})
-target_link_libraries(Engine2D 
+target_link_libraries(Engine2D
 sfml-graphics
 sfml-window
 sfml-system
 ImGui-SFML
+miniaudio
+LDtkLoader
 )
 target_precompile_headers(Engine2D PUBLIC "Engine/include/EnginePCH.h")
 
@@ -76,4 +82,7 @@ endmacro()
 add_subdirectory(Project/SimpleSandbox)
 add_subdirectory(Project/PhysicsTestBed)
 add_subdirectory(Project/PhysicsEngineDemo)
+add_subdirectory(Project/AudioTestBed)
+add_subdirectory(Project/MultiThreading)
+#add_subdirectory(Project/JobSystem)
 

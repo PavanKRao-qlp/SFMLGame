@@ -1,8 +1,10 @@
 #pragma once
 #include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
-#include "ECS/System.h"
+// View.h → ECSRegister.h → System.h (defines ESystemPhase/System before ECSRegister needs them).
+// Must come before System.h to avoid the System.h → ECSRegister.h circular-include issue.
 #include "ECS/View.h"
+#include "ECS/System.h"
 #include "Math/Matrix3x3.h"
 
 namespace Umbra {

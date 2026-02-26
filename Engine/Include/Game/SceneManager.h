@@ -20,6 +20,10 @@ namespace Umbra {
         // Returns the context that was passed to the most recent GoToScene call.
         const SceneContext& GetContext() const;
 
+        // Load a LDtk level file and immediately transition into it.
+        // _levelName = "" → load all levels from the file.
+        void LoadLDTKScene(const String& _ldtkPath, const String& _levelName = "");
+
         void ShutDown();
 
         SceneManager(/* args */);
