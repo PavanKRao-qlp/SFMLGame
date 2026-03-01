@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Component.h"
+#include "ECS/Components/MaterialComponent.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
@@ -38,6 +39,12 @@ namespace Umbra {
                 quad.Tint       = sprite->color;
                 quad.RefTexture = sprite->refTexture;
                 quad.UVRect     = sprite->uvRect;
+
+                if (mView->ecsRegister->HasComponent<MaterialComponent>(entity)) {
+                    const MaterialComponent* material =
+                        mView->ecsRegister->GetComponent<MaterialComponent>(entity);
+                    quad.RefShader = material->shader;
+                }
 
                 renderService->SubmitQuad(quad);
             }

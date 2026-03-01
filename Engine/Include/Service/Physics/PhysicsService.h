@@ -10,6 +10,8 @@
 
 namespace Umbra {
 
+    class JobSystem; // forward declaration — PhysicsService.cpp includes Thread/JobSystem.h
+
     /// @brief Physics service that manages physics simulation independent of ECS
     /// Bodies are accessed via handles, ECS components hold handles and sync with service
     class PhysicsService {
@@ -204,6 +206,11 @@ namespace Umbra {
         void SetHingeLimitsEnabled(ConstraintHandle _handle, bool _bEnable);
         void SetHingeLimits(ConstraintHandle _handle, float _lower, float _upper);
 
+        // ============== Job System Integration ==============
+
+        /// @brief Assigns a job system for parallel physics steps; nullptr disables parallelism
+        void SetJobSystem(JobSystem* _jobSystem);
+
         // ============== Internal Access (for sync system) ==============
 
         /// @brief Gets direct access to body data (use with caution)
@@ -259,6 +266,13 @@ namespace Umbra {
         void CategorizeCollisionEvents();
 
     private:
+        // Min body count before dispatching parallel integration jobs
+        static constexpr uint32 ParallelBodyThreshold = 64;
+        // Min broadphase pair count before running narrow phase in parallel
+        static constexpr uint32 ParallelPairThreshold = 32;
+
+        JobSystem* mJobSystem = nullptr;
+
         PhysicsServiceConfig mConfig;
 
         // Body storage

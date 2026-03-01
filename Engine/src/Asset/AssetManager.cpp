@@ -1,5 +1,7 @@
 #include "Asset/AssetManager.h"
 #include "Asset/FontResource.h"
+#include "Asset/ShaderResource.h"
+#include "Diag/MemoryTracker.h"
 #include "Service/ServiceLocator.h"
 #include <chrono>
 
@@ -14,6 +16,7 @@ namespace Umbra {
     // -------------------------------------------------------------------------
 
     SharedPtr<Texture> AssetManager::GetTexture(const String& _filePath) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
         SharedPtr<TextureResource> res = GetResource<TextureResource>(_filePath);
         if (res) {
             return std::make_shared<Texture>(res);
@@ -22,6 +25,7 @@ namespace Umbra {
     }
 
     SharedPtr<Audio> AssetManager::GetAudio(const String& _filePath) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
         SharedPtr<AudioResource> res = GetResource<AudioResource>(_filePath);
         if (res) {
             return std::make_shared<Audio>(res);
@@ -30,6 +34,7 @@ namespace Umbra {
     }
 
     SharedPtr<Font> AssetManager::GetFont(const String& _filePath) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
         SharedPtr<FontResource> res = GetResource<FontResource>(_filePath);
         if (res) {
             return std::make_shared<Font>(res);
@@ -87,6 +92,61 @@ namespace Umbra {
     }
 
     // -------------------------------------------------------------------------
+    // Shader synchronous
+    // -------------------------------------------------------------------------
+
+    SharedPtr<Shader> AssetManager::GetShader(const String& _fragPath) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
+        SharedPtr<ShaderResource> res = GetResource<ShaderResource>(_fragPath);
+        if (res) {
+            return std::make_shared<Shader>(res);
+        }
+        return nullptr;
+    }
+
+    SharedPtr<Shader> AssetManager::GetShader(const String& _vertPath, const String& _fragPath) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
+        String combinedKey = _vertPath + "|" + _fragPath;
+        SharedPtr<ShaderResource> res = GetResource<ShaderResource>(combinedKey);
+        if (res) {
+            return std::make_shared<Shader>(res);
+        }
+        return nullptr;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shader asynchronous
+    // -------------------------------------------------------------------------
+
+    void AssetManager::GetShaderAsync(const String&                           _fragPath,
+                                      std::function<void(SharedPtr<Shader>)>  _callback) {
+        AsyncLoadImpl(
+            _fragPath,
+            [_fragPath]() -> SharedPtr<IResource> {
+                return std::make_shared<ShaderResource>(_fragPath);
+            },
+            [cb = std::move(_callback)](SharedPtr<IResource> _res) {
+                auto shaderRes = std::static_pointer_cast<ShaderResource>(_res);
+                cb(std::make_shared<Shader>(shaderRes));
+            });
+    }
+
+    void AssetManager::GetShaderAsync(const String&                           _vertPath,
+                                      const String&                           _fragPath,
+                                      std::function<void(SharedPtr<Shader>)>  _callback) {
+        String combinedKey = _vertPath + "|" + _fragPath;
+        AsyncLoadImpl(
+            combinedKey,
+            [combinedKey]() -> SharedPtr<IResource> {
+                return std::make_shared<ShaderResource>(combinedKey);
+            },
+            [cb = std::move(_callback)](SharedPtr<IResource> _res) {
+                auto shaderRes = std::static_pointer_cast<ShaderResource>(_res);
+                cb(std::make_shared<Shader>(shaderRes));
+            });
+    }
+
+    // -------------------------------------------------------------------------
     // AsyncLoadImpl — core implementation
     //
     // Thread-safety contract:
@@ -127,6 +187,8 @@ namespace Umbra {
 
         // Build the job — captures path and factory by value/move
         auto loadJob = [this, path = _filePath, factory = std::move(_factory)]() {
+            // Tag this worker thread's allocations as Asset for the duration of the load
+            UMBRA_ALLOC_SCOPE(EMemoryCategory::Asset);
             SharedPtr<IResource> res = factory();
             res->Load();
 

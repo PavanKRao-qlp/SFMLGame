@@ -18,6 +18,9 @@ namespace Umbra {
             sPhysicsService = std::make_unique<PhysicsService>(config);
         }
 
+        // Wire up the job system so physics integration runs in parallel
+        sPhysicsService->SetJobSystem(sJobSystem.get());
+
         // Create default render service if not already set
         if (sRenderService == nullptr) {
             sRenderService = std::make_unique<RenderService>();

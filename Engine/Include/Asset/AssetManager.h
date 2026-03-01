@@ -3,6 +3,7 @@
 #include "Asset/AudioResource.h"
 #include "Asset/FontResource.h"
 #include "Asset/IResource.h"
+#include "Asset/ShaderResource.h"
 #include "Asset/Texture.h"
 #include "Asset/TextureResource.h"
 #include "Thread/Mutex.h"
@@ -19,6 +20,11 @@ namespace Umbra {
         SharedPtr<Audio>   GetAudio(const String& _filePath);
         SharedPtr<Font>    GetFont(const String& _filePath);
 
+        // Fragment shader only (vertex pass-through).
+        SharedPtr<Shader> GetShader(const String& _fragPath);
+        // Vertex + fragment shader pair.
+        SharedPtr<Shader> GetShader(const String& _vertPath, const String& _fragPath);
+
         // ---- Asynchronous API -----------------------------------------------
         // Returns immediately; the callback fires on a job-system worker thread
         // once the resource is loaded (or immediately if already cached).
@@ -29,6 +35,8 @@ namespace Umbra {
         void GetTextureAsync(const String& _filePath, std::function<void(SharedPtr<Texture>)> _callback);
         void GetAudioAsync(const String& _filePath, std::function<void(SharedPtr<Audio>)> _callback);
         void GetFontAsync(const String& _filePath, std::function<void(SharedPtr<Font>)> _callback);
+        void GetShaderAsync(const String& _fragPath, std::function<void(SharedPtr<Shader>)> _callback);
+        void GetShaderAsync(const String& _vertPath, const String& _fragPath, std::function<void(SharedPtr<Shader>)> _callback);
 
     private:
         AssetManager();

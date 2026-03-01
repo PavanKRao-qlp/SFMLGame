@@ -3,25 +3,27 @@
 #include "Graphics/Backends/SfmlTexture.h"
 
 namespace Umbra {
-    Texture::Texture(SharedPtr<TextureResource> _textureResource) : refTextureResource(_textureResource) {}
+    Texture::Texture(SharedPtr<TextureResource> _textureResource)
+        : IResourceHandle<TextureResource>(std::move(_textureResource)) {}
 
-    void* Texture::GetNativeHandle() {
-        if (refTextureResource && refTextureResource->mTexture) {
-            return refTextureResource->mTexture->GetNativeHandle();
+    void* Texture::GetNativeHandle() const {
+        if (mResource && mResource->mTexture) {
+            return mResource->mTexture->GetNativeHandle();
         }
         return nullptr;
     }
 
     Math::Vector2i Texture::GetSize() const {
-        if (refTextureResource && refTextureResource->mTexture) {
-            return refTextureResource->mTexture->GetSize();
+        if (mResource && mResource->mTexture) {
+            return mResource->mTexture->GetSize();
         }
         return Math::Vector2i(0, 0);
     }
 
     bool TextureResource::Load() {
         mTexture = std::make_unique<SfmlTexture>();
-        return mTexture->LoadFromFile(filePath);
+        bLoaded  = mTexture->LoadFromFile(filePath);
+        return bLoaded;
     }
 
     void TextureResource::Unload() {

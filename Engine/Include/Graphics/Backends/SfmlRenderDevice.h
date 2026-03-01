@@ -62,7 +62,7 @@ namespace Umbra {
         void BeginBatch() override;
         void BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
             Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
-            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) override;
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}, void* _shaderHandle = nullptr) override;
         void EndBatch() override;
 
     private:
@@ -79,11 +79,13 @@ namespace Umbra {
         // Batching state
         bool mBatching = false;
         struct BatchData {
-            sf::VertexArray vertices;
+            sf::VertexArray    vertices;
             const sf::Texture* texture = nullptr;
+            const sf::Shader*  shader  = nullptr;
         };
         Vector<BatchData> mBatchList;
         void* mCurrentBatchTexture = nullptr;
+        void* mCurrentBatchShader  = nullptr;
     };
 
 } // namespace Umbra

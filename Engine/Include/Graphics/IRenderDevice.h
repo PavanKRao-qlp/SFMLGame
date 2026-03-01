@@ -62,7 +62,7 @@ namespace Umbra {
         virtual void BeginBatch() = 0;
         virtual void BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
             Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
-            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}) = 0;
+            const FloatRect& _uvRect = {0.f, 0.f, 1.f, 1.f}, void* _shaderHandle = nullptr) = 0;
         virtual void EndBatch() = 0;
     };
 

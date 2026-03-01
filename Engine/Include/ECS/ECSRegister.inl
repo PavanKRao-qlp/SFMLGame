@@ -8,11 +8,6 @@ namespace Umbra {
     }
 
     inline ECSRegister::~ECSRegister() {
-        for (auto& pair : mSystemMap) {
-            for (auto& system : pair.second) {
-                system.reset();
-            }
-        }
         mComponentManager.reset();
         mComponentManager = nullptr;
     }
@@ -214,87 +209,50 @@ namespace Umbra {
 
 
     inline void ECSRegister::AddSystem(ESystemPhase _systemPhase, int _priority, SharedPtr<System> _system) {
-        if (mSystemMap.find(_systemPhase) == mSystemMap.end()) {
-            mSystemMap.emplace(_systemPhase, Vector<SharedPtr<System>>());
-        }
-        _system->SetPriority(_priority);
-        mSystemMap[_systemPhase].emplace_back(_system);
-        _system->AssignRegistry(this);
-
-        // Sort systems by priority (lower priority values execute first)
-        // Using stable_sort to preserve insertion order for systems with equal priority
-        std::stable_sort(mSystemMap[_systemPhase].begin(), mSystemMap[_systemPhase].end(),
-            [](const SharedPtr<System>& _a, const SharedPtr<System>& _b) {
-                return _a->GetPriority() < _b->GetPriority();
-            });
+        mSystemManager.AddSystem(_systemPhase, _priority, _system, this);
     }
 
     inline void ECSRegister::RemoveSystem(SharedPtr<System>& _system) {
-        // for (auto it = mSystems.begin(); it != mSystems.end(); ++it) {
-        //     if (*it == _system) {
-        //         mSystems.erase(it);
-        //         break; // Stop after removing the first match
-        //     }
-        // }
+        mSystemManager.RemoveSystem(_system);
+    }
+
+    template <typename T>
+    inline SharedPtr<T> ECSRegister::GetSystem() {
+        return mSystemManager.GetSystem<T>();
+    }
+
+    template <typename T>
+    inline void ECSRegister::SetSystemEnabled(bool _bEnabled) {
+        mSystemManager.SetSystemEnabled<T>(_bEnabled);
     }
 
     inline void ECSRegister::Update() {
         CleanUp();
-        for (const auto& pair : mSystemMap) {
-            for (const SharedPtr<System>& system : pair.second) {
-                if (system->GetEnabled()) {
-                    system->Update();
-                }
-            }
-        }
+        mSystemManager.UpdateAll();
     }
 
     inline void ECSRegister::Update(ESystemPhase _systemPhase) {
-        for (const SharedPtr<System>& system : mSystemMap[_systemPhase]) {
-            if (system->GetEnabled()) {
-                system->Update();
-            }
-        }
+        mSystemManager.UpdatePhase(_systemPhase);
     }
 
     inline void ECSRegister::CleanUp() {
         if (bRegisterDirty) {
             // Remove destroyed entities from all systems first (before clearing the list)
             for (EntityID entity : mEntityManager.EntitiesDestroyed) {
-                for (const auto& pair : mSystemMap) {
-                    for (const SharedPtr<System>& system : pair.second) {
-                        system->RemoveEntity(entity);
-                    }
-                }
+                mSystemManager.OnEntityRemoved(entity);
             }
             RemoveDestroyedEntities();
 
             // Process only newly created entities (before clearing the list)
             for (EntityID entity : mEntityManager.EntitiesAdded) {
                 mEntityManager.Entities.emplace(entity);
-                for (const auto& pair : mSystemMap) {
-                    for (const SharedPtr<System>& system : pair.second) {
-                        if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
-                            == system->SystemSignature) {
-                            system->AddEntity(entity);
-                        }
-                    }
-                }
+                mSystemManager.OnEntityAdded(entity, mEntityComponentSignatures.at(entity));
             }
             mEntityManager.EntitiesAdded.clear();
 
             // Process entities whose component signatures changed
             for (EntityID entity : mEntityManager.EntitiesModified) {
-                for (const auto& pair : mSystemMap) {
-                    for (const SharedPtr<System>& system : pair.second) {
-                        if ((system->SystemSignature & mEntityComponentSignatures.at(entity))
-                            == system->SystemSignature) {
-                            system->AddEntity(entity);
-                        } else {
-                            system->RemoveEntity(entity);
-                        }
-                    }
-                }
+                mSystemManager.OnEntityModified(entity, mEntityComponentSignatures.at(entity));
             }
             mEntityManager.EntitiesModified.clear();
 

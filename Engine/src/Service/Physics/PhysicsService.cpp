@@ -1,13 +1,16 @@
 #include "Service/Physics/PhysicsService.h"
 
+#include "Diag/MemoryTracker.h"
 #include "Math/MathUtils.h"
 #include "Service/Physics/CollisionQuery.h"
+#include "Thread/JobSystem.h"
 
 namespace Umbra {
 
     PhysicsService::PhysicsService() : PhysicsService(PhysicsServiceConfig{}) {}
 
     PhysicsService::PhysicsService(const PhysicsServiceConfig& _config) : mConfig(_config) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Physics);
         mBodies.reserve(_config.InitialBodyCapacity);
         mBroadphaseTree.SetFattenMargin(_config.AABBFattenMargin);
         mBroadphaseTree.SetDisplacementMultiplier(_config.AABBDisplacementMultiplier);
@@ -50,6 +53,12 @@ namespace Umbra {
 
     PhysicsServiceConfig& PhysicsService::GetConfig() {
         return mConfig;
+    }
+
+    // ============== Job System Integration ==============
+
+    void PhysicsService::SetJobSystem(JobSystem* _jobSystem) {
+        mJobSystem = _jobSystem;
     }
 
     // ============== Simulation ==============
@@ -111,75 +120,96 @@ namespace Umbra {
     }
 
     void PhysicsService::IntegrateForces(float _deltaTime) {
-        for (auto& body : mBodies) {
+        const uint32 bodyCount = static_cast<uint32>(mBodies.size());
+        auto integrateBody     = [this, _deltaTime](uint32 _i) {
+            PhysicsBodyData& body = mBodies[_i];
             if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
-                continue;
+                return;
             }
-
-            // Apply gravity
             if (body.bAffectedByGravity && body.InverseMass > 0) {
-                Math::Vector2f gravityForce = mConfig.Gravity / body.InverseMass;
-                body.ForceAccumulated += gravityForce;
+                body.ForceAccumulated += mConfig.Gravity / body.InverseMass;
             }
-
-            // Calculate acceleration: a = F * inverseMass
             Math::Vector2f newAcceleration = body.ForceAccumulated * body.InverseMass;
             float newAngularAcceleration   = body.TorqueAccumulated * body.InverseInertia;
-
-            // Velocity Verlet: v = v + 0.5 * (a_old + a_new) * dt
             body.Velocity += (body.Acceleration + newAcceleration) * 0.5f * _deltaTime;
             body.AngularVelocity += (body.AngularAcceleration + newAngularAcceleration) * 0.5f * _deltaTime;
-
-            // Store acceleration for next frame
             body.Acceleration        = newAcceleration;
             body.AngularAcceleration = newAngularAcceleration;
+        };
+
+        if (mJobSystem && bodyCount >= ParallelBodyThreshold) {
+            mJobSystem->ParallelFor(bodyCount, integrateBody).Wait();
+        } else {
+            for (uint32 i = 0; i < bodyCount; ++i) {
+                integrateBody(i);
+            }
         }
     }
 
     void PhysicsService::IntegrateVelocities(float _deltaTime) {
-        for (auto& body : mBodies) {
+        const uint32 bodyCount = static_cast<uint32>(mBodies.size());
+        auto integrateBody     = [this, _deltaTime](uint32 _i) {
+            PhysicsBodyData& body = mBodies[_i];
             if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
-                continue;
+                return;
             }
-
-            // Position: p = p + v * dt + 0.5 * a * dt^2
-            // Calculate displacement using s = vt + ((1/2) * at^2)
             body.Position += body.Velocity * _deltaTime + body.Acceleration * (Math::Pow(_deltaTime, 2) * 0.5f);
-
-            // Angle: theta = theta + omega * dt + 0.5 * alpha * dt^2
             body.Angle +=
                 body.AngularVelocity * _deltaTime + body.AngularAcceleration * (Math::Pow(_deltaTime, 2) * 0.5f);
-
-            // Normalize angle to [0, 2*PI]
             body.Angle = Math::Fmod(body.Angle, Math::PI * 2.0f);
             if (body.Angle < 0) {
                 body.Angle += Math::PI * 2.0f;
+            }
+        };
+
+        if (mJobSystem && bodyCount >= ParallelBodyThreshold) {
+            mJobSystem->ParallelFor(bodyCount, integrateBody).Wait();
+        } else {
+            for (uint32 i = 0; i < bodyCount; ++i) {
+                integrateBody(i);
             }
         }
     }
 
     void PhysicsService::ApplyDamping(float _deltaTime) {
-        for (auto& body : mBodies) {
+        const uint32 bodyCount = static_cast<uint32>(mBodies.size());
+        auto dampBody          = [this, _deltaTime](uint32 _i) {
+            PhysicsBodyData& body = mBodies[_i];
             if (!body.bIsActive || body.IsStatic() || body.bIsKinematic || body.bIsSleeping) {
-                continue;
+                return;
             }
-
-            // Exponential damping: v *= damping^dt
             float linearDamp  = body.LinearDamping > 0 ? body.LinearDamping : mConfig.LinearDamping;
             float angularDamp = body.AngularDamping > 0 ? body.AngularDamping : mConfig.AngularDamping;
-
             body.Velocity *= Math::Pow(linearDamp, _deltaTime);
             body.AngularVelocity *= Math::Pow(angularDamp, _deltaTime);
+        };
+
+        if (mJobSystem && bodyCount >= ParallelBodyThreshold) {
+            mJobSystem->ParallelFor(bodyCount, dampBody).Wait();
+        } else {
+            for (uint32 i = 0; i < bodyCount; ++i) {
+                dampBody(i);
+            }
         }
     }
 
     void PhysicsService::ClearForceAccumulators() {
-        for (auto& body : mBodies) {
+        const uint32 bodyCount = static_cast<uint32>(mBodies.size());
+        auto clearBody         = [this](uint32 _i) {
+            PhysicsBodyData& body = mBodies[_i];
             if (!body.bIsActive) {
-                continue;
+                return;
             }
             body.ForceAccumulated  = Math::Vector2f(0, 0);
             body.TorqueAccumulated = 0;
+        };
+
+        if (mJobSystem && bodyCount >= ParallelBodyThreshold) {
+            mJobSystem->ParallelFor(bodyCount, clearBody).Wait();
+        } else {
+            for (uint32 i = 0; i < bodyCount; ++i) {
+                clearBody(i);
+            }
         }
     }
 
@@ -188,11 +218,21 @@ namespace Umbra {
         if (!mConfig.bEnableCCD) {
             return;
         }
-        for (auto& body : mBodies) {
+        const uint32 bodyCount = static_cast<uint32>(mBodies.size());
+        auto saveBody          = [this](uint32 _i) {
+            PhysicsBodyData& body = mBodies[_i];
             if (!body.bIsActive || !body.bEnableCCD) {
-                continue;
+                return;
             }
             body.CCDSavedPosition = body.Position;
+        };
+
+        if (mJobSystem && bodyCount >= ParallelBodyThreshold) {
+            mJobSystem->ParallelFor(bodyCount, saveBody).Wait();
+        } else {
+            for (uint32 i = 0; i < bodyCount; ++i) {
+                saveBody(i);
+            }
         }
     }
 
@@ -337,15 +377,41 @@ namespace Umbra {
 
 
     void PhysicsService::NarrowPhaseDetection() {
-        // clear last frame Collision
+        const uint32 pairCount = static_cast<uint32>(mOverlappingBoundsIndexPair.size());
         mCollisions.clear();
+
+        if (mJobSystem && pairCount >= ParallelPairThreshold) {
+            // Pre-allocate worst-case space so workers can write without reallocation
+            mCollisions.resize(pairCount);
+            AtomicUInt32 collisionCount{0};
+
+            mJobSystem
+                ->ParallelFor(pairCount, [this, &collisionCount](uint32 _idx) {
+                    const auto& handlePair        = mOverlappingBoundsIndexPair[_idx];
+                    CollisionDef collisionDef;
+                    collisionDef.handleA          = std::get<0>(handlePair);
+                    collisionDef.handleB          = std::get<1>(handlePair);
+                    const PhysicsBodyData& bodyA  = mBodies[collisionDef.handleA.Index];
+                    const PhysicsBodyData& bodyB  = mBodies[collisionDef.handleB.Index];
+                    collisionDef.bIsTrigger       = bodyA.bIsTrigger || bodyB.bIsTrigger;
+                    if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
+                        uint32 writeIdx       = collisionCount.FetchAdd(1, EMemoryOrder::Relaxed);
+                        mCollisions[writeIdx] = std::move(collisionDef);
+                    }
+                })
+                .Wait();
+
+            mCollisions.resize(collisionCount.Load(EMemoryOrder::Relaxed));
+            return;
+        }
+
         for (const auto& handlePair : mOverlappingBoundsIndexPair) {
             CollisionDef collisionDef;
-            collisionDef.handleA    = std::get<0>(handlePair);
-            collisionDef.handleB    = std::get<1>(handlePair);
-            PhysicsBodyData bodyA   = mBodies[collisionDef.handleA.Index];
-            PhysicsBodyData bodyB   = mBodies[collisionDef.handleB.Index];
-            collisionDef.bIsTrigger = bodyA.bIsTrigger || bodyB.bIsTrigger;
+            collisionDef.handleA          = std::get<0>(handlePair);
+            collisionDef.handleB          = std::get<1>(handlePair);
+            const PhysicsBodyData& bodyA  = mBodies[collisionDef.handleA.Index];
+            const PhysicsBodyData& bodyB  = mBodies[collisionDef.handleB.Index];
+            collisionDef.bIsTrigger       = bodyA.bIsTrigger || bodyB.bIsTrigger;
             if (CollisionQuery::CheckCollision(bodyA, bodyB, collisionDef)) {
                 mCollisions.emplace_back(collisionDef);
             }
@@ -353,14 +419,16 @@ namespace Umbra {
     }
 
     void PhysicsService::PrecomputeContactConstraints() {
-        for (CollisionDef& collision : mCollisions) {
+        const uint32 collisionCount = static_cast<uint32>(mCollisions.size());
+        auto precompute             = [this](uint32 _i) {
+            CollisionDef& collision = mCollisions[_i];
             if (collision.bIsTrigger) {
-                continue;
+                return;
             }
-            PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
-            PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
+            // Bodies are read-only here: different collisions may share a body, but only read it
+            const PhysicsBodyData& bodyA = mBodies[collision.handleA.Index];
+            const PhysicsBodyData& bodyB = mBodies[collision.handleB.Index];
 
-            // Sleeping bodies are treated as immovable in the solver
             float invMassA    = bodyA.bIsSleeping ? 0.0f : bodyA.InverseMass;
             float invInertiaA = bodyA.bIsSleeping ? 0.0f : bodyA.InverseInertia;
             float invMassB    = bodyB.bIsSleeping ? 0.0f : bodyB.InverseMass;
@@ -369,29 +437,22 @@ namespace Umbra {
             float invMassSum = invMassA + invMassB;
             float e          = Math::Min(bodyA.CoefOfRestitution, bodyB.CoefOfRestitution);
 
-            // Fixed tangent direction perpendicular to contact normal
             Math::Vector2f tangent(-collision.contactNormal.y, collision.contactNormal.x);
 
             for (ContactDef& contact : collision.contacts) {
-                // Lever arms from body centers to contact point
                 contact.rA = contact.contactPoint - bodyA.Position;
                 contact.rB = contact.contactPoint - bodyB.Position;
 
-                // Effective mass along the normal:
-                //   1 / (1/mA + 1/mB + (rA x n)^2/IA + (rB x n)^2/IB)
                 float rACrossN     = Math::Vector2f::Cross2D(contact.rA, collision.contactNormal);
                 float rBCrossN     = Math::Vector2f::Cross2D(contact.rB, collision.contactNormal);
                 float normalDenom  = invMassSum + rACrossN * rACrossN * invInertiaA + rBCrossN * rBCrossN * invInertiaB;
                 contact.normalMass = normalDenom > 0.0f ? 1.0f / normalDenom : 0.0f;
 
-                // Effective mass along the tangent (same formula, tangent direction)
-                float rACrossT     = Math::Vector2f::Cross2D(contact.rA, tangent);
-                float rBCrossT     = Math::Vector2f::Cross2D(contact.rB, tangent);
-                float tangentDenom = invMassSum + rACrossT * rACrossT * invInertiaA + rBCrossT * rBCrossT * invInertiaB;
+                float rACrossT      = Math::Vector2f::Cross2D(contact.rA, tangent);
+                float rBCrossT      = Math::Vector2f::Cross2D(contact.rB, tangent);
+                float tangentDenom  = invMassSum + rACrossT * rACrossT * invInertiaA + rBCrossT * rBCrossT * invInertiaB;
                 contact.tangentMass = tangentDenom > 0.0f ? 1.0f / tangentDenom : 0.0f;
 
-                // Restitution velocity bias:
-                // Only apply bounce if the closing speed is above a threshold (avoids jitter at rest)
                 Math::Vector2f velA =
                     bodyA.Velocity + Math::Vector2f(-contact.rA.y, contact.rA.x) * bodyA.AngularVelocity;
                 Math::Vector2f velB =
@@ -399,9 +460,16 @@ namespace Umbra {
                 float closingSpeed   = Math::Vector2f::Dot(velB - velA, collision.contactNormal);
                 contact.velocityBias = closingSpeed < -1.0f ? -e * closingSpeed : 0.0f;
 
-                // Reset accumulators for this frame
                 contact.normalImpulseAccum  = 0.0f;
                 contact.tangentImpulseAccum = 0.0f;
+            }
+        };
+
+        if (mJobSystem && collisionCount >= ParallelPairThreshold) {
+            mJobSystem->ParallelFor(collisionCount, precompute).Wait();
+        } else {
+            for (uint32 i = 0; i < collisionCount; ++i) {
+                precompute(i);
             }
         }
     }
@@ -642,6 +710,7 @@ namespace Umbra {
     // ============== Body Management ==============
 
     BodyHandle PhysicsService::CreateBody(const BodyDef& _def) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Physics);
         uint32 index;
         uint32 generation;
 

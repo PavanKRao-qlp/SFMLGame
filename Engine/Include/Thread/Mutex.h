@@ -24,6 +24,7 @@ namespace Umbra {
     //       LockGuard<Mutex> lock(mtx);  // locks here
     //       // ... critical section ...
     //   }                                // unlocks here automatically
+    //
     // -------------------------------------------------------------------------
     template <typename TMutex>
     class LockGuard {

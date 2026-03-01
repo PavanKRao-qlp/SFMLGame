@@ -20,7 +20,8 @@ namespace Umbra {
         bool CreateWindow();
         bool InitializeGameInstance();
 
-        bool bAppRequestExit = false;
+        bool bAppRequestExit  = false;
+        bool mShowDebugLayer  = false;
         FGameConfig mGameConfig;
         // class World* mWorld;
         // class ECSRegister mWorldRegister;

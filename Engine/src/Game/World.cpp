@@ -3,6 +3,7 @@
 
 #include "Core/AppWindow.h"
 #include "ECS/Components/AnimatorComponent.h"
+#include "ECS/Components/MaterialComponent.h"
 #include "ECS/Components/Transform.h"
 #include "ECS/Components/AudioSource.h"
 #include "ECS/Components/CollisionCallback.h"
@@ -15,6 +16,9 @@
 namespace Umbra {
 
     void World::InitializeCoreSystems() {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
+
+        // ── Component registration (ECS) ──────────────────────────────────────
         mWorldRegister->RegisterComponent<SpriteComponent>();
         mWorldRegister->RegisterComponent<TransformComponent>();
         mWorldRegister->RegisterComponent<CameraComponent>();
@@ -26,9 +30,11 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<CollisionCallbackComponent>();
         mWorldRegister->RegisterComponent<AudioSourceComponent>();
         mWorldRegister->RegisterComponent<AnimatorComponent>();
+        mWorldRegister->RegisterComponent<MaterialComponent>();
 
         IRenderDevice* renderDevice = GEngineStatics.AppWindowPtr->GetRenderDevice();
 
+        // ── ECS systems ───────────────────────────────────────────────────────
         mCameraSystem = std::make_shared<CameraSystem>(renderDevice);
         mCameraSystem->SetRenderSize(
             Math::Vector2f(GEngineStatics.GameConfig->WindowSize.x, GEngineStatics.GameConfig->WindowSize.y));
@@ -41,31 +47,36 @@ namespace Umbra {
         mRenderSyncSystem = std::make_shared<RenderSyncSystem>();
         mPhysicsSystem    = std::make_shared<PhysicsSystem>();
 
-        // Initialize Physics Service Layer
-        PhysicsServiceConfig physicsConfig;
-        mPhysicsService       = std::make_unique<PhysicsService>(physicsConfig);
-        mPhysicsSyncSystem    = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
-
         mWorldRegister->AddSystem(ESystemPhase::PreRender, -5, mSceneGraphSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 10, mRenderSyncSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 5, mAnimationSystem);
-        // PhysicsSyncSystem runs after the old PhysicsSystem (lower priority = runs later)
-        mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
 
-        // CollisionEventDispatchSystem runs after PhysicsSyncSystem
-        mCollisionEventDispatchSystem = std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
+        // ── Physics service layer (Physics) ───────────────────────────────────
+        {
+            UMBRA_ALLOC_SCOPE(EMemoryCategory::Physics);
+            PhysicsServiceConfig physicsConfig;
+            mPhysicsService    = std::make_unique<PhysicsService>(physicsConfig);
+            mPhysicsSyncSystem = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
+            mCollisionEventDispatchSystem =
+                std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
+        }
+        mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 20, mCollisionEventDispatchSystem);
 
-        // Initialize Audio Service Layer
-        AudioServiceConfig audioConfig;
-        mAudioService    = std::make_unique<AudioService>(audioConfig);
-        mAudioSyncSystem = std::make_shared<AudioSyncSystem>(mAudioService.get());
+        // ── Audio service layer (Audio) ───────────────────────────────────────
+        {
+            UMBRA_ALLOC_SCOPE(EMemoryCategory::Audio);
+            AudioServiceConfig audioConfig;
+            mAudioService    = std::make_unique<AudioService>(audioConfig);
+            mAudioSyncSystem = std::make_shared<AudioSyncSystem>(mAudioService.get());
+        }
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 30, mAudioSyncSystem);
     }
 
     World::World() {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         mWorldRegister = std::make_shared<ECSRegister>();
         UMBRA_LOG_INFO("World Generated!");
     }

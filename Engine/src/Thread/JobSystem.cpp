@@ -1,5 +1,6 @@
 #include "Thread/JobSystem.h"
-#include <thread>  // for std::thread::hardware_concurrency
+
+#include <thread> // for std::thread::hardware_concurrency
 
 namespace Umbra {
 
@@ -9,7 +10,7 @@ namespace Umbra {
 
     JobSystem::JobSystem(uint32 _threadCount) {
         if (_threadCount == 0) {
-            uint32 hw = static_cast<uint32>(std::thread::hardware_concurrency());
+            uint32 hw    = static_cast<uint32>(std::thread::hardware_concurrency());
             _threadCount = hw > 1 ? hw - 1 : 1;
         }
 
@@ -41,7 +42,9 @@ namespace Umbra {
 
     void JobSystem::Shutdown() {
         // Exchange returns the old value; if it was already true we're done.
-        if (mShutdown.Exchange(true)) return;
+        if (mShutdown.Exchange(true)) {
+            return;
+        }
 
         // Wake all sleeping workers.  Those with pending jobs drain the queue;
         // those with an empty queue exit their WorkerLoop immediately.
@@ -57,8 +60,7 @@ namespace Umbra {
     }
 
     // =========================================================================
-    // M1 — Worker Loop
-    //
+    // Worker Loop
     // Each worker waits on mWorkReady until either:
     //   (a) a job is available in mJobQueue, or
     //   (b) mShutdown is set.
@@ -71,16 +73,13 @@ namespace Umbra {
 
         while (true) {
             std::function<void()> task;
-
+            // locked dequeue of task
             {
                 UniqueLock lock(mQueueMutex);
 
                 // Sleep until there is work OR we should shut down.
                 // Spurious wakeups are handled by the predicate loop inside Wait().
-                mWorkReady.Wait(lock, [&] {
-                    return !mJobQueue.empty() ||
-                           mShutdown.Load(EMemoryOrder::Acquire);
-                });
+                mWorkReady.Wait(lock, [&] { return !mJobQueue.empty() || mShutdown.Load(EMemoryOrder::Acquire); });
 
                 // If queue is empty at this point, shutdown is set — exit.
                 if (mJobQueue.empty()) {
@@ -93,7 +92,7 @@ namespace Umbra {
             } // release queue lock before executing the task
 
             busyFlag->Store(true, EMemoryOrder::Release);
-            task();   // execute — may fire dependency callbacks (see M3)
+            task(); // execute — may fire dependency callbacks (see M3)
             busyFlag->Store(false, EMemoryOrder::Release);
 
             mTotalJobsCompleted.FetchAdd(1, EMemoryOrder::Relaxed);
@@ -114,7 +113,7 @@ namespace Umbra {
     }
 
     // =========================================================================
-    // M2 — Submit
+    //  Submit
     //
     // Wraps the caller's task in a lambda that also decrements the shared
     // completion counter when done.  The counter starts at 1 so the first
@@ -134,7 +133,7 @@ namespace Umbra {
     }
 
     // =========================================================================
-    // M3 — SubmitAfter (dependency chain)
+    // SubmitAfter (dependency chain)
     //
     // The child job should only enter the queue once _parent completes.
     // We take the parent's callback lock to prevent a race between
@@ -173,13 +172,12 @@ namespace Umbra {
                 enqueueNow = true;
             } else {
                 // Parent still running — register a callback that will enqueue us.
-                _parent.mCompletion->mCallbacks.push_back(
-                    [this, task = std::move(_task), completion]() mutable {
-                        this->EnqueueRaw([task = std::move(task), completion]() mutable {
-                            task();
-                            completion->Decrement();
-                        });
+                _parent.mCompletion->mCallbacks.push_back([this, task = std::move(_task), completion]() mutable {
+                    this->EnqueueRaw([task = std::move(task), completion]() mutable {
+                        task();
+                        completion->Decrement();
                     });
+                });
             }
         }
 
@@ -194,7 +192,7 @@ namespace Umbra {
     }
 
     // =========================================================================
-    // M4 — ParallelFor (fork-join)
+    //  ParallelFor (fork-join)
     //
     // Creates ONE shared JobCompletion initialized to _count. Each of the
     // _count items gets its own queue entry; every entry calls Decrement()
@@ -205,8 +203,7 @@ namespace Umbra {
     // wakes every idle worker simultaneously — minimal lock contention.
     // =========================================================================
 
-    JobHandle JobSystem::ParallelFor(uint32 _count,
-                                     std::function<void(uint32)> _itemTask) {
+    JobHandle JobSystem::ParallelFor(uint32 _count, std::function<void(uint32)> _itemTask) {
         auto completion = std::make_shared<JobCompletion>();
 
         if (_count == 0) {
@@ -225,8 +222,7 @@ namespace Umbra {
                     completion->Decrement();
                 });
             }
-            mApproxQueueDepth.FetchAdd(static_cast<int32>(_count),
-                                       EMemoryOrder::Relaxed);
+            mApproxQueueDepth.FetchAdd(static_cast<int32>(_count), EMemoryOrder::Relaxed);
         }
         // Wake all workers at once — each will grab one item.
         mWorkReady.NotifyAll();
@@ -244,7 +240,9 @@ namespace Umbra {
     }
 
     bool JobSystem::IsWorkerBusy(uint32 _index) const {
-        if (_index >= static_cast<uint32>(mWorkerBusy.size())) return false;
+        if (_index >= static_cast<uint32>(mWorkerBusy.size())) {
+            return false;
+        }
         return mWorkerBusy[_index]->Load(EMemoryOrder::Acquire);
     }
 

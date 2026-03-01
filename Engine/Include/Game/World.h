@@ -1,4 +1,5 @@
 #pragma once
+#include "Diag/MemoryTracker.h"
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/AudioSyncSystem.h"
 #include "ECS/Systems/CameraSystem.h"
@@ -69,6 +70,14 @@ namespace Umbra {
 
         void AddSystem(ESystemPhase _phase, int _priority, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
+
+        /** Returns the first registered system of type T, or nullptr if not found. */
+        template <typename T>
+        SharedPtr<T> GetSystem();
+
+        /** Enables or disables the first registered system of type T. */
+        template <typename T>
+        void SetSystemEnabled(bool _bEnabled);
 
         PhysicsSystem* GetPhysicsSystem();
 

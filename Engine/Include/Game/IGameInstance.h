@@ -15,6 +15,9 @@ namespace Umbra {
         SceneManager& GetSceneManager();
         ImGuiBackend& GetUIManager();
 
+        // Set to true to enable the debug overlay (toggle with Alt + ~)
+        bool bDebug = true;
+
     protected:
         IGameInstance(const IGameInstance&)            = delete; // NO COPY CONSTRUCTOR
         IGameInstance& operator=(const IGameInstance&) = delete; // NO COPY CONSTRUCTOR

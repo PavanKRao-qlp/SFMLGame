@@ -26,14 +26,11 @@ namespace Umbra {
         bLoaded = false;
     }
 
-    Audio::Audio(SharedPtr<AudioResource> _audioResource) : mRefAudioResource(_audioResource) {}
+    Audio::Audio(SharedPtr<AudioResource> _audioResource)
+        : IResourceHandle<AudioResource>(std::move(_audioResource)) {}
 
     const String& Audio::GetFilePath() const {
-        return mRefAudioResource->GetFilePath();
-    }
-
-    bool Audio::IsLoaded() const {
-        return mRefAudioResource && mRefAudioResource->bLoaded;
+        return mResource->GetFilePath();
     }
 
 } // namespace Umbra

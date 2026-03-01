@@ -16,13 +16,10 @@ namespace Umbra {
         UniquePtr<ITexture> mTexture;
     };
 
-    class Texture {
+    class Texture : public IResourceHandle<TextureResource> {
     public:
-        Texture(SharedPtr<TextureResource> _textureResource);
-        void* GetNativeHandle();
+        explicit Texture(SharedPtr<TextureResource> _textureResource);
+        void*          GetNativeHandle() const;
         Math::Vector2i GetSize() const;
-
-    private:
-        SharedPtr<TextureResource> refTextureResource;
     };
 } // namespace Umbra

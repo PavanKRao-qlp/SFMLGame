@@ -2,6 +2,7 @@
 namespace Umbra {
 
     inline const EntityID World::CreateEntity() {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         return mWorldRegister->CreateEntity();
     }
 
@@ -10,6 +11,7 @@ namespace Umbra {
     }
 
     inline void World::AddTag(EntityID _entity, const String& _tag) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         mWorldRegister->AddTag(_entity, _tag);
     }
 
@@ -42,17 +44,30 @@ namespace Umbra {
     }
 
     template <typename T>
+    inline SharedPtr<T> World::GetSystem() {
+        return mWorldRegister->GetSystem<T>();
+    }
+
+    template <typename T>
+    inline void World::SetSystemEnabled(bool _bEnabled) {
+        mWorldRegister->SetSystemEnabled<T>(_bEnabled);
+    }
+
+    template <typename T>
     inline void World::RegisterComponent() {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         mWorldRegister->RegisterComponent<T>();
     }
 
     template <typename T>
     inline void World::AddComponent(EntityID _entity, T _component) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         mWorldRegister->AddComponent<T>(_entity, _component);
     }
 
     template <typename T, typename... Args>
     inline void World::AddComponent(EntityID _entity, Args&&... args) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::ECS);
         mWorldRegister->AddComponent<T>(_entity, std::forward<Args>(args)...);
     }
 

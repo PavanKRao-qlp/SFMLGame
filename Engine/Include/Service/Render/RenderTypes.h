@@ -1,5 +1,6 @@
 #pragma once
 #include "EnginePCH.h"
+#include "Asset/ShaderResource.h"
 #include "Asset/Texture.h"
 #include "Graphics/Color.h"
 #include "Graphics/RenderTypes.h"
@@ -15,7 +16,8 @@ namespace Umbra {
         int32 ZOrder         = 0;
         Color Tint           = Color::White;
         SharedPtr<Texture> RefTexture;
-        FloatRect UVRect = {0.f, 0.f, 1.f, 1.f};
+        FloatRect UVRect     = {0.f, 0.f, 1.f, 1.f};
+        SharedPtr<Shader> RefShader; // nullptr = no shader
     };
 
     struct RenderStats {

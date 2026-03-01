@@ -1,8 +1,8 @@
 #pragma once
 #include "EnginePCH.h"
 #include "Mutex.h"
-#include <condition_variable>
 #include <chrono>
+#include <condition_variable>
 
 namespace Umbra {
 
@@ -17,7 +17,8 @@ namespace Umbra {
     //   UniqueLock lock(mtx);       // locks immediately
     //   lock.Unlock();              // manually release
     //   lock.Lock();                // manually reacquire
-    //   // auto-unlocks on scope exit
+    //    auto-unlocks on scope exit
+    //
     // -------------------------------------------------------------------------
     class UniqueLock {
     public:
@@ -26,7 +27,9 @@ namespace Umbra {
         }
 
         ~UniqueLock() {
-            if (mOwns) mMutex.Unlock();
+            if (mOwns) {
+                mMutex.Unlock();
+            }
         }
 
         UniqueLock(const UniqueLock&)            = delete;
@@ -42,7 +45,9 @@ namespace Umbra {
             mOwns = false;
         }
 
-        bool OwnsLock() const { return mOwns; }
+        bool OwnsLock() const {
+            return mOwns;
+        }
 
         // Expose the underlying std::unique_lock to the CV internals.
         // The standard CV only accepts std::unique_lock<std::mutex>.
@@ -52,11 +57,13 @@ namespace Umbra {
             return std::unique_lock<std::mutex>(mMutex.GetStd(), std::adopt_lock);
         }
 
-        Mutex& GetMutex() { return mMutex; }
+        Mutex& GetMutex() {
+            return mMutex;
+        }
 
     private:
         Mutex& mMutex;
-        bool   mOwns;
+        bool mOwns;
     };
 
     // -------------------------------------------------------------------------
@@ -142,10 +149,14 @@ namespace Umbra {
         // ── Notify ────────────────────────────────────────────────────────────
 
         // Wake one waiting thread
-        void NotifyOne() { mCV.notify_one(); }
+        void NotifyOne() {
+            mCV.notify_one();
+        }
 
         // Wake all waiting threads
-        void NotifyAll() { mCV.notify_all(); }
+        void NotifyAll() {
+            mCV.notify_all();
+        }
 
     private:
         std::condition_variable mCV;

@@ -53,6 +53,18 @@ function(register_executable_for_dll_copy TARGET_NAME)
     message(STATUS "Registered ${TARGET_NAME} for DLL copying")
 endfunction()
 
+macro(setup_target_asset_copy TARGET_NAME)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Asset")
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${CMAKE_CURRENT_SOURCE_DIR}/Asset"
+                    "$<TARGET_FILE_DIR:${TARGET_NAME}>/Asset"
+            COMMENT "Copying assets for ${TARGET_NAME}"
+        )
+        message(STATUS "Asset copy set up for target: ${TARGET_NAME}")
+    endif()
+endmacro()
+
 macro(setup_target_dll_copy TARGET_NAME)
     # Only do this on Windows and if copying is enabled
     if(WIN32 )
@@ -84,5 +96,6 @@ add_subdirectory(Project/PhysicsTestBed)
 add_subdirectory(Project/PhysicsEngineDemo)
 add_subdirectory(Project/AudioTestBed)
 add_subdirectory(Project/MultiThreading)
+add_subdirectory(Project/LDtkViewer)
 #add_subdirectory(Project/JobSystem)
 

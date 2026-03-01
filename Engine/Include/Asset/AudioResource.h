@@ -13,19 +13,13 @@ namespace Umbra {
         void Unload() override;
 
         const String& GetFilePath() const { return filePath; }
-
-        bool bLoaded = false;
     };
 
-    class Audio {
+    class Audio : public IResourceHandle<AudioResource> {
     public:
-        Audio(SharedPtr<AudioResource> _audioResource);
+        explicit Audio(SharedPtr<AudioResource> _audioResource);
 
         const String& GetFilePath() const;
-        bool IsLoaded() const;
-
-    private:
-        SharedPtr<AudioResource> mRefAudioResource;
     };
 
 } // namespace Umbra

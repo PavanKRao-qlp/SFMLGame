@@ -3,6 +3,7 @@
 #include "Core/AppWindow.h"
 #include "Core/Event.h"
 #include "Core/Random.h"
+#include "Diag/MemoryTracker.h"
 #include "ECS/ECSRegister.h"
 #include "ECS/Systems/CollisionDetectionSystem.h"
 #include "ECS/Systems/CollisionEventResolverSystem.h"
@@ -12,6 +13,7 @@
 #include "Game/IGameInstance.h"
 #include "Game/SceneManager.h"
 #include "Game/World.h"
+#include "Graphics/IRenderDevice.h"
 #include "Input/Input.h"
 #include "Platform/NativeFileSystem.h"
 #include "Platform/PakFileSystem.h"
@@ -19,7 +21,6 @@
 #include "Service/ServiceLocator.h"
 #include "UI/Backends/SfmlImguiImpl.h"
 #include "Umbra.h"
-#include "Graphics/IRenderDevice.h"
 
 namespace Umbra {
 
@@ -57,7 +58,8 @@ namespace Umbra {
             @todo 3rd party / dll ?
             @todo memoryManager
             @todo parser
-            @todo Config <--parser
+ @todo Config
+         * <--parser
             @todo logger
             @todo math ?
             @todo RNG
@@ -161,6 +163,13 @@ namespace Umbra {
             while (!bAppRequestExit) {
 
                 EngineTime::Tick();
+
+                // Poll events and refresh input state at the top of every frame,
+                // before any fixed updates, so GetKeyDown/GetKeyUp work correctly
+                // in both simulation and render phases.
+                Input::Refresh();
+                mAppWindow->Update();
+
                 float scaledDt = EngineTime::GetScaledDeltaTime();
 
                 if (scaledDt > 0.f) {
@@ -183,8 +192,12 @@ namespace Umbra {
     }
 
     void App::OnUpdate(float _dt) {
-        Input::Refresh();
-        mAppWindow->Update();
+        // Debug overlay toggle: Alt + ~
+        if (mGameInstance->bDebug) {
+            if (Input::GetKeyDown(KeyBoard::LAlt)) {
+                mShowDebugLayer = !mShowDebugLayer;
+            }
+        }
 
         // Begin UI frame
         mUIManager->NewFrame(EngineTime::GetDeltaTime());
@@ -197,6 +210,11 @@ namespace Umbra {
 
         // Flush render service (sort, cull, batch, draw, flush debug)
         ServiceLocator::GetRenderService()->Flush();
+
+        // Debug overlay panels
+        if (mGameInstance->bDebug && mShowDebugLayer) {
+            MemoryTracker::DrawImGuiPanel();
+        }
 
         // End UI frame
         mUIManager->Render();

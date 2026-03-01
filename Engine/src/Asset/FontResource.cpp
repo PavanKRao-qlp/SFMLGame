@@ -7,8 +7,9 @@ namespace Umbra {
     FontResource::FontResource(const String& _filePath) : IResource(_filePath) {}
 
     bool FontResource::Load() {
-        mFont = std::make_unique<SfmlFont>();
-        return mFont->LoadFromFile(filePath);
+        mFont   = std::make_unique<SfmlFont>();
+        bLoaded = mFont->LoadFromFile(filePath);
+        return bLoaded;
     }
 
     void FontResource::Unload() {
@@ -17,17 +18,14 @@ namespace Umbra {
         }
     }
 
-    Font::Font(SharedPtr<FontResource> _fontResource) : mRefFontResource(_fontResource) {}
+    Font::Font(SharedPtr<FontResource> _fontResource)
+        : IResourceHandle<FontResource>(std::move(_fontResource)) {}
 
     void* Font::GetNativeHandle() const {
-        if (mRefFontResource && mRefFontResource->mFont) {
-            return mRefFontResource->mFont->GetNativeHandle();
+        if (mResource && mResource->mFont) {
+            return mResource->mFont->GetNativeHandle();
         }
         return nullptr;
-    }
-
-    bool Font::IsLoaded() const {
-        return mRefFontResource && mRefFontResource->mFont != nullptr;
     }
 
 } // namespace Umbra

@@ -58,6 +58,12 @@ namespace Umbra {
         void AddSystem(ESystemPhase _systemPhase, int _priority, SharedPtr<System> _system);
         void RemoveSystem(SharedPtr<System>& _system);
 
+        template <typename T>
+        SharedPtr<T> GetSystem();
+
+        template <typename T>
+        void SetSystemEnabled(bool _bEnabled);
+
         void Update();
         void Update(ESystemPhase _systemPhase);
         void CleanUp();
@@ -69,7 +75,7 @@ namespace Umbra {
         UniquePtr<ComponentManager> mComponentManager;
 
         UMap<EntityID, ComponentMask> mEntityComponentSignatures;
-        UMap<ESystemPhase, Vector<SharedPtr<System>>> mSystemMap;
+        SystemManager mSystemManager;
 
         // Tag index for efficient tag-based entity queries
         UMap<String, Set<EntityID>> mTagIndex;

@@ -235,19 +235,23 @@ namespace Umbra {
         mBatching = true;
         mBatchList.clear();
         mCurrentBatchTexture = reinterpret_cast<void*>(~uintptr_t(0)); // sentinel
+        mCurrentBatchShader  = reinterpret_cast<void*>(~uintptr_t(0)); // sentinel
     }
 
     void SfmlRenderDevice::BatchQuad(Math::Vector2f _position, Math::Vector2f _size,
         Math::Vector2f _origin, float _angle, const Color& _color, void* _textureHandle,
-        const FloatRect& _uvRect) {
+        const FloatRect& _uvRect, void* _shaderHandle) {
         if (!mBatching) return;
 
-        // Start a new batch when the texture changes
-        if (_textureHandle != mCurrentBatchTexture || mBatchList.empty()) {
+        // Start a new batch when either the texture or the shader changes
+        if (_textureHandle != mCurrentBatchTexture || _shaderHandle != mCurrentBatchShader
+            || mBatchList.empty()) {
             mCurrentBatchTexture = _textureHandle;
+            mCurrentBatchShader  = _shaderHandle;
             BatchData data;
             data.vertices.setPrimitiveType(sf::Quads);
             data.texture = static_cast<const sf::Texture*>(_textureHandle);
+            data.shader  = static_cast<const sf::Shader*>(_shaderHandle);
             mBatchList.push_back(std::move(data));
         }
 
@@ -260,13 +264,12 @@ namespace Umbra {
         mBatching = false;
 
         for (auto& batch : mBatchList) {
-            if (batch.vertices.getVertexCount() > 0) {
-                if (batch.texture) {
-                    mWindow->draw(batch.vertices, batch.texture);
-                } else {
-                    mWindow->draw(batch.vertices);
-                }
-            }
+            if (batch.vertices.getVertexCount() == 0) continue;
+
+            sf::RenderStates states;
+            if (batch.texture) states.texture = batch.texture;
+            if (batch.shader)  states.shader  = batch.shader;
+            mWindow->draw(batch.vertices, states);
         }
     }
 

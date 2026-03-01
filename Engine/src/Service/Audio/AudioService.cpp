@@ -1,12 +1,14 @@
 #include "Service/Audio/AudioService.h"
 
 #include "Diag/Logger.h"
+#include "Diag/MemoryTracker.h"
 
 namespace Umbra {
 
     AudioService::AudioService() : AudioService(AudioServiceConfig{}) {}
 
     AudioService::AudioService(const AudioServiceConfig& _config) : mConfig(_config) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Audio);
         mSounds.reserve(_config.InitialSoundCapacity);
 
         // Initialize group volumes from config
@@ -43,6 +45,7 @@ namespace Umbra {
     // ============== Playback ==============
 
     SoundHandle AudioService::PlaySound(const String& _filePath, ESoundGroup _group, bool _looping) {
+        UMBRA_ALLOC_SCOPE(EMemoryCategory::Audio);
         if (!bEngineInitialized) {
             return SoundHandle::Invalid();
         }

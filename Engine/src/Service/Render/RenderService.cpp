@@ -64,10 +64,11 @@ namespace Umbra {
 
             float renderAngle   = WorldToRenderAngle(quad.Angle);
             void* textureHandle = quad.RefTexture ? quad.RefTexture->GetNativeHandle() : nullptr;
+            void* shaderHandle  = quad.RefShader  ? quad.RefShader->GetNativeHandle()  : nullptr;
 
             mRenderDevice->BatchQuad(
                 renderPos, quad.Size, quad.Pivot,
-                renderAngle, quad.Tint, textureHandle, quad.UVRect);
+                renderAngle, quad.Tint, textureHandle, quad.UVRect, shaderHandle);
 
             mStats.QuadsRendered++;
         }

@@ -15,14 +15,10 @@ namespace Umbra {
         UniquePtr<IFont> mFont;
     };
 
-    class Font {
+    class Font : public IResourceHandle<FontResource> {
     public:
-        Font(SharedPtr<FontResource> _fontResource);
+        explicit Font(SharedPtr<FontResource> _fontResource);
         void* GetNativeHandle() const;
-        bool  IsLoaded() const;
-
-    private:
-        SharedPtr<FontResource> mRefFontResource;
     };
 
 } // namespace Umbra
