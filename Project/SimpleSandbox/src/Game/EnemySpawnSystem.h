@@ -6,7 +6,7 @@
 #include "ECS/Enity.h"
 #include "ECS/System.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Components/Rigidbody.h"
+// #include "ECS/Components/Rigidbody.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/CollisionBox.h"
 #include "Math/CollisionSystem.h"
@@ -57,9 +57,9 @@ private:
             mView->ecsRegister->AddComponent<Umbra::TransformComponent>(enemyShip, Umbra::TransformComponent(spawnPos, Umbra::Math::Vector2f(32, 32), angleToShip));
             mView->ecsRegister->AddComponent<Umbra::SpriteComponent>(enemyShip, Umbra::AssetManager::GetInstance()->GetTexture("Asset/Texture/T_ship_0005.png"));
 
-            Umbra::RigidBodyComponent enemyShipRB;
-            enemyShipRB.Velocity = toShipDir * 50;
-            mView->ecsRegister->AddComponent<Umbra::RigidBodyComponent>(enemyShip, enemyShipRB);
+            // Umbra::RigidBodyComponent enemyShipRB;
+            // enemyShipRB.Velocity = toShipDir * 50;
+            // mView->ecsRegister->AddComponent<Umbra::RigidBodyComponent>(enemyShip, enemyShipRB);
             mView->ecsRegister->AddComponent<Umbra::CollisionBoxComponent>(enemyShip, Umbra::Math::Bounds2D(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(40, 40)), ShipCollisionMask);
         }
     };

@@ -20,21 +20,21 @@ void BVHScene::OnFixedUpdate() {
     Umbra::Math::Bounds2D mouseBound    = Umbra::Math::Bounds2D(worldMousePos, mBoxSize);
     Umbra::Math::Ray2D mouseRay =
         Umbra::Math::Ray2D(worldMousePos, (Umbra::Math::Vector2f(1, 0).GetRotated(mRayAngle)));
-    if (GetWorld()->GetPhysicsSystem()->QueryColliderAt(worldMousePos)) {
-        mPointColliding = true;
-    } else {
-        mPointColliding = false;
-    }
-    if (GetWorld()->GetPhysicsSystem()->QueryCollidersInsideAABB(mouseBound)) {
-        mAABBColliding = true;
-    } else {
-        mAABBColliding = false;
-    }
-    if (GetWorld()->GetPhysicsSystem()->Raycast(mouseRay)) {
-        mRayCastColliding = true;
-    } else {
-        mRayCastColliding = false;
-    }
+    // if (GetWorld()->GetPhysicsSystem()->QueryColliderAt(worldMousePos)) {
+    //     mPointColliding = true;
+    // } else {
+    //     mPointColliding = false;
+    // }
+    // if (GetWorld()->GetPhysicsSystem()->QueryCollidersInsideAABB(mouseBound)) {
+    //     mAABBColliding = true;
+    // } else {
+    //     mAABBColliding = false;
+    // }
+    // if (GetWorld()->GetPhysicsSystem()->Raycast(mouseRay)) {
+    //     mRayCastColliding = true;
+    // } else {
+    //     mRayCastColliding = false;
+    // }
 
     Umbra::ServiceLocator::GetRenderService()->DebugDrawBox(mouseBound, false, Umbra::Color::Cyan);
     Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(worldMousePos, worldMousePos + mouseRay.Direction * 10000, Umbra::Color::Cyan);
@@ -127,9 +127,9 @@ void BVHScene::OnBeginPlay() {
         GetWorld()->AddComponent<Umbra::TransformComponent>(
             mBoxEntity, Umbra::Math::Vector2f(transformX, transformY), Umbra::Math::Vector2f(sizeRX, sizeRY), angle);
         GetWorld()->AddComponent<Umbra::BoxColliderComponent>(mBoxEntity, Umbra::Math::Vector2f(sizeRX, sizeRY));
-        Umbra::PhysicsBodyComponent physicsBodyComponent;
-        physicsBodyComponent.mAngularVelocity = Umbra::Random::RandomRange(-5, 5);
-        GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(mBoxEntity, physicsBodyComponent);
+        // Umbra::PhysicsBodyComponent physicsBodyComponent;
+        // physicsBodyComponent.mAngularVelocity = Umbra::Random::RandomRange(-5, 5);
+        // GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(mBoxEntity, physicsBodyComponent);
         GetWorld()->AddComponent<Umbra::SpriteComponent>(mBoxEntity, Umbra::Color::Red);
     }
     int sizeRX = Umbra::Random::RandomRange(10, 20);

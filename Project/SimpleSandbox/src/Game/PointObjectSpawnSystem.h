@@ -40,13 +40,12 @@ private:
             Umbra::TransformComponent(
                 Umbra::Math::Vector2f(Umbra::Random::RandomRange(-100, 100), Umbra::Random::RandomRange(-100, 100)),
                 RandomSize));
-        Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
-        physicsBodyComponent.SetMass(Umbra::Random::RandomRange(1, 10));
-        physicsBodyComponent.bAffectedByGravity = false;
-        Umbra::Math::Vector2f RandomVelocity =
-            Umbra::Math::Vector2f(Umbra::Random::RandomRange(-50, 50), Umbra::Random::RandomRange(-50, 50));
-        // physicsBodyComponent.mVelocity = RandomVelocity;
-        mView->ecsRegister->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
+        // Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+        // physicsBodyComponent.SetMass(Umbra::Random::RandomRange(1, 10));
+        // physicsBodyComponent.bAffectedByGravity = false;
+        // Umbra::Math::Vector2f RandomVelocity =
+        //     Umbra::Math::Vector2f(Umbra::Random::RandomRange(-50, 50), Umbra::Random::RandomRange(-50, 50));
+        // mView->ecsRegister->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
 
         Umbra::CircleColliderComponent circleColliderComponent;
         circleColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);

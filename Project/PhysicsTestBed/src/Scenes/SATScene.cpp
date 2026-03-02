@@ -3,283 +3,304 @@
 #include "Core/Random.h"
 #include "ECS/Components/SpriteQuad.h"
 #include "ECS/Components/Transform.h"
-#include "Service/ServiceLocator.h"
 #include "EnginePCH.h"
 #include "Game/IGameInstance.h"
+#include "Graphics/Color.h"
 #include "Input/Input.h"
 #include "LandingScene.h"
 #include "Math/Box.h"
 #include "Math/GeometryUtils.h"
+#include "Service/ServiceLocator.h"
 #include "Umbra.h"
 #include "imgui.h"
-#include "Graphics/Color.h"
 #include <ctime>
 #include <random>
 
 
 void SATScene::Initialize() {
     CreateDefaultCamera(150.0f);
-    mCollisionDetector = std::make_shared<Umbra::CollisionDetector>();
+    //  mCollisionDetector = nullptr; // std::make_shared<Umbra::CollisionDetector>();
 }
 
 void SATScene::OnFixedUpdate() {
 
-    Umbra::Math::Vector2f worldMousePos   = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
-    Umbra::TransformComponent* transformA = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityA);
-    Umbra::TransformComponent* transformB = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityB);
-    Umbra::UniquePtr<Umbra::Math::Polygon> shapeA;
-    Umbra::UniquePtr<Umbra::Math::Polygon> shapeB;
-    if (mShapeA == Box) {
-        shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
-        Umbra::Math::Bounds2D boundsA(transformA->Position, transformA->Size);
-        Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(boundsA, transformA->Angle, false, Umbra::Color::FromU8(60, 60, 60));
-    } else if (mShapeA == Polygon) {
-        Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
-        for (int i = 0; i < pointsA.size(); i++) {
-            pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
-        }
-        shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
-        for (int i = 0; i < pointsA.size(); i++) {
-            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(pointsA[(i + 1) % pointsA.size()], pointsA[i], Umbra::Color::FromU8(60, 60, 60));
-        }
-    }
-    if (mShapeB == Box) {
-        shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
-        Umbra::Math::Bounds2D boundsB(transformB->Position, transformB->Size);
-        Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(boundsB, transformB->Angle, false, Umbra::Color::FromU8(60, 60, 60));
-    } else if (mShapeB == Polygon) {
-        Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
-        for (int i = 0; i < pointsB.size(); i++) {
-            pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
-        }
-        shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
-        for (int i = 0; i < pointsB.size(); i++) {
-            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(pointsB[(i + 1) % pointsB.size()], pointsB[i], Umbra::Color::FromU8(60, 60, 60));
-        }
-    }
+    // Umbra::Math::Vector2f worldMousePos   = GetWorld()->GetScreenToWorldPosition(Umbra::Input::GetMousePosition());
+    // Umbra::TransformComponent* transformA = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityA);
+    // Umbra::TransformComponent* transformB = GetWorld()->GetComponent<Umbra::TransformComponent>(mEntityB);
+    // Umbra::UniquePtr<Umbra::Math::Polygon> shapeA;
+    // Umbra::UniquePtr<Umbra::Math::Polygon> shapeB;
+    // if (mShapeA == Box) {
+    //     shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
+    //     Umbra::Math::Bounds2D boundsA(transformA->Position, transformA->Size);
+    //     Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(
+    //         boundsA, transformA->Angle, false, Umbra::Color::FromU8(60, 60, 60));
+    // } else if (mShapeA == Polygon) {
+    //     Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
+    //     for (int i = 0; i < pointsA.size(); i++) {
+    //         pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
+    //     }
+    //     shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
+    //     for (int i = 0; i < pointsA.size(); i++) {
+    //         Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //             pointsA[(i + 1) % pointsA.size()], pointsA[i], Umbra::Color::FromU8(60, 60, 60));
+    //     }
+    // }
+    // if (mShapeB == Box) {
+    //     shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
+    //     Umbra::Math::Bounds2D boundsB(transformB->Position, transformB->Size);
+    //     Umbra::ServiceLocator::GetRenderService()->DebugDrawOrientedBox(
+    //         boundsB, transformB->Angle, false, Umbra::Color::FromU8(60, 60, 60));
+    // } else if (mShapeB == Polygon) {
+    //     Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
+    //     for (int i = 0; i < pointsB.size(); i++) {
+    //         pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
+    //     }
+    //     shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
+    //     for (int i = 0; i < pointsB.size(); i++) {
+    //         Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //             pointsB[(i + 1) % pointsB.size()], pointsB[i], Umbra::Color::FromU8(60, 60, 60));
+    //     }
+    // }
 
-    if (mShapeA != Circle && mShapeB != Circle) {
-        Umbra::Collision collision;
-        bool bCollided = mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB, collision);
-        if (bCollided) {
-            Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
-                transformA->Position, transformA->Position + collision.mContactNormal * 100, Umbra::Color::Green);
-            for (auto point : collision.GetContacts()) {
-                // if (bDrawContactPoint) {
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(point.mContactPosition, 1.5, true, Umbra::Color::White);
-                // }
-            }
-            if (bDrawContactPoint) {
-                Umbra::Vector<Umbra::Math::Vector2f> collisionPoint;
+    // if (mShapeA != Circle && mShapeB != Circle) {
+    //     Umbra::Collision collision;
+    //     bool bCollided = false; // mCollisionDetector->CheckPolygonPolygonOverlapSAT(*shapeA, *shapeB, collision);
+    //     if (bCollided) {
+    //         Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //             transformA->Position, transformA->Position + collision.mContactNormal * 100, Umbra::Color::Green);
+    //         for (auto point : collision.GetContacts()) {
+    //             // if (bDrawContactPoint) {
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                 point.mContactPosition, 1.5, true, Umbra::Color::White);
+    //             // }
+    //         }
+    //         if (bDrawContactPoint) {
+    //             Umbra::Vector<Umbra::Math::Vector2f> collisionPoint;
 
-                int vaIx                                       = -1;
-                float vaProj                                   = -Umbra::fInf;
-                Umbra::Vector<Umbra::Math::Vector2f> verticesA = shapeA->GetVertices();
-                for (int i = 0; i < verticesA.size(); i++) {
-                    float projection = Umbra::Math::Vector2f::Dot(collision.mContactNormal, verticesA[i]);
-                    if (projection >= vaProj) {
-                        vaIx   = i;
-                        vaProj = projection;
-                    }
-                }
-                Umbra::Math::Vector2f vertexNextA     = verticesA[(vaIx + 1) % verticesA.size()];
-                Umbra::Math::Vector2f vertexPrevA     = verticesA[(vaIx - 1) % verticesA.size()];
-                Umbra::Math::Vector2f vertToNextEdgeA = (vertexNextA - verticesA[vaIx]).GetNormalized();
-                Umbra::Math::Vector2f prevToVertEdgeA = (verticesA[vaIx] - vertexPrevA).GetNormalized();
-                float prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeA, collision.mContactNormal);
-                float nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeA, collision.mContactNormal);
-                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
-                if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
-                    bestEdgeA = {vertexPrevA, verticesA[vaIx]};
-                } else {
-                    bestEdgeA = {verticesA[vaIx], vertexNextA};
-                }
+    //             int vaIx                                       = -1;
+    //             float vaProj                                   = -Umbra::fInf;
+    //             Umbra::Vector<Umbra::Math::Vector2f> verticesA = shapeA->GetVertices();
+    //             for (int i = 0; i < verticesA.size(); i++) {
+    //                 float projection = Umbra::Math::Vector2f::Dot(collision.mContactNormal, verticesA[i]);
+    //                 if (projection >= vaProj) {
+    //                     vaIx   = i;
+    //                     vaProj = projection;
+    //                 }
+    //             }
+    //             Umbra::Math::Vector2f vertexNextA     = verticesA[(vaIx + 1) % verticesA.size()];
+    //             Umbra::Math::Vector2f vertexPrevA     = verticesA[(vaIx - 1) % verticesA.size()];
+    //             Umbra::Math::Vector2f vertToNextEdgeA = (vertexNextA - verticesA[vaIx]).GetNormalized();
+    //             Umbra::Math::Vector2f prevToVertEdgeA = (verticesA[vaIx] - vertexPrevA).GetNormalized();
+    //             float prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeA, collision.mContactNormal);
+    //             float nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeA, collision.mContactNormal);
+    //             Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
+    //             if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
+    //                 bestEdgeA = {vertexPrevA, verticesA[vaIx]};
+    //             } else {
+    //                 bestEdgeA = {verticesA[vaIx], vertexNextA};
+    //             }
 
-                int vbIx                                       = -1;
-                float vbProj                                   = -Umbra::fInf;
-                Umbra::Vector<Umbra::Math::Vector2f> verticesB = shapeB->GetVertices();
-                for (int i = 0; i < verticesB.size(); i++) {
-                    float projection = Umbra::Math::Vector2f::Dot(-1 * collision.mContactNormal, verticesB[i]);
-                    if (projection >= vbProj) {
-                        vbIx   = i;
-                        vbProj = projection;
-                    }
-                }
-                // find the edge that is perpendicular to contact normal
-                Umbra::Math::Vector2f vertexNextB     = verticesB[(vbIx + 1) % verticesB.size()];
-                Umbra::Math::Vector2f vertexPrevB     = verticesB[(vbIx - 1) % verticesB.size()];
-                Umbra::Math::Vector2f vertToNextEdgeB = (vertexNextB - verticesB[vbIx]).GetNormalized();
-                Umbra::Math::Vector2f prevToVertEdgeB = (verticesB[vbIx] - vertexPrevB).GetNormalized();
-                prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeB, -1 * collision.mContactNormal);
-                nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeB, -1 * collision.mContactNormal);
-                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeB;
-                if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
-                    bestEdgeB = {vertexPrevB, verticesB[vbIx]};
-                } else {
-                    bestEdgeB = {verticesB[vbIx], vertexNextB};
-                }
+    //             int vbIx                                       = -1;
+    //             float vbProj                                   = -Umbra::fInf;
+    //             Umbra::Vector<Umbra::Math::Vector2f> verticesB = shapeB->GetVertices();
+    //             for (int i = 0; i < verticesB.size(); i++) {
+    //                 float projection = Umbra::Math::Vector2f::Dot(-1 * collision.mContactNormal, verticesB[i]);
+    //                 if (projection >= vbProj) {
+    //                     vbIx   = i;
+    //                     vbProj = projection;
+    //                 }
+    //             }
+    //             // find the edge that is perpendicular to contact normal
+    //             Umbra::Math::Vector2f vertexNextB     = verticesB[(vbIx + 1) % verticesB.size()];
+    //             Umbra::Math::Vector2f vertexPrevB     = verticesB[(vbIx - 1) % verticesB.size()];
+    //             Umbra::Math::Vector2f vertToNextEdgeB = (vertexNextB - verticesB[vbIx]).GetNormalized();
+    //             Umbra::Math::Vector2f prevToVertEdgeB = (verticesB[vbIx] - vertexPrevB).GetNormalized();
+    //             prevProj = Umbra::Math::Vector2f::Dot(prevToVertEdgeB, -1 * collision.mContactNormal);
+    //             nextProj = Umbra::Math::Vector2f::Dot(vertToNextEdgeB, -1 * collision.mContactNormal);
+    //             Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeB;
+    //             if (Umbra::Math::Abs(prevProj) <= Umbra::Math::Abs(nextProj)) {
+    //                 bestEdgeB = {vertexPrevB, verticesB[vbIx]};
+    //             } else {
+    //                 bestEdgeB = {verticesB[vbIx], vertexNextB};
+    //             }
 
-                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> referenceEdge;
-                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> incidentEdge;
-                float e1Dot = Umbra::Math::Abs(
-                    Umbra::Math::Vector2f::Dot((bestEdgeA.second - bestEdgeA.first), collision.mContactNormal));
-                float e2Dot = Umbra::Math::Abs(
-                    Umbra::Math::Vector2f::Dot((bestEdgeB.second - bestEdgeB.first), -1 * collision.mContactNormal));
+    //             Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> referenceEdge;
+    //             Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> incidentEdge;
+    //             float e1Dot = Umbra::Math::Abs(
+    //                 Umbra::Math::Vector2f::Dot((bestEdgeA.second - bestEdgeA.first), collision.mContactNormal));
+    //             float e2Dot = Umbra::Math::Abs(
+    //                 Umbra::Math::Vector2f::Dot((bestEdgeB.second - bestEdgeB.first), -1 * collision.mContactNormal));
 
-                bool bFlipInc = false;
-                if (e1Dot <= e2Dot) {
-                    bFlipInc      = false;
-                    referenceEdge = bestEdgeA;
-                    incidentEdge  = bestEdgeB;
-                } else {
-                    referenceEdge = bestEdgeB;
-                    incidentEdge  = bestEdgeA;
-                    bFlipInc      = true;
-                }
+    //             bool bFlipInc = false;
+    //             if (e1Dot <= e2Dot) {
+    //                 bFlipInc      = false;
+    //                 referenceEdge = bestEdgeA;
+    //                 incidentEdge  = bestEdgeB;
+    //             } else {
+    //                 referenceEdge = bestEdgeB;
+    //                 incidentEdge  = bestEdgeA;
+    //                 bFlipInc      = true;
+    //             }
 
-                Umbra::Math::Vector2f refEdge   = (referenceEdge.second - referenceEdge.first).GetNormalized();
-                Umbra::Math::Vector2f refNormal = Umbra::Math::Vector2f(refEdge.y, -refEdge.x);
-                if (Umbra::Math::Vector2f::Dot(collision.mContactNormal, refNormal) < 0) {
-                    refNormal = -1 * refNormal; // Flip the normal to make sure it points in the correct direction
-                }
+    //             Umbra::Math::Vector2f refEdge   = (referenceEdge.second - referenceEdge.first).GetNormalized();
+    //             Umbra::Math::Vector2f refNormal = Umbra::Math::Vector2f(refEdge.y, -refEdge.x);
+    //             if (Umbra::Math::Vector2f::Dot(collision.mContactNormal, refNormal) < 0) {
+    //                 refNormal = -1 * refNormal; // Flip the normal to make sure it points in the correct direction
+    //             }
 
-                float refC1 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.first);
-                float refC2 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.second) * -1;
-                Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> clipped = incidentEdge;
-                if (!mCollisionDetector->Clip(refEdge, clipped, refC1)) {
-                } else if (!mCollisionDetector->Clip(-1 * refEdge, clipped, refC2)) {
-                } else {
-                    if (bFlipInc) {
-                        refNormal *= -1;
-                    }
-                    float refDepth = Umbra::Math::Vector2f::Dot(refNormal, referenceEdge.first);
-                    for (auto& point : {clipped.first, clipped.second}) {
-                        float depth = Umbra::Math::Vector2f::Dot(refNormal, point) - refDepth;
-                        if (depth <= 0.0f) {
-                            collisionPoint.emplace_back(point);
-                        }
-                    }
-
-
-                    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(clipped.first, 2.5, false, Umbra::Color::White);
-                    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(clipped.second, 2.5, false, Umbra::Color::White);
-                }
-
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(verticesA[vaIx], 2.5, false, Umbra::Color::Red);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(verticesB[vbIx], 2.5, false, Umbra::Color::Green);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexPrevA, 2.5, false, Umbra::Color::Blue);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexNextA, 2.5, false, Umbra::Color::Yellow);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexPrevB, 2.5, false, Umbra::Color::Blue);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexNextB, 2.5, false, Umbra::Color::Yellow);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(referenceEdge.first, referenceEdge.second, Umbra::Color::Red);
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(incidentEdge.first, incidentEdge.second, Umbra::Color::Green);
-            }
+    //             float refC1 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.first);
+    //             float refC2 = Umbra::Math::Vector2f::Dot(refEdge, referenceEdge.second) * -1;
+    //             Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> clipped = incidentEdge;
+    //             //
+    //             {
+    //                 if (bFlipInc) {
+    //                     refNormal *= -1;
+    //                 }
+    //                 float refDepth = Umbra::Math::Vector2f::Dot(refNormal, referenceEdge.first);
+    //                 for (auto& point : {clipped.first, clipped.second}) {
+    //                     float depth = Umbra::Math::Vector2f::Dot(refNormal, point) - refDepth;
+    //                     if (depth <= 0.0f) {
+    //                         collisionPoint.emplace_back(point);
+    //                     }
+    //                 }
 
 
-            // // find the edge from the vertex such that it is most perpendicular to the collision normal
-            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> prevVertEdgeA = {
-            //     verticesA[vaIx - 1 % verticesA.size()], verticesA[vaIx]};
-            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> nextVertEdgeA = {
-            //     verticesA[vaIx], verticesA[vaIx + 1 % verticesA.size()]};
-            // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
-            // if ()
-        }
-    }
+    //                 Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                     clipped.first, 2.5, false, Umbra::Color::White);
+    //                 Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                     clipped.second, 2.5, false, Umbra::Color::White);
+    //             }
+
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                 verticesA[vaIx], 2.5, false, Umbra::Color::Red);
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                 verticesB[vbIx], 2.5, false, Umbra::Color::Green);
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexPrevA, 2.5, false,
+    //             Umbra::Color::Blue); Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                 vertexNextA, 2.5, false, Umbra::Color::Yellow);
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(vertexPrevB, 2.5, false,
+    //             Umbra::Color::Blue); Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(
+    //                 vertexNextB, 2.5, false, Umbra::Color::Yellow);
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //                 referenceEdge.first, referenceEdge.second, Umbra::Color::Red);
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //                 incidentEdge.first, incidentEdge.second, Umbra::Color::Green);
+    //         }
 
 
-    if (mShapeA == Box) {
-        shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
-    } else if (mShapeA == Polygon) {
-        Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
-        for (int i = 0; i < pointsA.size(); i++) {
-            pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
-        }
-        shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
-    }
-    if (mShapeB == Box) {
-        shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
-    } else if (mShapeB == Polygon) {
-        Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
-        for (int i = 0; i < pointsB.size(); i++) {
-            pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
-        }
-        shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
-    }
+    //         // // find the edge from the vertex such that it is most perpendicular to the collision normal
+    //         // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> prevVertEdgeA = {
+    //         //     verticesA[vaIx - 1 % verticesA.size()], verticesA[vaIx]};
+    //         // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> nextVertEdgeA = {
+    //         //     verticesA[vaIx], verticesA[vaIx + 1 % verticesA.size()]};
+    //         // Umbra::Pair<Umbra::Math::Vector2f, Umbra::Math::Vector2f> bestEdgeA;
+    //         // if ()
+    //     }
+    // }
 
 
-    Umbra::Math::Vector2f minAxis;
-    bool flip = false;
-    if (bShowProjections) {
-        if (mShapeA != Circle) {
-            Umbra::Vector<Umbra::Math::Vector2f> normals = shapeA->GetNormals();
-            for (auto normal : normals) {
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 100, Umbra::Color::FromU8(0, 75, 75));
-            }
-        }
-        if (mShapeB != Circle) {
-            Umbra::Vector<Umbra::Math::Vector2f> normals = shapeB->GetNormals();
-            for (auto normal : normals) {
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(Umbra::Math::Vector2f(0, 0), normal * 100, Umbra::Color::FromU8(75, 0, 75));
-            }
-        }
-        Umbra::Vector<Umbra::Math::Vector2f> normalsA = shapeA->GetNormals();
-        Umbra::Vector<Umbra::Math::Vector2f> normalsB = shapeB->GetNormals();
-        Umbra::Vector<Umbra::Math::Vector2f> axes;
-        axes.insert(axes.end(), normalsA.begin(), normalsA.end());
-        axes.insert(axes.end(), normalsB.begin(), normalsB.end());
-        float minOverLap = Umbra::fInf;
-        // For every axis project both shape and find if any axis exist which has no overlap
-        // if overlap is not found objects are separated
-        // else find the axis with minimum overlap to find minimum translation vector
-        for (Umbra::Math::Vector2f axis : normalsA) {
-            Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
-            Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
-            // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, Umbra::Color::Red);
-            // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, Umbra::Color::Blue);
-            if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
-                // axis is the separating axis theorem
-            } else {
-                Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
-                    axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), Umbra::Color::Yellow);
-                float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
-                              - Umbra::Math::Max(projectionA.Min, projectionB.Min);
-                if (overlap < minOverLap) {
-                    minOverLap = overlap;
-                    minAxis    = axis;
-                    flip       = false;
-                }
-            }
-        }
-        for (Umbra::Math::Vector2f axis : normalsB) {
-            Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
-            Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
-            // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionA.Min, axis * projectionA.Max, Umbra::Color::Blue);
-            // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionB.Min, axis * projectionB.Max, Umbra::Color::Red);
-            if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
-                // axis is the separating axis theorem
-            } else {
-                // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
-                // axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), Umbra::Color::Yellow);
-                float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
-                              - Umbra::Math::Max(projectionA.Min, projectionB.Min);
-                if (overlap < minOverLap) {
-                    minOverLap = overlap;
-                    minAxis    = axis;
-                    flip       = true;
-                }
-            }
-        }
-    }
+    // if (mShapeA == Box) {
+    //     shapeA = std::make_unique<Umbra::Math::Box>(transformA->Position, transformA->Size, transformA->Angle);
+    // } else if (mShapeA == Polygon) {
+    //     Umbra::Vector<Umbra::Math::Vector2f> pointsA = mPolygonA.GetVertices();
+    //     for (int i = 0; i < pointsA.size(); i++) {
+    //         pointsA[i] = transformA->Position + (pointsA[i].GetRotated(transformA->Angle));
+    //     }
+    //     shapeA = std::make_unique<Umbra::Math::Polygon>(pointsA);
+    // }
+    // if (mShapeB == Box) {
+    //     shapeB = std::make_unique<Umbra::Math::Box>(transformB->Position, transformB->Size, transformB->Angle);
+    // } else if (mShapeB == Polygon) {
+    //     Umbra::Vector<Umbra::Math::Vector2f> pointsB = mPolygonB.GetVertices();
+    //     for (int i = 0; i < pointsB.size(); i++) {
+    //         pointsB[i] = transformB->Position + (pointsB[i].GetRotated(transformB->Angle));
+    //     }
+    //     shapeB = std::make_unique<Umbra::Math::Polygon>(pointsB);
+    // }
 
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 2.f, true, Umbra::Color::White);
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transformA->Position, 2.f, true, Umbra::Color::Cyan);
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(transformA->Position,
-        transformA->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformA->Angle) * 10, Umbra::Color::Cyan);
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
-        transformA->Position, transformA->Position + minAxis * 70, flip ? Umbra::Color::Cyan : Umbra::Color::White);
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transformB->Position, 2.f, true, Umbra::Color::Magenta);
-    Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(transformB->Position,
-        transformB->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformB->Angle) * 10, Umbra::Color::Magenta);
+
+    // Umbra::Math::Vector2f minAxis;
+    // bool flip = false;
+    // if (bShowProjections) {
+    //     if (mShapeA != Circle) {
+    //         Umbra::Vector<Umbra::Math::Vector2f> normals = shapeA->GetNormals();
+    //         for (auto normal : normals) {
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //                 Umbra::Math::Vector2f(0, 0), normal * 100, Umbra::Color::FromU8(0, 75, 75));
+    //         }
+    //     }
+    //     if (mShapeB != Circle) {
+    //         Umbra::Vector<Umbra::Math::Vector2f> normals = shapeB->GetNormals();
+    //         for (auto normal : normals) {
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //                 Umbra::Math::Vector2f(0, 0), normal * 100, Umbra::Color::FromU8(75, 0, 75));
+    //         }
+    //     }
+    //     Umbra::Vector<Umbra::Math::Vector2f> normalsA = shapeA->GetNormals();
+    //     Umbra::Vector<Umbra::Math::Vector2f> normalsB = shapeB->GetNormals();
+    //     Umbra::Vector<Umbra::Math::Vector2f> axes;
+    //     axes.insert(axes.end(), normalsA.begin(), normalsA.end());
+    //     axes.insert(axes.end(), normalsB.begin(), normalsB.end());
+    //     float minOverLap = Umbra::fInf;
+    //     // For every axis project both shape and find if any axis exist which has no overlap
+    //     // if overlap is not found objects are separated
+    //     // else find the axis with minimum overlap to find minimum translation vector
+    //     for (Umbra::Math::Vector2f axis : normalsA) {
+    //         Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
+    //         Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
+    //         // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionB.Min, axis *
+    //         projectionB.Max,
+    //         // Umbra::Color::Red); Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionA.Min,
+    //         axis
+    //         // * projectionA.Max, Umbra::Color::Blue);
+    //         if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
+    //             // axis is the separating axis theorem
+    //         } else {
+    //             Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //                 axis * Umbra::Math::Max(projectionA.Min, projectionB.Min),
+    //                 axis * Umbra::Math::Min(projectionA.Max, projectionB.Max), Umbra::Color::Yellow);
+    //             float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
+    //                           - Umbra::Math::Max(projectionA.Min, projectionB.Min);
+    //             if (overlap < minOverLap) {
+    //                 minOverLap = overlap;
+    //                 minAxis    = axis;
+    //                 flip       = false;
+    //             }
+    //         }
+    //     }
+    //     for (Umbra::Math::Vector2f axis : normalsB) {
+    //         Umbra::Math::Polygon::Projection projectionA = shapeA->GetProjectionOntoAxis(axis);
+    //         Umbra::Math::Polygon::Projection projectionB = shapeB->GetProjectionOntoAxis(axis);
+    //         // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionA.Min, axis *
+    //         projectionA.Max,
+    //         // Umbra::Color::Blue); Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * projectionB.Min,
+    //         // axis * projectionB.Max, Umbra::Color::Red);
+    //         if (projectionA.Min > projectionB.Max || projectionA.Max < projectionB.Min) {
+    //             // axis is the separating axis theorem
+    //         } else {
+    //             // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(axis * Umbra::Math::Max(projectionA.Min,
+    //             // projectionB.Min), axis * Umbra::Math::Min(projectionA.Max, projectionB.Max),
+    //             Umbra::Color::Yellow); float overlap = Umbra::Math::Min(projectionA.Max, projectionB.Max)
+    //                           - Umbra::Math::Max(projectionA.Min, projectionB.Min);
+    //             if (overlap < minOverLap) {
+    //                 minOverLap = overlap;
+    //                 minAxis    = axis;
+    //                 flip       = true;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(worldMousePos, 2.f, true, Umbra::Color::White);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transformA->Position, 2.f, true, Umbra::Color::Cyan);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(transformA->Position,
+    //     transformA->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformA->Angle) * 10, Umbra::Color::Cyan);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(
+    //     transformA->Position, transformA->Position + minAxis * 70, flip ? Umbra::Color::Cyan : Umbra::Color::White);
+    // Umbra::ServiceLocator::GetRenderService()->DebugDrawCircle(transformB->Position, 2.f, true,
+    // Umbra::Color::Magenta); Umbra::ServiceLocator::GetRenderService()->DebugDrawLine(transformB->Position,
+    //     transformB->Position + Umbra::Math::Vector2f(1, 0).GetRotated(transformB->Angle) * 10,
+    //     Umbra::Color::Magenta);
 }
 
 void SATScene::OnUpdate() {

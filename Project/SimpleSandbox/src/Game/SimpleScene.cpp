@@ -2,10 +2,10 @@
 
 #include "ECS/Components/Collider.h"
 #include "Graphics/Color.h"
-#include "ECS/Components/PhysicsBodyComponent.h"
+// #include "ECS/Components/PhysicsBodyComponent.h"
 #include "Game/IGameInstance.h"
 #include "Input/Input.h"
-#include "Physics/ForceGenerator.h"
+// #include "Physics/ForceGenerator.h"
 #include "PointObjectSpawnSystem.h"
 #include "Umbra.h"
 #include "imgui.h"
@@ -115,11 +115,11 @@ void SimpleScene::OnBeginPlay() {
         GetWorld()->AddComponent<Umbra::SpriteComponent>(entity, Umbra::Color::Red);
         GetWorld()->AddComponent<Umbra::TransformComponent>(
             entity, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 0), Umbra::Math::Vector2f(50, 50)));
-        Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
-        physicsBodyComponent.SetMass(1);
-        physicsBodyComponent.bAffectedByGravity = false;
-        physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
-        GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
+        // Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+        // physicsBodyComponent.SetMass(1);
+        // physicsBodyComponent.bAffectedByGravity = false;
+        // physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
+        // GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity, physicsBodyComponent);
         Umbra::BoxColliderComponent boxColliderComponent;
         boxColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);
         boxColliderComponent.Size   = Umbra::Math::Vector2f(50, 50);
@@ -163,11 +163,11 @@ void SimpleScene::OnBeginPlay() {
         // GetWorld()->AddComponent<Umbra::SpriteComponent>(entity2, sf::Color::Blue);
         GetWorld()->AddComponent<Umbra::TransformComponent>(
             entity2, Umbra::TransformComponent(Umbra::Math::Vector2f(0, 100), Umbra::Math::Vector2f(20, 20)));
-        Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
-        physicsBodyComponent.SetMass(0);
-        physicsBodyComponent.bAffectedByGravity = false;
-        physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
-        GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
+        // Umbra::PhysicsBodyComponent physicsBodyComponent = Umbra::PhysicsBodyComponent();
+        // physicsBodyComponent.SetMass(0);
+        // physicsBodyComponent.bAffectedByGravity = false;
+        // physicsBodyComponent.mVelocity          = Umbra::Math::Vector2f(0, 0);
+        // GetWorld()->AddComponent<Umbra::PhysicsBodyComponent>(entity2, physicsBodyComponent);
 
         Umbra::BoxColliderComponent boxColliderComponent;
         boxColliderComponent.Offset = Umbra::Math::Vector2f(0, 0);

@@ -5,7 +5,7 @@
 #include "ECS/Systems/CameraSystem.h"
 #include "ECS/Systems/CollisionEventDispatchSystem.h"
 #include "ECS/Systems/PhysicsSyncSystem.h"
-#include "ECS/Systems/PhysicsSystem.h"
+// #include "ECS/Systems/PhysicsSystem.h"
 #include "ECS/Systems/AnimationSystem.h"
 #include "ECS/Systems/RenderSyncSystem.h"
 #include "ECS/Systems/SceneGraphSystem.h"
@@ -79,7 +79,7 @@ namespace Umbra {
         template <typename T>
         void SetSystemEnabled(bool _bEnabled);
 
-        PhysicsSystem* GetPhysicsSystem();
+        // PhysicsSystem* GetPhysicsSystem(); // removed — use GetPhysicsService()
 
         Math::Vector2f GetScreenToWorldPosition(Math::Vector2i _screenPos);
 
@@ -150,7 +150,7 @@ namespace Umbra {
         SharedPtr<AnimationSystem> mAnimationSystem;
         SharedPtr<RenderSyncSystem> mRenderSyncSystem;
         SharedPtr<CameraSystem> mCameraSystem;
-        SharedPtr<PhysicsSystem> mPhysicsSystem;
+        // SharedPtr<PhysicsSystem> mPhysicsSystem;
         SharedPtr<PhysicsSyncSystem> mPhysicsSyncSystem;
         SharedPtr<CollisionEventDispatchSystem> mCollisionEventDispatchSystem;
 

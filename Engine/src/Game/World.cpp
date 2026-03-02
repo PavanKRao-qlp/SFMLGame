@@ -1,15 +1,16 @@
 #include "Game/World.h"
-#include "Game/PrefabManager.h"
 
 #include "Core/AppWindow.h"
 #include "ECS/Components/AnimatorComponent.h"
-#include "ECS/Components/MaterialComponent.h"
-#include "ECS/Components/Transform.h"
 #include "ECS/Components/AudioSource.h"
+#include "ECS/Components/Collider.h"
 #include "ECS/Components/CollisionCallback.h"
 #include "ECS/Components/LifeTime.h"
+#include "ECS/Components/MaterialComponent.h"
 #include "ECS/Components/RigidbodyHandle.h"
 #include "ECS/Components/SpriteQuad.h"
+#include "ECS/Components/Transform.h"
+#include "Game/PrefabManager.h"
 #include "Service/Audio/AudioServiceConfig.h"
 #include "Service/Physics/PhysicsServiceConfig.h"
 
@@ -22,7 +23,7 @@ namespace Umbra {
         mWorldRegister->RegisterComponent<SpriteComponent>();
         mWorldRegister->RegisterComponent<TransformComponent>();
         mWorldRegister->RegisterComponent<CameraComponent>();
-        mWorldRegister->RegisterComponent<PhysicsBodyComponent>();
+        // mWorldRegister->RegisterComponent<PhysicsBodyComponent>(); // old physics — removed
         mWorldRegister->RegisterComponent<BoxColliderComponent>();
         mWorldRegister->RegisterComponent<CircleColliderComponent>();
         mWorldRegister->RegisterComponent<RigidbodyHandleComponent>();
@@ -45,22 +46,18 @@ namespace Umbra {
         mSceneGraphSystem = std::make_shared<SceneGraphSystem>();
         mAnimationSystem  = std::make_shared<AnimationSystem>();
         mRenderSyncSystem = std::make_shared<RenderSyncSystem>();
-        mPhysicsSystem    = std::make_shared<PhysicsSystem>();
-
         mWorldRegister->AddSystem(ESystemPhase::PreRender, -5, mSceneGraphSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 0, mCameraSystem);
         mWorldRegister->AddSystem(ESystemPhase::PreRender, 10, mRenderSyncSystem);
-        mWorldRegister->AddSystem(ESystemPhase::Simulation, 0, mPhysicsSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 5, mAnimationSystem);
 
         // ── Physics service layer (Physics) ───────────────────────────────────
         {
             UMBRA_ALLOC_SCOPE(EMemoryCategory::Physics);
             PhysicsServiceConfig physicsConfig;
-            mPhysicsService    = std::make_unique<PhysicsService>(physicsConfig);
-            mPhysicsSyncSystem = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
-            mCollisionEventDispatchSystem =
-                std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
+            mPhysicsService               = std::make_unique<PhysicsService>(physicsConfig);
+            mPhysicsSyncSystem            = std::make_shared<PhysicsSyncSystem>(mPhysicsService.get());
+            mCollisionEventDispatchSystem = std::make_shared<CollisionEventDispatchSystem>(mPhysicsService.get());
         }
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 10, mPhysicsSyncSystem);
         mWorldRegister->AddSystem(ESystemPhase::Simulation, 20, mCollisionEventDispatchSystem);
@@ -102,10 +99,6 @@ namespace Umbra {
         mWorldRegister->Update(ESystemPhase::FrameStart);
         mWorldRegister->Update(ESystemPhase::PreRender);
         mWorldRegister->Update(ESystemPhase::FrameEnd);
-    }
-
-    PhysicsSystem* World::GetPhysicsSystem() {
-        return mPhysicsSystem.get();
     }
 
     Math::Vector2f World::GetScreenToWorldPosition(Math::Vector2i _screenPos) {
@@ -223,17 +216,19 @@ namespace Umbra {
 
         TransformComponent* childT  = mWorldRegister->GetComponent<TransformComponent>(_child);
         TransformComponent* parentT = mWorldRegister->GetComponent<TransformComponent>(_parent);
-        childT->Parent = _parent;
+        childT->Parent              = _parent;
         parentT->Children.push_back(_child);
     }
 
     void World::DetachFromParent(EntityID _child) {
-        if (!mWorldRegister->HasComponent<TransformComponent>(_child))
+        if (!mWorldRegister->HasComponent<TransformComponent>(_child)) {
             return;
+        }
 
         TransformComponent* childT = mWorldRegister->GetComponent<TransformComponent>(_child);
-        if (childT->Parent == MAX_ENTITY)
+        if (childT->Parent == MAX_ENTITY) {
             return;
+        }
 
         TransformComponent* parentT = mWorldRegister->GetComponent<TransformComponent>(childT->Parent);
         if (parentT) {
@@ -244,15 +239,17 @@ namespace Umbra {
     }
 
     EntityID World::GetParent(EntityID _entity) const {
-        if (!mWorldRegister->HasComponent<TransformComponent>(_entity))
+        if (!mWorldRegister->HasComponent<TransformComponent>(_entity)) {
             return MAX_ENTITY;
+        }
         return mWorldRegister->GetComponent<TransformComponent>(_entity)->Parent;
     }
 
     const Vector<EntityID>& World::GetChildren(EntityID _entity) const {
         static const Vector<EntityID> empty;
-        if (!mWorldRegister->HasComponent<TransformComponent>(_entity))
+        if (!mWorldRegister->HasComponent<TransformComponent>(_entity)) {
             return empty;
+        }
         return mWorldRegister->GetComponent<TransformComponent>(_entity)->Children;
     }
 

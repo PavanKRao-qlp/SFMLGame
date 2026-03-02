@@ -34,5 +34,5 @@ private:
     bool bShowProjections  = false;
     bool bDrawContactPoint = false;
 
-    Umbra::SharedPtr<Umbra::CollisionDetector> mCollisionDetector;
+    // Umbra::SharedPtr<Umbra::CollisionDetector> mCollisionDetector;
 };
