@@ -1,20 +1,29 @@
 #pragma once
-#include "EnginePCH.h"
-#include "ECS/ECSRegister.h"
-namespace UMBRA
-{
-    class IGameInstance
-    {
+#include "Core/AppWindow.h"
+#include "Game/SceneManager.h"
+#include "UI/ImGuiBackend.h"
+#include "Umbra.h"
+namespace Umbra {
+    class IGameInstance {
     public:
+        IGameInstance()  = default;
+        ~IGameInstance() = default;
+        virtual FGameConfig LoadGameConfig();
         virtual void Initialize() = 0;
-        virtual void OnUpdate(float dt) = 0;
-        virtual void OnBeginPlay() = 0;
-        virtual void OnEndPlay() = 0;
-        inline void SetECSRegister(ECSRegister *worldRegister)
-        {
-            mWorldRegister = worldRegister;
-        };
+        virtual void ShutDown()   = 0;
+        void QuitApplication();
+        SceneManager& GetSceneManager();
+        ImGuiBackend& GetUIManager();
+
+        // Set to true to enable the debug overlay (toggle with Alt + ~)
+        bool bDebug = true;
+
     protected:
-        class ECSRegister *mWorldRegister;
+        IGameInstance(const IGameInstance&)            = delete; // NO COPY CONSTRUCTOR
+        IGameInstance& operator=(const IGameInstance&) = delete; // NO COPY CONSTRUCTOR
+    private:
+        friend class App;
+        SceneManager* mSceneManager;
+        ImGuiBackend* mUIBackend;
     };
-}
+} // namespace Umbra

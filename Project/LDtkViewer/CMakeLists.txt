@@ -1,0 +1,5 @@
+file(GLOB_RECURSE SOURCES_LDTKVIEWER "src/*.cpp")
+add_executable(LDtkViewer ${SOURCES_LDTKVIEWER})
+target_link_libraries(LDtkViewer Engine2D)
+setup_target_dll_copy(LDtkViewer)
+setup_target_asset_copy(LDtkViewer)

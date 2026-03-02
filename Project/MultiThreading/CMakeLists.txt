@@ -1,0 +1,5 @@
+file(GLOB_RECURSE SOURCES_MULTITHREADING "src/*.cpp")
+add_executable(MultiThreading ${SOURCES_MULTITHREADING})
+target_link_libraries(MultiThreading Engine2D)
+setup_target_dll_copy(MultiThreading)
+setup_target_asset_copy(MultiThreading)

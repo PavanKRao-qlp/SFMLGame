@@ -1,0 +1,111 @@
+#include "Game/SceneManager.h"
+
+#include "Game/IGameInstance.h"
+#include "LDtk/LDtkScene.h"
+
+namespace Umbra {
+
+    void SceneManager::Simulate() {
+        if (mDeletedScene) {
+            mDeletedScene->ShutDown();
+            mDeletedScene.reset();
+        }
+        if (bCurrentSceneStarted && mCurrentScene) {
+            mCurrentScene->Simulate();
+        }
+    }
+
+    void Umbra::SceneManager::Render() {
+        if (mDeletedScene) {
+            mDeletedScene->ShutDown();
+            mDeletedScene.reset();
+        }
+        if (mCurrentScene) {
+            if (!bCurrentSceneStarted) {
+                bCurrentSceneStarted = true;
+                mCurrentScene->OnBeginPlay();
+            }
+            mCurrentScene->Render();
+        }
+    }
+
+    void SceneManager::AddScene(String _sceneId, SharedPtr<Scene> _Scene) {
+        mSceneMap.emplace(_sceneId, _Scene);
+        _Scene->SetSceneManager(this);
+        _Scene->SetSceneId(_sceneId);
+        _Scene->SetGameInstance(mGameInstance);
+    }
+
+    const SharedPtr<Scene>& SceneManager::GetCurrentScene() {
+        return mCurrentScene;
+    }
+
+    void SceneManager::GoToScene(const String& _sceneId, SceneContext _context) {
+        if (mSceneMap.find(_sceneId) == mSceneMap.end()) {
+            UMBRA_LOG_CRITICAL("Trying To Load Unkown Scene!:%s", _sceneId.c_str());
+            mGameInstance->QuitApplication();
+        }
+        GoToScene(mSceneMap[_sceneId], std::move(_context));
+    }
+
+    const SceneContext& SceneManager::GetContext() const {
+        return mContext;
+    }
+
+    void SceneManager::ShutDown() {
+        if (mCurrentScene) {
+            // Call OnEndPlay if scene was started
+            if (bCurrentSceneStarted) {
+                mCurrentScene->OnEndPlay();
+            }
+            mCurrentScene->ShutDown();
+            mCurrentScene.reset();
+        }
+        for (auto pair : mSceneMap) {
+            pair.second->ShutDown();
+        }
+        mSceneMap.clear();
+    }
+
+    void SceneManager::GoToScene(SharedPtr<Scene>& _scene, SceneContext _context) {
+        if (mCurrentScene) {
+            UMBRA_LOG_INFO("GoToScene exiting %s", mCurrentScene->GetSceneID().c_str());
+            // Call OnEndPlay before transitioning
+            if (bCurrentSceneStarted) {
+                mCurrentScene->OnEndPlay();
+            }
+            // Transfer current scene to deletion queue (will be cleaned up in Render/Simulate)
+            mDeletedScene = mCurrentScene;
+            mCurrentScene.reset();
+        }
+
+        // Store the context so the incoming scene can read it in OnBeginPlay
+        mContext = std::move(_context);
+
+        // Create new instance from template
+        mCurrentScene = _scene->InstantiateCopy();
+        mCurrentScene->Construct();
+        bCurrentSceneStarted = false;
+    }
+
+    void SceneManager::LoadLDTKScene(const String& _ldtkPath, const String& _levelName) {
+        String id = "__ldtk__" + _ldtkPath + "__" + _levelName;
+        // Only register once; re-use the existing template on subsequent calls.
+        if (mSceneMap.find(id) == mSceneMap.end()) {
+            auto scene = std::make_shared<LDtkScene>(_ldtkPath, _levelName);
+            AddScene(id, scene);
+        }
+        GoToScene(id);
+    }
+
+    SceneManager::SceneManager() {}
+
+    SceneManager::~SceneManager() {
+        UMBRA_LOG_DEBUG("Scene Manager Destroyed!");
+    }
+
+    void SceneManager::SetGameInstance(IGameInstance* _GameInstance) {
+        mGameInstance = _GameInstance;
+    }
+
+} // namespace Umbra

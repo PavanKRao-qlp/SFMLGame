@@ -1,27 +1,24 @@
 #pragma once
-#include "ECS/System.h"
 #include "ECS/Component.h"
+#include "ECS/Components/Transform.h"
 #include "ECS/Enity.h"
-#include "ECS/Components/Transfrom.h"
+#include "ECS/System.h"
 
-namespace UMBRA
-{
-    class RotationSystem : public System
-    {
+namespace Umbra {
+    class RotationSystem : public System {
     public:
-        inline RotationSystem() : System(new ECView<TransformComponent>()) {
-                                  };
+        inline RotationSystem() : System(std::make_unique<ECView<TransformComponent>>()) {
+            bEnabled = false;
+        }
         inline ~RotationSystem() {};
-        inline void Update() override
-        {
-            for (EntityID entity : mView->mEntities)
-            {
-                TransformComponent *transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
+        inline void Update() override {
+            for (EntityID entity : mView->mEntities) {
+                TransformComponent* transform = mView->ecsRegister->GetComponent<TransformComponent>(entity);
                 transform->Angle += 50.f * EngineTime::GetDeltaTime();
-                //transform->y += 5 * EngineTime::GetDeltaTime();
+                // transform->y += 5 * EngineTime::GetDeltaTime();
             };
-        };
+        }
 
     protected:
     };
-}
+} // namespace Umbra

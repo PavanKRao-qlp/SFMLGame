@@ -1,32 +1,42 @@
 #pragma once
-#include "Core/AppWindow.h"
-#include "Core/Event.h"
-#include "ECS/ECSRegister.h"
 #include "Game/IGameInstance.h"
-#include "ECS/Systems/RenderSystem.h"
 
-namespace UMBRA
-{
-    class App
-    {
+namespace Umbra {
+    namespace Platform {
+        class VirtualFileManager;
+    }
+    class App {
     private:
+        bool PreInit();
         bool Init();
         void Run();
         int Exit();
-        
+
         void OnUpdate(float _dt);
         void OnFixedUpdate();
-        void OnAppWindowClosed(const AppClosedEvent& _event);
+        void OnAppClosedEvent(const AppClosedEvent& _event);
 
-        bool mAppRunning = false;
-        class AppWindow *mAppWindow;
-        class ECSRegister mWorldRegister;
-        class RenderSystem* mRenderSystem;
-        class IGameInstance* mGameInstance;
+        void InitializeECS();
+        bool CreateWindow();
+        bool InitializeGameInstance();
+
+        bool bAppRequestExit  = false;
+        bool mShowDebugLayer  = false;
+        FGameConfig mGameConfig;
+        // class World* mWorld;
+        // class ECSRegister mWorldRegister;
+        // class RenderSystem* mRenderSystem;
+        SharedPtr<class AppWindow> mAppWindow;
+        SharedPtr<class IGameInstance> mGameInstance;
+        UniquePtr<class SceneManager> mSceneManager;
+        UniquePtr<class ImGuiBackend> mUIManager;
+        UniquePtr<Platform::VirtualFileManager> mFileManager;
 
     public:
-        App(IGameInstance* gameInstance);
+        App(SharedPtr<IGameInstance>& _gameInstance);
         ~App();
+
         int Bootup();
     };
-}
+
+} // namespace Umbra

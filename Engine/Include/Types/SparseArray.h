@@ -1,14 +1,12 @@
 #pragma once
 #include "EnginePCH.h"
 
-namespace UMBRA
-{
+namespace Umbra {
 
     template <typename T, std::size_t Capacity>
-    class SparseArray
-    {
+    class SparseArray {
     public:
-        void Insert(std::size_t _index, const T &_value);
+        void Insert(std::size_t _index, const T& _value);
         void RemoveAt();
 
     private:
@@ -18,7 +16,7 @@ namespace UMBRA
     };
 
     template <typename T, std::size_t Capacity>
-    void SparseArray<T, Capacity>::Insert(std::size_t _index, const T &_value) {
-        
+    void SparseArray<T, Capacity>::Insert(std::size_t _index, const T& _value) {
+
     };
-}
+} // namespace Umbra

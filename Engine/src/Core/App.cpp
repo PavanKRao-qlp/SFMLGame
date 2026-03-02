@@ -1,110 +1,270 @@
 #include "Core/App.h"
+
+#include "Core/AppWindow.h"
 #include "Core/Event.h"
-#include "Core/Clock.h"
-#include "Input/Input.h"
-#include "Diag/Logger.h"
-#include "ECS/Systems/RotationSystem.h"
+#include "Core/Random.h"
+#include "Diag/MemoryTracker.h"
+#include "ECS/ECSRegister.h"
+#include "ECS/Systems/CollisionDetectionSystem.h"
+#include "ECS/Systems/CollisionEventResolverSystem.h"
 #include "ECS/Systems/LifeTimeSystem.h"
+#include "ECS/Systems/PhysicsSystem.h"
+#include "ECS/Systems/RotationSystem.h"
+#include "Game/IGameInstance.h"
+#include "Game/SceneManager.h"
+#include "Game/World.h"
+#include "Graphics/IRenderDevice.h"
+#include "Input/Input.h"
+#include "Platform/NativeFileSystem.h"
+#include "Platform/PakFileSystem.h"
+#include "Platform/VirtualFileManager.h"
+#include "Service/ServiceLocator.h"
+#include "UI/Backends/SfmlImguiImpl.h"
+#include "Umbra.h"
 
-namespace UMBRA
-{
-    const float fixedDt = 1.f / 60;
-    App::App(IGameInstance *gameInstance)
-    {
-        mGameInstance = gameInstance;
+namespace Umbra {
+
+    App::App(SharedPtr<IGameInstance>& _gameInstance) {
+        mGameInstance = _gameInstance;
     }
 
-    App::~App()
-    {
-    }
+    App::~App() {}
 
-    int App::Bootup()
-    {
-        Logger::Log(LogType::Verbose, "App Booting Up!");
-        if (Init())
-        {
+    int App::Bootup() {
+        if (Init()) {
             Run();
         }
         return Exit();
     }
 
-    bool App::Init()
-    {
-        EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppWindowClosed));
-        Input Input;
-        mAppWindow = new AppWindow();
-        mAppWindow->CreateWindow();
-        mAppRunning = true;
+    bool App::PreInit() {
 
-        mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
-        mWorldRegister.RegisterComponent<SpriteComponent>();
-        mWorldRegister.RegisterComponent<TransformComponent>();
-        mWorldRegister.RegisterComponent<LifeTimeComponent>();
+        Logger::Config loggerConfig;
+        loggerConfig.bEnable = true;
+        Logger::Initialize(loggerConfig);
 
-        
-        mWorldRegister.AddSystem(mRenderSystem);
-        mWorldRegister.AddSystem(new RotationSystem());
-        mWorldRegister.AddSystem(new LifeTimeSystem());
-        
-        if (mGameInstance != nullptr)
-        {
-            mGameInstance->SetECSRegister(&mWorldRegister);
-            mGameInstance->Initialize();
-        }
-        else
-        {
-            return false;
-        }
+        mFileManager = std::make_unique<Platform::VirtualFileManager>();
+        mFileManager->Mount("game/", "Asset/", std::make_shared<Platform::NativeFileSystem>());
+        //  Initialize Platform layer
+
+        /*
+            @todo : HiRes Timer
+            @todo : FileSystem
+        */
+
+        // Initialize Core Layer
+
+        /*
+            @todo 3rd party / dll ?
+            @todo memoryManager
+            @todo parser
+ @todo Config
+         * <--parser
+            @todo logger
+            @todo math ?
+            @todo RNG
+
+        */
+
+
+        EventBus::Initialize();
+
+        Random::SetSeed(EngineTime::GetTimestamp(), EngineTime::GetTimestamp() / 2);
+        // Initialize Resource Layer
+
+        /*
+            @todo ResourceManager
+        */
+
+
+        // Initialize Engine Layer
+        Input::Initialize();
+        mSceneManager = std::make_unique<SceneManager>();
+        mUIManager    = std::make_unique<SfmlImguiImpl>();
+        // GEngineStatics.
+
         return true;
     }
 
-    void App::Run()
-    {
-        float dt = 0;
-        double accDt = 0;
-        if (mGameInstance != nullptr)
-            mGameInstance->OnBeginPlay();
-        while (mAppRunning)
-        {
-            dt = EngineTime::Tick();
-            accDt += dt;
-            OnUpdate(dt);
-            while (accDt >= fixedDt)
-            {
-                OnFixedUpdate();
-                accDt -= fixedDt;
+    bool App::Init() {
+
+        bool preRequisiteSuccess = PreInit();
+        if (preRequisiteSuccess) {
+            if (mGameInstance == nullptr) {
+                UMBRA_LOG_CRITICAL("GameInstance not Found, Exiting App");
             }
+            mGameConfig               = mGameInstance->LoadGameConfig();
+            GEngineStatics.GameConfig = &mGameConfig;
+            mAppWindow                = std::make_shared<AppWindow>();
+            bool windowSuccess        = mAppWindow->CreateWindow();
+            if (!windowSuccess) {
+                UMBRA_LOG_CRITICAL("Window Creation Failed, Exiting App!");
+                return false;
+            }
+            EventBus::Subscribe<AppClosedEvent>(BIND_1P(this, &App::OnAppClosedEvent));
+            mUIManager->Init(mAppWindow->GetRenderDevice()->GetNativeWindowHandle(), 800, 800);
+            GEngineStatics.ImGuiBackend = mUIManager.get();
+
+            // Initialize services
+            ServiceLocator::Initialize();
+            ServiceLocator::GetRenderService()->Initialize(mAppWindow->GetRenderDevice());
+
+            UMBRA_LOG_INFO("App Initalized!");
+            return true;
         }
-        if (mGameInstance != nullptr)
-            mGameInstance->OnEndPlay();
+        return false;
     }
 
-    void App::OnUpdate(float _dt)
-    {
-        mAppWindow->Update();
-        if (mGameInstance != nullptr)
-        {
-            mGameInstance->OnUpdate(_dt);
-            mWorldRegister.Update();
-        }
-        Input::Update();
-    }
+    int App::Exit() {
+        UMBRA_LOG_INFO("App Exiting!");
+        mUIManager->Shutdown();
+        mUIManager.reset();
+        mSceneManager->ShutDown();
+        mSceneManager.reset();
+        ServiceLocator::Shutdown();
+        mAppWindow->CloseWindow();
+        mAppWindow.reset();
+        mGameInstance->ShutDown();
 
-    void App::OnFixedUpdate()
-    {
-    }
-
-    int App::Exit()
-    {
-        Logger::Log(LogType::Verbose, "App Shuting Down!");
-        EventBus::Flush();
-        delete mAppWindow;
+        Input::Destroy();
+        EventBus::Destroy();
+        Logger::Destroy();
         return 0;
     }
 
-    void App::OnAppWindowClosed(const AppClosedEvent &_event)
-    {
-        mAppRunning = false;
-        mAppWindow->CloseWindow();
+    void App::Run() {
+
+        // Initialize Gameplay framework;
+
+
+        // InitializeECS();
+        //  mWorld = new World();
+        //  mWorld->SetECSRegister(&mWorldRegister);
+        //  mGameInstance->SetCurrentWorld(mWorld);
+        //  // LoadDefaultScene
+
+        // // Start Game
+
+        // // While App Running
+        // // Poll Input
+        // // Update World
+
+        // // End Game
+        // // ShutDown Gameplay framework;
+        // // Unload Scenes
+
+        try {
+            mGameInstance->mSceneManager = mSceneManager.get();
+            mGameInstance->mUIBackend    = mUIManager.get();
+            mSceneManager->SetGameInstance(mGameInstance.get());
+            mGameInstance->Initialize();
+            float accumulatedDelta = 0.f;
+            EngineTime::Reset();
+            while (!bAppRequestExit) {
+
+                EngineTime::Tick();
+
+                // Poll events and refresh input state at the top of every frame,
+                // before any fixed updates, so GetKeyDown/GetKeyUp work correctly
+                // in both simulation and render phases.
+                Input::Refresh();
+                mAppWindow->Update();
+
+                float scaledDt = EngineTime::GetScaledDeltaTime();
+
+                if (scaledDt > 0.f) {
+                    if (scaledDt > mGameConfig.MaxPhysicsDeltaTime) { // Handle spiral of death
+                        UMBRA_LOG_WARNING("Long frame detected %f", scaledDt);
+                        scaledDt = mGameConfig.MaxPhysicsDeltaTime;
+                    }
+                    accumulatedDelta += scaledDt;
+                    while (accumulatedDelta >= mGameConfig.FixedDeltaTime) {
+                        accumulatedDelta -= mGameConfig.FixedDeltaTime;
+                        OnFixedUpdate();
+                    }
+                }
+                const float alpha = accumulatedDelta / mGameConfig.FixedDeltaTime;
+                OnUpdate(alpha);
+            }
+        } catch (std::exception& e) {
+            UMBRA_LOG_CRITICAL("Exception Faced ! %s", e.what());
+        }
     }
-}
+
+    void App::OnUpdate(float _dt) {
+        // Debug overlay toggle: Alt + ~
+        if (mGameInstance->bDebug) {
+            if (Input::GetKeyDown(KeyBoard::LAlt)) {
+                mShowDebugLayer = !mShowDebugLayer;
+            }
+        }
+
+        // Begin UI frame
+        mUIManager->NewFrame(EngineTime::GetDeltaTime());
+
+        // Begin render frame (clears screen and resets quad queue)
+        ServiceLocator::GetRenderService()->BeginFrame();
+
+        // Render scene (submits quads via RenderSyncSystem)
+        mSceneManager->Render();
+
+        // Flush render service (sort, cull, batch, draw, flush debug)
+        ServiceLocator::GetRenderService()->Flush();
+
+        // Debug overlay panels
+        if (mGameInstance->bDebug && mShowDebugLayer) {
+            MemoryTracker::DrawImGuiPanel();
+        }
+
+        // End UI frame
+        mUIManager->Render();
+
+        // Present the frame
+        mAppWindow->RefreshDisplay();
+    }
+
+    void App::OnFixedUpdate() {
+        mSceneManager->Simulate();
+    }
+
+
+    void App::OnAppClosedEvent(const AppClosedEvent& _event) {
+        bAppRequestExit = true;
+    }
+
+    void App::InitializeECS() {
+
+        // mWorldRegister.RegisterComponent<SpriteComponent>();
+        // mWorldRegister.RegisterComponent<TransformComponent>();
+        // mWorldRegister.RegisterComponent<LifeTimeComponent>();
+        // mWorldRegister.RegisterComponent<RigidBodyComponent>();
+        // mWorldRegister.RegisterComponent<CollisionBoxComponent>();
+        // mWorldRegister.RegisterComponent<CollisionEventComponent>();
+
+        // mRenderSystem = new RenderSystem(mAppWindow->GetRenderWindowHandle());
+        // mWorldRegister.AddSystem(mRenderSystem);
+        // mWorldRegister.AddSystem(new LifeTimeSystem());
+        // mWorldRegister.AddSystem(new RotationSystem());
+        // mWorldRegister.AddSystem(new PhysicsSystem());
+        // mWorldRegister.AddSystem(new CollisionDetectionSystem());
+        // mWorldRegister.AddSystem(new CollisionEventResolverSystem());
+    }
+
+    bool App::CreateWindow() {
+
+        return true;
+    }
+
+    bool App::InitializeGameInstance() {
+        // UM_ASSERT(mGameInstance != nullptr, "Game Instance not set!");
+        // if (mGameInstance != nullptr) {
+        //     mGameInstance->SetAppWindowRef(mAppWindow);
+        //     mGameInstance->Initialize();
+        //     return true;
+        // } else {
+        //     return false;
+        // }
+        return true;
+    }
+
+} // namespace Umbra

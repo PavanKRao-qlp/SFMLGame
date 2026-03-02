@@ -1,0 +1,5 @@
+file(GLOB_RECURSE SOURCES_AUDIO_TESTBED "src/*.cpp")
+add_executable(AudioTestBed ${SOURCES_AUDIO_TESTBED})
+target_link_libraries(AudioTestBed Engine2D)
+setup_target_dll_copy(AudioTestBed)
+setup_target_asset_copy(AudioTestBed)
